@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LandWorks v4 — Wake County Development System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Nunito+Sans:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0f1a14; --forest:#1b3d28; --pine:#2a5c3f; --sage:#3d7a55;
+  --fern:#5a9e74; --mint:#9dd4b0; --foam:#d4f0df; --cream:#f7f3ec;
+  --parch:#ede7da; --bone:#e2dbd0; --gold:#b8882a; --amber:#d4a843;
+  --sun:#f0c96a; --rust:#8b3a2a; --sky:#2c5f8a; --lavender:#5a4a7a;
+  --white:#ffffff; --muted:#7a7568; --border:#ccc6b8;
+  --shadow-sm:0 2px 8px rgba(15,26,20,.08);
+  --shadow:0 4px 20px rgba(15,26,20,.12);
+  --shadow-lg:0 8px 40px rgba(15,26,20,.18);
+  --r:8px; --r-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:14px;}
+
+/* ── ONBOARDING MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,26,20,.7);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);width:100%;max-width:560px;overflow:hidden;}
+.modal-head{background:linear-gradient(135deg,var(--forest),var(--pine));padding:2rem;color:var(--white);text-align:center;}
+.modal-logo{font-size:2.5rem;margin-bottom:.5rem;}
+.modal-head h2{font-family:'Playfair Display',serif;font-size:1.6rem;margin-bottom:.3rem;}
+.modal-head p{color:var(--mint);font-size:.85rem;}
+.modal-body{padding:1.8rem;}
+.modal-step{display:none;}
+.modal-step.on{display:block;}
+.modal-step h3{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--forest);margin-bottom:.85rem;}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--forest);color:var(--white);border-radius:50%;font-size:.78rem;font-weight:700;margin-right:8px;flex-shrink:0;}
+.setup-field{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;}
+.setup-field label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.setup-field input,.setup-field select{padding:.6rem .9rem;border:1.5px solid var(--border);border-radius:var(--r);font-family:'Nunito Sans',sans-serif;font-size:.9rem;outline:none;background:var(--cream);transition:border-color .18s;}
+.setup-field input:focus,.setup-field select:focus{border-color:var(--sage);background:var(--white);}
+.api-how{background:var(--foam);border:1px solid var(--mint);border-radius:var(--r);padding:1rem;margin-bottom:1rem;font-size:.82rem;line-height:1.7;}
+.api-how a{color:var(--pine);font-weight:600;}
+.api-how ol{padding-left:1.2rem;margin-top:.5rem;}
+.api-steps-toggle{font-size:.8rem;color:var(--pine);cursor:pointer;font-weight:600;margin-bottom:.75rem;display:inline-flex;align-items:center;gap:5px;}
+.api-steps{display:none;}
+.api-steps.on{display:block;}
+.modal-btns{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.2rem;}
+.mbtn{padding:.6rem 1.4rem;border-radius:var(--r);font-family:'Nunito Sans',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;border:none;transition:all .18s;}
+.mbtn-primary{background:var(--forest);color:var(--white);}
+.mbtn-primary:hover{background:var(--pine);}
+.mbtn-sec{background:var(--parch);color:var(--forest);border:1.5px solid var(--border);}
+.mbtn-sec:hover{background:var(--bone);}
+.mbtn-gold{background:var(--amber);color:var(--forest);}
+.mbtn-gold:hover{background:var(--sun);}
+.role-cards{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;}
+.role-card{border:2px solid var(--border);border-radius:var(--r);padding:1rem;cursor:pointer;transition:all .18s;text-align:center;}
+.role-card:hover,.role-card.on{border-color:var(--sage);background:var(--foam);}
+.role-card.on{border-color:var(--forest);}
+.role-icon{font-size:1.8rem;margin-bottom:.4rem;}
+.role-name{font-weight:700;font-size:.88rem;color:var(--forest);}
+.role-desc{font-size:.72rem;color:var(--muted);margin-top:2px;}
+.skip-link{font-size:.78rem;color:var(--muted);text-align:center;margin-top:.75rem;cursor:pointer;}
+.skip-link:hover{color:var(--forest);}
+
+/* ── HEADER ── */
+.hdr{background:var(--forest);color:var(--white);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.hdr-brand{display:flex;align-items:center;gap:10px;}
+.hdr-logo{width:34px;height:34px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.hdr-name{font-family:'Playfair Display',serif;font-size:1.1rem;}
+.hdr-sub{font-size:.62rem;color:var(--mint);letter-spacing:.09em;text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:12px;}
+.hdr-user{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--mint);}
+.hdr-avatar{width:30px;height:30px;background:var(--sage);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;}
+.hdr-role-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:.7rem;color:var(--mint);letter-spacing:.04em;}
+.hdr-btn{padding:.3rem .8rem;border-radius:5px;font-size:.75rem;font-weight:700;cursor:pointer;border:none;background:rgba(255,255,255,.1);color:var(--white);transition:background .18s;}
+.hdr-btn:hover{background:rgba(255,255,255,.2);}
+
+/* ── SEARCH ── */
+.search-bar{background:var(--pine);padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.s-label{color:var(--mint);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;}
+.s-wrap{display:flex;max-width:420px;flex:1;}
+.s-in{flex:1;padding:.5rem .85rem;border:2px solid var(--sage);border-right:none;border-radius:var(--r) 0 0 var(--r);background:rgba(255,255,255,.08);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;}
+.s-in::placeholder{color:rgba(255,255,255,.3);}
+.s-in:focus{border-color:var(--amber);}
+.s-btn{padding:.5rem 1rem;background:var(--amber);color:var(--forest);border:none;border-radius:0 var(--r) var(--r) 0;font-weight:700;font-size:.8rem;cursor:pointer;}
+.s-btn:hover{background:var(--sun);}
+.pin-pill{display:none;align-items:center;gap:6px;background:rgba(157,212,176,.15);border:1px solid var(--mint);border-radius:20px;padding:.3rem .85rem;color:var(--mint);font-size:.78rem;}
+.pin-pill.on{display:flex;}
+.pin-pill strong{color:var(--white);font-family:'JetBrains Mono',monospace;}
+.pin-pill span{cursor:pointer;opacity:.6;margin-left:3px;}
+
+/* ── TABS ── */
+.tabs{background:var(--parch);border-bottom:2px solid var(--border);padding:0 1.5rem;display:flex;overflow-x:auto;gap:0;}
+.tab{padding:.75rem 1.1rem;border:none;background:transparent;color:var(--muted);font-family:'Nunito Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .18s;}
+.tab:hover{color:var(--pine);}
+.tab.on{color:var(--forest);border-bottom-color:var(--amber);font-weight:700;}
+.tab .badge{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;background:var(--rust);color:var(--white);border-radius:50%;font-size:.62rem;font-weight:700;margin-left:5px;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;height:calc(100vh - 58px - 48px - 41px);overflow:hidden;}
+.main{flex:1;overflow-y:auto;padding:1.5rem;}
+.sidebar{width:360px;background:var(--white);border-left:2px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width .28s ease;}
+.sidebar.slim{width:46px;}
+
+/* ── PANELS ── */
+.panel{display:none;animation:fadeUp .2s ease;}
+.panel.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS ── */
+.card{background:var(--white);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:1.2rem;overflow:hidden;}
+.card-hd{background:var(--forest);color:var(--white);padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.card-hd h3{font-family:'Playfair Display',serif;font-size:.98rem;font-weight:400;display:flex;align-items:center;gap:8px;}
+.card-body{padding:1.2rem;}
+.card-hd-gold{background:linear-gradient(90deg,var(--gold),var(--amber));}
+.card-hd-rust{background:var(--rust);}
+.card-hd-sky{background:var(--sky);}
+.card-hd-lav{background:var(--lavender);}
+
+/* ── FORMS ── */
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.85rem;}
+.f{display:flex;flex-direction:column;gap:4px;}
+.f.w2{grid-column:span 2;}
+label{font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+input[type=text],input[type=number],input[type=date],input[type=email],select,textarea{padding:.5rem .8rem;border:1.5px solid var(--border);border-radius:var(--r);font-family:'Nunito Sans',sans-serif;font-size:.88rem;color:var(--ink);background:var(--cream);transition:border-color .18s;outline:none;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--sage);background:var(--white);}
+textarea{resize:vertical;min-height:68px;}
+
+/* ── STATUS BADGES ── */
+.sb{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.03em;}
+.sb-ns{background:#f0f0ee;color:#888;}
+.sb-ip{background:#fff3cd;color:#856404;}
+.sb-sub{background:#d1ecff;color:#004085;}
+.sb-app{background:#d4edda;color:#155724;}
+.sb-com{background:#d1ecf1;color:#0c5460;}
+.sb-na{background:#f0f0f0;color:#aaa;}
+.sb-pe{background:#ffe4e4;color:#8b0000;}
+
+/* ── STAGE TRACKER ── */
+.stage-grid{display:grid;grid-template-columns:28px 1fr 130px 130px 130px;gap:.5rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);}
+.stage-grid:last-child{border-bottom:none;}
+.sn{width:24px;height:24px;background:var(--forest);color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0;}
+.sname{font-size:.85rem;font-weight:600;}
+
+/* ── STATS ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.8rem;margin-bottom:1.2rem;}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:.9rem;box-shadow:var(--shadow-sm);}
+.stat.hi{background:var(--forest);}
+.stat-lbl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px;}
+.stat.hi .stat-lbl{color:var(--mint);}
+.stat-val{font-family:'Playfair Display',serif;font-size:1.55rem;color:var(--forest);}
+.stat.hi .stat-val{color:var(--amber);}
+.stat-unit{font-size:.7rem;color:var(--muted);margin-top:1px;}
+.stat.hi .stat-unit{color:var(--mint);}
+
+/* ── PROFORMA ── */
+.pf-sec{margin-bottom:.9rem;}
+.pf-sh{background:var(--pine);color:var(--white);padding:.42rem .9rem;font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;border-radius:6px 6px 0 0;}
+.pf-tbl{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-top:none;}
+.pf-tbl th{background:var(--parch);padding:.45rem .75rem;text-align:left;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);}
+.pf-tbl td{padding:.45rem .75rem;border-bottom:1px solid #f0ece4;font-size:.83rem;vertical-align:middle;}
+.pf-tbl tr:hover td{background:#fafaf8;}
+.ci{width:98px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:2px 5px!important;}
+.cd{font-family:'JetBrains Mono',monospace;font-size:.8rem;text-align:right;}
+.sub-row td{background:var(--parch)!important;font-weight:700;color:var(--pine);}
+.tot-row td{background:var(--forest)!important;color:var(--white)!important;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.vp{color:#27ae60;}.vn{color:#c0392b;}
+
+/* ── PERMIT LIBRARY ── */
+.pcat-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+.pcat{padding:.3rem .85rem;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .18s;color:var(--muted);}
+.pcat.on{background:var(--forest);color:var(--white);border-color:var(--forest);}
+.permit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:.85rem;}
+.pc{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:.55rem;transition:all .18s;}
+.pc:hover{border-color:var(--fern);box-shadow:var(--shadow);}
+.pc-agency{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700;}
+.pc-name{font-weight:700;font-size:.88rem;color:var(--forest);line-height:1.3;}
+.pc-desc{font-size:.78rem;color:var(--ink);line-height:1.55;}
+.pc-need{font-size:.7rem;font-weight:700;}
+.pc-need.req{color:var(--rust);}
+.pc-need.opt{color:var(--muted);}
+.pc-actions{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.2rem;}
+.pbtn{padding:.3rem .7rem;border-radius:5px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:all .18s;}
+.pbtn-dl{background:var(--parch);color:var(--forest);border:1px solid var(--border);}
+.pbtn-dl:hover{background:var(--bone);}
+.pbtn-ai{background:var(--sage);color:var(--white);}
+.pbtn-ai:hover{background:var(--pine);}
+.pbtn-folder{background:var(--amber);color:var(--forest);}
+.pbtn-folder:hover{background:var(--sun);}
+
+/* ── SUBMITTAL FOLDERS ── */
+.folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;}
+.folder{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .18s;}
+.folder:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.folder-hd{padding:.85rem 1rem;display:flex;align-items:center;gap:.65rem;cursor:pointer;}
+.folder-icon{font-size:1.6rem;}
+.folder-name{font-weight:700;font-size:.9rem;}
+.folder-agency{font-size:.68rem;color:rgba(255,255,255,.75);margin-top:1px;}
+.folder-body{padding:.75rem 1rem;border-top:1px solid rgba(255,255,255,.15);display:none;}
+.folder-body.on{display:block;}
+.folder-doc-list{list-style:none;display:flex;flex-direction:column;gap:.45rem;}
+.folder-doc{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.4rem .6rem;background:rgba(255,255,255,.08);border-radius:5px;font-size:.78rem;}
+.folder-doc-name{flex:1;color:var(--white);}
+.folder-doc-status{font-size:.65rem;font-weight:700;}
+.doc-ready{color:#9dd4b0;}
+.doc-needs-pe{color:#f0c96a;}
+.doc-pending{color:#aaa;}
+.folder-meta{font-size:.72rem;color:rgba(255,255,255,.6);margin-top:.65rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.1);}
+.folder-actions{padding:.75rem 1rem;display:flex;gap:.5rem;flex-wrap:wrap;}
+.fbtn{padding:.35rem .85rem;border-radius:5px;font-size:.75rem;font-weight:700;cursor:pointer;border:none;transition:all .18s;}
+.fbtn-primary{background:var(--forest);color:var(--white);}
+.fbtn-primary:hover{background:var(--pine);}
+.fbtn-pe{background:var(--amber);color:var(--forest);}
+.fbtn-pe:hover{background:var(--sun);}
+
+/* ── PE REVIEW PANEL ── */
+.pe-banner{background:linear-gradient(90deg,#3d1a1a,var(--rust));border-radius:var(--r-lg);padding:1.2rem 1.4rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.pe-banner h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--white);}
+.pe-banner p{font-size:.8rem;color:#ffcfc9;margin-top:2px;}
+.pe-seal-area{background:var(--white);border:3px dashed var(--rust);border-radius:var(--r-lg);padding:2rem;text-align:center;margin-bottom:1.2rem;cursor:pointer;transition:all .18s;}
+.pe-seal-area:hover{border-color:var(--amber);background:var(--foam);}
+.pe-seal-area.sealed{border-style:solid;border-color:var(--sage);background:var(--foam);}
+.pe-seal-icon{font-size:2.5rem;margin-bottom:.5rem;}
+.pe-seal-text{font-size:.85rem;color:var(--muted);}
+.pe-review-items{display:flex;flex-direction:column;gap:.75rem;}
+.pri{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;display:flex;gap:1rem;align-items:flex-start;}
+.pri-num{width:28px;height:28px;background:var(--rust);color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.pri-num.done{background:var(--sage);}
+.pri-content{flex:1;}
+.pri-title{font-weight:700;font-size:.88rem;color:var(--forest);margin-bottom:3px;}
+.pri-desc{font-size:.78rem;color:var(--muted);line-height:1.5;}
+.pri-actions{margin-top:.6rem;display:flex;gap:.5rem;}
+.pri-chk{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;}
+.pri-chk input[type=checkbox]{width:16px;height:16px;accent-color:var(--sage);}
+.pri-chk label{font-size:.78rem;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:400;}
+
+/* ── CHECKLIST ── */
+.cl-ent{margin-bottom:1.2rem;}
+.cl-hd{background:var(--sage);color:var(--white);padding:.55rem 1rem;border-radius:var(--r) var(--r) 0 0;font-weight:700;font-size:.85rem;}
+.cl-tbl{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);overflow:hidden;}
+.cl-tbl th{background:var(--parch);padding:.42rem .75rem;text-align:left;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);}
+.cl-tbl td{padding:.48rem .75rem;border-bottom:1px solid #f0ece4;font-size:.82rem;vertical-align:middle;}
+.cl-tbl tr:last-child td{border-bottom:none;}
+.cnum{width:21px;height:21px;background:var(--parch);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:var(--muted);}
+.cs{font-size:.78rem;padding:3px 5px;min-width:115px;}
+
+/* ── iMAPS ── */
+.imaps-hero{background:linear-gradient(135deg,var(--forest),var(--sky));border-radius:var(--r-lg);padding:1.5rem;color:var(--white);margin-bottom:1.2rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;}
+.imaps-hero h2{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:3px;}
+.imaps-hero p{color:var(--mint);font-size:.83rem;}
+.imaps-btn{display:inline-flex;align-items:center;gap:6px;background:var(--amber);color:var(--forest);padding:.5rem 1.1rem;border-radius:var(--r);font-weight:700;font-size:.82rem;text-decoration:none;margin-top:.6rem;}
+.gt{width:100%;border-collapse:collapse;}
+.gt th{background:var(--parch);padding:.45rem .9rem;text-align:left;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);}
+.gt td{padding:.52rem .9rem;border-bottom:1px solid #f0ece4;font-size:.82rem;}
+.gt tr:nth-child(even) td{background:#fafaf8;}
+.fn{font-weight:700;color:var(--forest);font-family:'JetBrains Mono',monospace;font-size:.76rem;}
+.pi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:.75rem;}
+
+/* ── PARCEL INFO BOX ── */
+.pbox{display:none;background:linear-gradient(135deg,#eef8f2,#e4f2ea);border:1px solid var(--mint);border-radius:var(--r-lg);padding:1rem;margin-bottom:1.2rem;}
+.pbox.on{display:block;animation:fadeUp .3s ease;}
+.pbox-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+.pbox-hd h4{color:var(--forest);font-family:'Playfair Display',serif;font-size:.98rem;}
+.pbox-data{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.55rem;}
+.pd-l{font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.pd-v{font-size:.86rem;font-weight:600;margin-top:2px;}
+.pd-v a{color:var(--pine);text-decoration:none;}
+
+/* ── AI SIDEBAR ── */
+.sb-toggle{height:46px;background:var(--forest);color:var(--amber);border:none;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;width:100%;flex-shrink:0;}
+.sb-full{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+.sidebar.slim .sb-full{display:none;}
+.sb-slim-content{display:none;flex-direction:column;align-items:center;padding:.5rem 0;gap:.5rem;}
+.sidebar.slim .sb-slim-content{display:flex;}
+.sb-hd{background:var(--forest);color:var(--white);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sb-hd h4{font-family:'Playfair Display',serif;font-size:.92rem;font-weight:400;}
+.sb-model{font-size:.65rem;color:var(--mint);}
+.ai-msgs{flex:1;overflow-y:auto;padding:.8rem;display:flex;flex-direction:column;gap:.7rem;}
+.am{max-width:93%;padding:.6rem .85rem;border-radius:8px;font-size:.8rem;line-height:1.58;}
+.am.user{background:var(--forest);color:var(--white);align-self:flex-end;border-radius:8px 8px 2px 8px;}
+.am.assistant{background:var(--parch);color:var(--ink);align-self:flex-start;border:1px solid var(--border);border-radius:8px 8px 8px 2px;}
+.am.sys{background:#fff8e1;color:#7a5c00;font-size:.72rem;align-self:center;text-align:center;border-radius:6px;border:1px solid #ffe082;}
+.ai-typing{display:none;align-self:flex-start;background:var(--parch);border:1px solid var(--border);border-radius:8px;padding:.5rem .85rem;}
+.ai-typing.on{display:flex;gap:4px;align-items:center;}
+.dot{width:6px;height:6px;background:var(--sage);border-radius:50%;animation:bounce .8s infinite;}
+.dot:nth-child(2){animation-delay:.15s;}.dot:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.qbtns{padding:.6rem .85rem;flex-shrink:0;border-top:1px solid var(--border);background:var(--white);}
+.qbtns-lbl{font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;}
+.qb{width:100%;padding:.32rem .65rem;background:var(--parch);border:1px solid var(--border);border-radius:5px;font-size:.73rem;cursor:pointer;text-align:left;color:var(--ink);margin-bottom:.35rem;transition:background .15s;}
+.qb:hover{background:var(--bone);}
+.ai-in-area{border-top:2px solid var(--border);padding:.7rem;display:flex;gap:.5rem;flex-shrink:0;background:var(--white);}
+.ai-ta{flex:1;padding:.48rem .7rem;border:1.5px solid var(--border);border-radius:var(--r);font-family:'Nunito Sans',sans-serif;font-size:.8rem;resize:none;outline:none;height:60px;}
+.ai-ta:focus{border-color:var(--sage);}
+.ai-send{padding:.48rem .85rem;background:var(--forest);color:var(--white);border:none;border-radius:var(--r);font-weight:700;font-size:.78rem;cursor:pointer;align-self:flex-end;}
+.ai-send:hover{background:var(--pine);}
+.ai-send:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ── BUTTONS ── */
+.btn{padding:.52rem 1.2rem;border-radius:var(--r);font-family:'Nunito Sans',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;border:none;transition:all .18s;display:inline-flex;align-items:center;gap:5px;}
+.btn-p{background:var(--forest);color:var(--white);}
+.btn-p:hover{background:var(--pine);}
+.btn-s{background:var(--parch);color:var(--forest);border:1.5px solid var(--border);}
+.btn-s:hover{background:var(--bone);}
+.btn-g{background:var(--amber);color:var(--forest);}
+.btn-g:hover{background:var(--sun);}
+.btn-rust{background:var(--rust);color:var(--white);}
+.btn-rust:hover{background:#a04030;}
+.actions{display:flex;gap:.65rem;margin-top:1.2rem;flex-wrap:wrap;align-items:center;}
+.ok{font-size:.78rem;color:var(--sage);display:none;}
+.ok.on{display:block;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--forest);color:var(--white);padding:.75rem 1.2rem;border-radius:var(--r-lg);font-size:.83rem;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:310px;}
+.toast.on{transform:translateY(0);opacity:1;}
+.toast.s{border-left:4px solid var(--fern);}
+.toast.e{border-left:4px solid var(--rust);}
+.toast.i{border-left:4px solid var(--amber);}
+
+/* ── PROGRESS BAR ── */
+.progress-bar{height:4px;background:var(--bone);border-radius:2px;margin:.5rem 0;}
+.progress-fill{height:100%;background:var(--fern);border-radius:2px;transition:width .3s;}
+
+/* ── API SETUP INLINE ── */
+.api-inline{background:linear-gradient(135deg,#1b3d28,#2a5c3f);border-radius:var(--r-lg);padding:1.2rem 1.4rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.api-inline.hidden{display:none;}
+.api-inline h4{font-family:'Playfair Display',serif;color:var(--white);font-size:.95rem;margin-bottom:2px;}
+.api-inline p{font-size:.78rem;color:var(--mint);}
+.api-in{padding:.48rem .85rem;border:1.5px solid var(--sage);border-radius:var(--r);background:rgba(255,255,255,.08);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.82rem;outline:none;width:320px;}
+.api-in:focus{border-color:var(--amber);}
+.api-in::placeholder{color:rgba(255,255,255,.35);}
+
+@media(max-width:900px){
+  .sidebar{position:fixed;right:0;top:58px;bottom:0;z-index:150;box-shadow:-4px 0 20px rgba(0,0,0,.15);}
+  .sidebar.slim{width:0;overflow:hidden;}
+  .layout{height:auto;}
+  .main{height:auto;}
+}
+
+/* ── MEETING NOTES ── */
+.mtg-form{background:var(--parch);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem;}
+.mtg-form .fg{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
+.mtg-form textarea{width:100%;min-height:80px;resize:vertical;font-family:inherit;font-size:.82rem;padding:.5rem;border:1px solid var(--border);border-radius:6px;background:var(--white);color:var(--ink);}
+.mtg-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);margin-bottom:.9rem;overflow:hidden;}
+.mtg-card-hd{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;background:var(--parch);cursor:pointer;gap:.5rem;}
+.mtg-card-hd:hover{background:#e8e4dc;}
+.mtg-meta{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;}
+.mtg-date{font-size:.78rem;font-weight:700;color:var(--forest);}
+.mtg-topic{font-size:.85rem;font-weight:600;color:var(--ink);}
+.mtg-attendees{font-size:.74rem;color:var(--muted);}
+.mtg-body{padding:1rem;display:none;}
+.mtg-body.open{display:block;}
+.mtg-section{margin-bottom:.9rem;}
+.mtg-section h5{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;}
+.mtg-notes-text{font-size:.83rem;color:var(--ink);white-space:pre-wrap;line-height:1.5;}
+.action-list{display:flex;flex-direction:column;gap:.4rem;}
+.action-item{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:.5rem;align-items:center;padding:.4rem .6rem;background:var(--parch);border-radius:6px;font-size:.8rem;}
+.action-item.done-item{opacity:.55;}
+.action-item input[type=checkbox]{accent-color:var(--forest);width:15px;height:15px;cursor:pointer;}
+.action-text{font-size:.82rem;color:var(--ink);}
+.action-text.struck{text-decoration:line-through;color:var(--muted);}
+.action-owner{font-size:.75rem;color:var(--pine);font-weight:600;}
+.action-due{font-size:.72rem;color:var(--muted);}
+.ai-action-badge{font-size:.65rem;background:var(--forest);color:var(--white);padding:2px 6px;border-radius:10px;margin-left:4px;}
+.add-action-row{display:grid;grid-template-columns:1fr auto auto auto;gap:.4rem;margin-top:.5rem;}
+.add-action-row input{font-size:.78rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:5px;background:var(--white);}
+.mtg-empty{text-align:center;color:var(--muted);padding:2rem;font-size:.85rem;}
+
+/* ── SCHEDULE / MILESTONES ── */
+.sched-phase{margin-bottom:1.4rem;}
+.sched-phase-hd{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:.4rem 0;border-bottom:2px solid var(--border);margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center;}
+.sched-phase-hd .phase-pct{font-size:.72rem;background:var(--parch);border-radius:10px;padding:2px 8px;color:var(--forest);}
+.ms-row{display:grid;grid-template-columns:2fr 130px 130px 130px 150px;gap:.5rem;align-items:center;padding:.5rem .6rem;border-radius:6px;margin-bottom:.3rem;background:var(--white);border:1px solid var(--border);font-size:.8rem;}
+.ms-row:hover{background:var(--parch);}
+.ms-name{font-weight:600;color:var(--ink);}
+.ms-owner{font-size:.74rem;color:var(--muted);}
+.ms-date{font-size:.78rem;padding:.25rem .4rem;border:1px solid var(--border);border-radius:5px;width:100%;background:var(--white);}
+.ms-status{padding:.25rem .5rem;border-radius:12px;font-size:.72rem;font-weight:700;text-align:center;border:none;cursor:pointer;width:100%;}
+.ms-status.ns{background:#f0f0f0;color:#888;}
+.ms-status.ip{background:#fff3cd;color:#856404;}
+.ms-status.dn{background:#d1e7dd;color:#0f5132;}
+.ms-status.dl{background:#f8d7da;color:#842029;}
+.ms-status select{border:none;background:transparent;font-size:.72rem;font-weight:700;cursor:pointer;width:100%;}
+.sched-progress-bar{height:6px;background:var(--border);border-radius:3px;margin-bottom:1.2rem;overflow:hidden;}
+.sched-progress-fill{height:100%;background:linear-gradient(90deg,var(--pine),var(--forest));border-radius:3px;transition:width .4s;}
+.add-ms-btn{font-size:.78rem;}
+
+/* ── PROJECT HUB ── */
+.hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.phase-stepper{display:flex;gap:0;margin-bottom:1.2rem;overflow-x:auto;}
+.ps-step{flex:1;min-width:80px;text-align:center;padding:.5rem .3rem;font-size:.7rem;font-weight:600;background:var(--parch);border:1px solid var(--border);color:var(--muted);position:relative;cursor:pointer;transition:all .2s;}
+.ps-step:not(:last-child)::after{content:'›';position:absolute;right:-8px;top:50%;transform:translateY(-50%);z-index:1;font-size:1rem;color:var(--muted);}
+.ps-step.active{background:var(--forest);color:var(--white);border-color:var(--forest);}
+.ps-step.done{background:var(--pine);color:var(--white);border-color:var(--pine);}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.contact-card{background:var(--parch);border:1px solid var(--border);border-radius:8px;padding:.7rem;font-size:.78rem;}
+.contact-role{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem;}
+.contact-name{font-weight:700;color:var(--ink);margin-bottom:.15rem;}
+.contact-co{color:var(--muted);font-size:.74rem;}
+.contact-links{display:flex;gap:.5rem;margin-top:.35rem;}
+.contact-links a{font-size:.72rem;color:var(--pine);text-decoration:none;}
+.contact-links a:hover{text-decoration:underline;}
+.doc-tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+.doc-tbl th{background:var(--parch);padding:.45rem .6rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border);}
+.doc-tbl td{padding:.4rem .6rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.doc-tbl tr:hover td{background:var(--parch);}
+.ds-badge{padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700;white-space:nowrap;}
+.ds-none{background:#f0f0f0;color:#888;}
+.ds-sub{background:#cfe2ff;color:#084298;}
+.ds-rev{background:#fff3cd;color:#856404;}
+.ds-app{background:#d1e7dd;color:#0f5132;}
+.ds-rej{background:#f8d7da;color:#842029;}
+.open-actions-list{display:flex;flex-direction:column;gap:.4rem;max-height:260px;overflow-y:auto;}
+.oa-item{display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;align-items:center;padding:.4rem .6rem;background:var(--parch);border-radius:6px;font-size:.78rem;}
+.oa-overdue{border-left:3px solid var(--rust);}
+.hub-stat{text-align:center;padding:.8rem;background:var(--parch);border:1px solid var(--border);border-radius:8px;}
+.hub-stat-num{font-size:1.8rem;font-weight:800;color:var(--forest);}
+.hub-stat-lbl{font-size:.72rem;color:var(--muted);margin-top:.2rem;}
+.hub-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem;}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     ONBOARDING MODAL
+════════════════════════════════ -->
+<div class="modal-overlay" id="onboardModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-logo">🏗</div>
+      <h2>LandWorks</h2>
+      <p>Wake County Land Development System · Powered by Sport AI</p>
+    </div>
+    <div class="modal-body">
+
+      <!-- STEP 1: Role -->
+      <div class="modal-step on" id="step1">
+        <h3><span class="step-num">1</span> Who are you?</h3>
+        <div class="role-cards">
+          <div class="role-card" onclick="selectRole('developer',this)">
+            <div class="role-icon">🏢</div>
+            <div class="role-name">Developer</div>
+            <div class="role-desc">Managing projects, evaluating parcels</div>
+          </div>
+          <div class="role-card" onclick="selectRole('engineer',this)">
+            <div class="role-icon">📐</div>
+            <div class="role-name">PE / Engineer</div>
+            <div class="role-desc">Reviewing, sealing, signing plans</div>
+          </div>
+          <div class="role-card" onclick="selectRole('planner',this)">
+            <div class="role-icon">📋</div>
+            <div class="role-name">Planner</div>
+            <div class="role-desc">Zoning, entitlements, permit tracking</div>
+          </div>
+          <div class="role-card" onclick="selectRole('owner',this)">
+            <div class="role-icon">🏠</div>
+            <div class="role-name">Property Owner</div>
+            <div class="role-desc">Exploring development options</div>
+          </div>
+        </div>
+        <div class="setup-field">
+          <label>Your Full Name</label>
+          <input type="text" id="ob-name" placeholder="Tyler Duncan">
+        </div>
+        <div class="setup-field" id="pe-fields" style="display:none">
+          <label>PE License Number (NC)</label>
+          <input type="text" id="ob-pe-num" placeholder="NC-XXXXX">
+          <label style="margin-top:.5rem">Firm / Company Name</label>
+          <input type="text" id="ob-firm" placeholder="Duncan Engineering, PLLC">
+        </div>
+        <div class="modal-btns">
+          <button class="mbtn mbtn-primary" onclick="goStep(2)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: API Key -->
+      <div class="modal-step" id="step2">
+        <h3><span class="step-num">2</span> Connect Your Claude API Key</h3>
+        <div class="api-how">
+          <strong>Each user brings their own API key.</strong> This keeps your conversations private and your costs separate.
+          <div class="api-steps-toggle" onclick="toggleApiSteps()">▶ How to get a free Claude API key</div>
+          <div class="api-steps" id="apiSteps">
+            <ol>
+              <li>Go to <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></li>
+              <li>Create a free account (or sign in)</li>
+              <li>Click <strong>"Get API Keys"</strong> in the left menu</li>
+              <li>Click <strong>"Create Key"</strong> — name it "LandWorks"</li>
+              <li>Copy the key (starts with <code>sk-ant-</code>)</li>
+              <li>Add $5–20 credit under <strong>Billing</strong> to activate it</li>
+            </ol>
+            <p style="margin-top:.5rem;font-size:.78rem;color:var(--muted)">$20 credit = approximately 400–800 full project analyses with Sport AI.</p>
+          </div>
+        </div>
+        <div class="setup-field">
+          <label>Your Claude API Key</label>
+          <input type="password" id="ob-api" placeholder="sk-ant-api03-...">
+        </div>
+        <p class="skip-link" onclick="skipAPI()">Skip for now — I'll add it later</p>
+        <div class="modal-btns">
+          <button class="mbtn mbtn-sec" onclick="goStep(1)">← Back</button>
+          <button class="mbtn mbtn-primary" onclick="goStep(3)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Done -->
+      <div class="modal-step" id="step3">
+        <h3><span class="step-num">3</span> You're Ready</h3>
+        <div style="text-align:center;padding:1rem 0">
+          <div style="font-size:3rem;margin-bottom:.75rem">✅</div>
+          <p style="font-size:.92rem;color:var(--forest);font-weight:600;margin-bottom:.5rem">Welcome to LandWorks</p>
+          <p style="font-size:.82rem;color:var(--muted);line-height:1.6">Sport AI is ready to help you analyze parcels, identify permits, build proformas, organize submittal packages, and prepare documents for PE review — all in one place.</p>
+        </div>
+        <div style="background:var(--foam);border:1px solid var(--mint);border-radius:var(--r);padding:.9rem;font-size:.8rem;line-height:1.7;margin-top:.75rem">
+          <strong>To get started:</strong><br>
+          1. Enter a Wake County PIN in the search bar<br>
+          2. Fill in your project details<br>
+          3. Ask Sport AI anything about your project<br>
+          4. Use the Submittal Folders tab to organize your package
+        </div>
+        <div class="modal-btns">
+          <button class="mbtn mbtn-gold" onclick="closeOnboard()" style="width:100%;justify-content:center">🚀 Launch LandWorks</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     HEADER
+════════════════════════════════ -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">🏗</div>
+    <div>
+      <div class="hdr-name">LandWorks</div>
+      <div class="hdr-sub">Wake County Development System</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-role-badge" id="roleBadge">Developer</div>
+    <div class="hdr-user">
+      <span id="uname">User</span>
+      <div class="hdr-avatar" id="avatar" onclick="showOnboard()" title="Profile settings">TD</div>
+    </div>
+    <span id="serverBadge" class="hdr-role-badge" style="cursor:pointer;display:none" title="Wake County data server" onclick="checkDataServer()">🟡 Data Server</span>
+    <button class="hdr-btn" onclick="loadFromFile()">📂 Load</button>
+    <button class="hdr-btn" onclick="saveToFile()">💾 Save</button>
+    <button class="hdr-btn" onclick="exportAll()" title="Export raw JSON">📤 JSON</button>
+    <input type="file" id="fileIn" accept=".json" style="display:none" onchange="onFileLoad(event)">
+  </div>
+</header>
+
+<!-- SEARCH -->
+<div class="search-bar">
+  <span class="s-label">📍 Parcel PIN</span>
+  <div class="s-wrap">
+    <input class="s-in" id="pinIn" type="text" placeholder="Wake County PIN (e.g. 0785123456)" onkeydown="if(event.key==='Enter')doLookup()">
+    <button class="s-btn" onclick="doLookup()">Look Up</button>
+  </div>
+  <div class="pin-pill" id="pinPill">
+    📋 Active: <strong id="activePin"></strong>
+    <span onclick="clearPin()">✕</span>
+  </div>
+  <button class="s-btn" style="border-radius:var(--r);margin-left:.5rem;background:rgba(255,255,255,.12);color:var(--white);font-size:.72rem" onclick="triggerServerRefresh()" title="Refresh Wake County database">🔄 Refresh Data</button>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" onclick="sw('overview',this)">📋 Project Overview</button>
+  <button class="tab" onclick="sw('stats',this)">📊 Statistics</button>
+  <button class="tab" onclick="sw('proforma',this)">💰 Proforma</button>
+  <button class="tab" onclick="sw('permits',this)">📄 Permit Library</button>
+  <button class="tab" onclick="sw('folders',this)">📁 Submittal Folders</button>
+  <button class="tab" onclick="sw('pe',this)">🔏 PE Review <span class="badge" id="peBadge">!</span></button>
+  <button class="tab" onclick="sw('checklist',this)">✅ Checklist</button>
+  <button class="tab" onclick="sw('imaps',this)">🗺 iMAPS</button>
+  <button class="tab" onclick="sw('meetings',this)">📝 Meeting Notes</button>
+  <button class="tab" onclick="sw('schedule',this)">📅 Schedule</button>
+  <button class="tab" onclick="sw('hub',this)">🏠 Project Hub</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+<div class="main" id="mainPanel">
+
+<!-- PARCEL BOX -->
+<div class="pbox" id="pbox">
+  <div class="pbox-hd">
+    <h4>📦 Parcel — Wake County iMAPS</h4>
+    <a href="https://imaps.wake.gov" target="_blank" style="font-size:.76rem;color:var(--pine)">Open iMAPS ↗</a>
+  </div>
+  <div class="pbox-data" id="pboxData"></div>
+</div>
+
+<!-- API INLINE -->
+<div class="api-inline" id="apiInline">
+  <div style="flex:1">
+    <h4>🔑 Connect Sport AI</h4>
+    <p>Paste your Claude API key to activate Sport AI assistance throughout the system.</p>
+  </div>
+  <input class="api-in" id="apiInKey" type="password" placeholder="sk-ant-api03-...">
+  <button class="mbtn mbtn-gold" onclick="connectAPIInline()">Connect</button>
+  <a href="https://console.anthropic.com" target="_blank" style="font-size:.75rem;color:var(--mint);white-space:nowrap">Get API key ↗</a>
+</div>
+
+<!-- ── OVERVIEW ── -->
+<div class="panel on" id="panel-overview">
+  <div class="card">
+    <div class="card-hd"><h3>📋 Project Details</h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Project Name</label><input type="text" id="pName" placeholder="Development project name"></div>
+        <div class="f"><label>Developer / Company</label><input type="text" id="pDev" placeholder="Company or individual"></div>
+        <div class="f"><label>Project Type</label>
+          <select id="pType" onchange="buildPermits()">
+            <option value="">— Select Type —</option>
+            <option>Single Family Detached</option><option>Apartments</option>
+            <option>Townhomes</option><option>Condos</option><option>Duplexes</option>
+            <option>Commercial</option><option>Mixed Use</option>
+          </select>
+        </div>
+        <div class="f"><label>Parcel ID (PIN)</label>
+          <input type="text" id="pPIN" placeholder="Wake County PIN" oninput="document.getElementById('pinIn').value=this.value">
+        </div>
+        <div class="f w2"><label>Project Address</label><input type="text" id="pAddr" placeholder="Street address, Wake County, NC"></div>
+        <div class="f w2"><label>Zoning District</label><input type="text" id="pZone" placeholder="e.g. R-40, R-20W, GR, NB, CB (from iMAPS)"></div>
+        <div class="f"><label>Municipality / Jurisdiction</label>
+          <select id="pJuris">
+            <option value="">— Select —</option>
+            <option>Unincorporated Wake County</option><option>City of Raleigh</option>
+            <option>Town of Cary</option><option>Town of Apex</option>
+            <option>Town of Holly Springs</option><option>Town of Morrisville</option>
+            <option>Town of Fuquay-Varina</option><option>Town of Knightdale</option>
+            <option>Town of Rolesville</option><option>Town of Wendell</option>
+            <option>Town of Zebulon</option><option>Town of Wake Forest</option>
+          </select>
+        </div>
+        <div class="f"><label>Watershed / Basin</label>
+          <select id="pBasin">
+            <option value="">— Select —</option>
+            <option>Neuse River Basin</option><option>Cape Fear Basin (Jordan Lake)</option>
+            <option>Falls Lake Watershed</option>
+          </select>
+        </div>
+        <div class="f w2"><label>Project Description</label>
+          <textarea id="pDesc" placeholder="Describe scope, goals, special considerations..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>📅 Development Stage Tracker</h3>
+      <span id="stageProgress" style="font-size:.75rem;color:var(--mint)"></span>
+    </div>
+    <div class="card-body">
+      <div style="padding:.5rem 0 0">
+        <div class="progress-bar"><div class="progress-fill" id="stageProg" style="width:0%"></div></div>
+      </div>
+      <div id="stageContainer" style="margin-top:.75rem"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save Project</button>
+    <button class="btn btn-s" onclick="exportAll()">📤 Export</button>
+    <button class="btn btn-g" onclick="aiAsk('Analyze my project overview and tell me: 1) Key risks, 2) Permits I will need, 3) Recommended next steps. Be specific to Wake County.')">🤖 Sport: Full Analysis</button>
+    <span class="ok" id="saveOk">✓ Saved</span>
+  </div>
+</div>
+
+<!-- ── STATS ── -->
+<div class="panel" id="panel-stats">
+  <div class="stat-row" id="statRow"></div>
+  <div class="card">
+    <div class="card-hd"><h3>📥 Input Values</h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Total Units</label><input type="number" id="sU" min="0" oninput="calcStats()" placeholder="0"></div>
+        <div class="f"><label>Lot Size (acres)</label><input type="number" id="sA" min="0" step="0.01" oninput="calcStats()" placeholder="0.00"></div>
+        <div class="f"><label>Gross Building Area (sq ft)</label><input type="number" id="sG" min="0" oninput="calcStats()" placeholder="0"></div>
+        <div class="f"><label>Parking Spaces</label><input type="number" id="sP" min="0" oninput="calcStats()" placeholder="0"></div>
+        <div class="f"><label>Impervious Surface (sq ft)</label><input type="number" id="sI" min="0" oninput="calcStats()" placeholder="0"></div>
+        <div class="f"><label>Road Frontage (ft)</label><input type="number" id="sF" min="0" placeholder="0"></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('Review my project statistics for Wake County compliance. Flag any issues with impervious surface limits, density, parking ratios, or FAR based on typical Wake County zoning standards.')">🤖 Sport: Review Stats</button>
+  </div>
+</div>
+
+<!-- ── PROFORMA ── -->
+<div class="panel" id="panel-proforma">
+  <div id="pfContent"></div>
+  <div class="card"><div class="card-body" style="padding:.65rem .9rem">
+    <table class="pf-tbl">
+      <tr class="tot-row">
+        <td style="width:42%"><strong>TOTAL PROJECT COST</strong></td>
+        <td class="cd" id="totE">$0</td><td class="cd" id="totA">$0</td>
+        <td class="cd" id="totV">$0</td><td style="width:16%"></td>
+      </tr>
+    </table>
+  </div></div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save</button>
+    <button class="btn btn-s" onclick="buildPF()">🔄 Refresh</button>
+    <button class="btn btn-g" onclick="aiAsk('Based on my project type, acreage, and unit count, review my proforma cost estimates for a Wake County development. What line items seem off? What am I missing? Give me realistic ranges.')">🤖 Sport: Review Costs</button>
+  </div>
+</div>
+
+<!-- ── PERMIT LIBRARY ── -->
+<div class="panel" id="panel-permits">
+  <div class="card">
+    <div class="card-hd"><h3>📄 Permit & Form Library</h3>
+      <span style="font-size:.72rem;color:var(--mint)" id="permitCount"></span>
+    </div>
+    <div class="card-body">
+      <div class="pcat-row" id="pcatRow"></div>
+      <div class="permit-grid" id="permitGrid"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-g" onclick="aiAsk('Based on my project type ('+getField('pType')+') in '+getField('pJuris')+', Watershed: '+getField('pBasin')+' — which specific permits do I need and in what order should I apply? Be very specific about each agency and timeline.')">🤖 Sport: Which Permits Do I Need?</button>
+    <button class="btn btn-p" onclick="sw('folders',document.querySelectorAll('.tab')[4])">📁 Organize into Folders →</button>
+  </div>
+</div>
+
+<!-- ── SUBMITTAL FOLDERS ── -->
+<div class="panel" id="panel-folders">
+  <div class="card">
+    <div class="card-hd card-hd-gold"><h3>📁 Submittal Packages by Agency</h3></div>
+    <div class="card-body">
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem">Each folder contains the specific documents required by that review entity. Documents marked <span style="color:var(--amber);font-weight:700">⚠ PE Required</span> must be reviewed, signed, and sealed by a licensed Professional Engineer before submission.</p>
+      <div class="folder-grid" id="folderGrid"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-g" onclick="aiAsk('Walk me through how to assemble my submittal package for Wake County Watershed Management. What order should the documents be in, what are common rejection reasons, and what should I double-check before submitting?')">🤖 Sport: Help Assemble Package</button>
+    <button class="btn btn-rust" onclick="sw('pe',document.querySelectorAll('.tab')[5])">🔏 Send to PE Review →</button>
+  </div>
+</div>
+
+<!-- ── PE REVIEW ── -->
+<div class="panel" id="panel-pe">
+  <div class="pe-banner">
+    <div style="font-size:2rem">🔏</div>
+    <div>
+      <h3>Professional Engineer Review & Seal</h3>
+      <p>The following items require review, signature, and seal by a licensed NC Professional Engineer before submittal. Sport AI prepares the documents — the PE verifies and authorizes.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-rust"><h3>📋 PE Information</h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>PE Name</label><input type="text" id="peName" placeholder="John Smith, PE"></div>
+        <div class="f"><label>NC PE License Number</label><input type="text" id="peLic" placeholder="NC-XXXXX"></div>
+        <div class="f"><label>Firm / Company</label><input type="text" id="peFirm" placeholder="Engineering firm name"></div>
+        <div class="f"><label>Email</label><input type="email" id="peEmail" placeholder="pe@firm.com"></div>
+        <div class="f"><label>Phone</label><input type="text" id="pePhone" placeholder="(919) 555-0000"></div>
+        <div class="f"><label>Date of Review</label><input type="date" id="peDate"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-rust"><h3>🔍 PE Review Checklist</h3></div>
+    <div class="card-body">
+      <div class="pe-review-items" id="peReviewItems"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-rust"><h3>📝 PE Certification Statement</h3></div>
+    <div class="card-body">
+      <div class="pe-seal-area" id="peSealArea" onclick="toggleSeal()">
+        <div class="pe-seal-icon" id="peSealIcon">🔴</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;color:var(--forest);margin-bottom:.3rem" id="peSealTitle">Documents Not Yet Sealed</div>
+        <div class="pe-seal-text" id="peSealText">Click here to certify that you have reviewed all documents, verified calculations, and are authorizing submission with your PE seal and signature.</div>
+      </div>
+      <div style="background:var(--parch);border-radius:var(--r);padding:1rem;font-size:.8rem;line-height:1.7;color:var(--muted)">
+        <strong style="color:var(--forest)">Important Notice:</strong> By activating the PE seal above, the Licensed Professional Engineer certifies that they have independently reviewed all submitted documents, verified that calculations comply with applicable codes and standards, and accept professional responsibility for the sealed documents. This digital certification does not replace the requirement for a physical PE seal and wet or digital signature on submitted plans per NC BOSPE requirements.
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save PE Review</button>
+    <button class="btn btn-g" onclick="aiAsk('What are the most common reasons Wake County Watershed Management or NCDEQ rejects stormwater and erosion control submittals? Help me make sure my package is complete before the PE reviews it.')">🤖 Sport: Pre-PE Checklist</button>
+    <button class="btn btn-rust" onclick="generatePEReport()">📄 Generate PE Review Report</button>
+  </div>
+</div>
+
+<!-- ── CHECKLIST ── -->
+<div class="panel" id="panel-checklist">
+  <div id="clContent"></div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('Look at my development stage tracker and checklist. What is blocking progress? What should I be working on right now? What deadlines might I be approaching?')">🤖 Sport: What's Next?</button>
+  </div>
+</div>
+
+<!-- ── iMAPS ── -->
+<div class="panel" id="panel-imaps">
+  <div class="imaps-hero">
+    <div style="font-size:2.2rem">🗺</div>
+    <div>
+      <h2>Wake County iMAPS</h2>
+      <p>Official parcel mapping — zoning, ownership, acreage, utilities, flood zones, and more.</p>
+      <a class="imaps-btn" href="https://imaps.wake.gov" target="_blank">🔗 Open iMAPS</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><h3>📖 Where to Find Data in iMAPS</h3></div>
+    <div class="card-body" style="padding:0"><table class="gt"><thead><tr><th>Field</th><th>Where to Find It</th></tr></thead><tbody id="guideRows"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><h3>📝 Parcel Data Entry</h3></div>
+    <div class="card-body"><div class="pi-grid" id="imapsIn"></div></div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save Parcel Data</button>
+    <button class="btn btn-g" onclick="aiAsk('Based on the parcel data I entered from iMAPS, what are the key development opportunities and constraints? What zoning allows on this site? Any red flags?')">🤖 Sport: Analyze Parcel</button>
+  </div>
+</div>
+
+<!-- ══════════════════ MEETING NOTES ══════════════════ -->
+<div class="panel" id="panel-meetings">
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📝 Log a Meeting</h3>
+      <button class="btn btn-p add-ms-btn" onclick="toggleMtgForm()">+ New Meeting</button>
+    </div>
+    <div class="card-body" id="mtgFormWrap" style="display:none">
+      <div class="mtg-form">
+        <div class="fg">
+          <div class="f"><label>Date</label><input type="date" id="mtgDate"></div>
+          <div class="f"><label>Topic / Meeting Title</label><input type="text" id="mtgTopic" placeholder="Pre-App Meeting with Planning Dept."></div>
+        </div>
+        <div class="f" style="margin-bottom:.6rem"><label>Attendees</label><input type="text" id="mtgAttendees" placeholder="Tyler Duncan, John Smith (PE), Sarah Jones (Planning)"></div>
+        <div class="f" style="margin-bottom:.6rem"><label>Notes</label><textarea id="mtgNotes" placeholder="Key discussion points, decisions made, information received..."></textarea></div>
+        <div style="margin-bottom:.5rem">
+          <label style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase">Action Items</label>
+          <div id="newMtgActions" style="margin-top:.4rem;display:flex;flex-direction:column;gap:.3rem"></div>
+          <div class="add-action-row" style="margin-top:.5rem">
+            <input type="text" id="newActionText" placeholder="Action item description">
+            <input type="text" id="newActionOwner" placeholder="Owner" style="max-width:130px">
+            <input type="date" id="newActionDue" style="max-width:140px">
+            <button class="btn btn-g" onclick="addNewMtgAction()" style="white-space:nowrap">+ Add</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-p" onclick="saveMeeting()">💾 Save Meeting</button>
+          <button class="btn" onclick="toggleMtgForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="mtgLog"></div>
+</div>
+
+<!-- ══════════════════ SCHEDULE ══════════════════ -->
+<div class="panel" id="panel-schedule">
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📅 Project Milestones</h3>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="font-size:.78rem;color:var(--muted)" id="schedPctLabel"></span>
+        <button class="btn btn-g add-ms-btn" onclick="addCustomMilestone()">+ Custom Milestone</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="sched-progress-bar"><div class="sched-progress-fill" id="schedProgressFill" style="width:0%"></div></div>
+      <div id="schedGrid"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save Schedule</button>
+    <button class="btn btn-g" onclick="aiAsk('Review my project milestones and schedule. Flag any gaps, unrealistic timelines, or missing steps for a Wake County residential development.')">🤖 Sport: Review Schedule</button>
+  </div>
+</div>
+
+<!-- ══════════════════ PROJECT HUB ══════════════════ -->
+<div class="panel" id="panel-hub">
+  <!-- Phase Stepper -->
+  <div class="card">
+    <div class="card-hd"><h3>🚦 Project Phase</h3></div>
+    <div class="card-body">
+      <div class="phase-stepper" id="phaseStepper"></div>
+    </div>
+  </div>
+  <!-- Stats row -->
+  <div class="hub-stats-row" id="hubStatsRow"></div>
+  <!-- Two-column grid -->
+  <div class="hub-grid">
+    <!-- Open Action Items -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-hd"><h3>⚡ Open Action Items</h3><span style="font-size:.75rem;color:var(--muted)" id="openActionCount"></span></div>
+      <div class="card-body">
+        <div class="open-actions-list" id="openActionsList">
+          <div class="mtg-empty">No open action items. Add meetings with action items to track them here.</div>
+        </div>
+      </div>
+    </div>
+    <!-- Key Contacts -->
+    <div class="card">
+      <div class="card-hd" style="justify-content:space-between"><h3>👥 Key Contacts</h3><button class="btn btn-g add-ms-btn" onclick="addContact()">+ Add</button></div>
+      <div class="card-body">
+        <div class="contact-grid" id="contactGrid"></div>
+      </div>
+    </div>
+    <!-- Document Status -->
+    <div class="card">
+      <div class="card-hd" style="justify-content:space-between"><h3>📋 Document Status</h3><button class="btn btn-g add-ms-btn" onclick="addDocStatus()">+ Add Doc</button></div>
+      <div class="card-body" style="padding:0">
+        <table class="doc-tbl">
+          <thead><tr><th>Document</th><th>Status</th><th>Submitted</th><th>Approved</th></tr></thead>
+          <tbody id="docStatusBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('Look at my project hub — open action items, document status, and current phase. What should I be focused on right now to keep this deal moving forward?')">🤖 Alma: What Should I Focus On?</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ── AI SIDEBAR ── -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-full">
+    <div class="sb-hd">
+      <div><h4>🤖 Sport AI</h4><div class="sb-model" id="sbModel">Not connected</div></div>
+      <button onclick="toggleSB()" style="background:none;border:none;color:var(--mint);cursor:pointer;font-size:14px">◀</button>
+    </div>
+    <div class="ai-msgs" id="aiMsgs">
+      <div class="am sys">Sport AI is not connected. Enter your Claude API key to activate.</div>
+    </div>
+    <div class="ai-typing" id="aiTyping"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="qbtns">
+      <div class="qbtns-lbl">Quick Asks</div>
+      <button class="qb" onclick="aiAsk('What permits do I need for '+getField('pType')+' in '+getField('pJuris')+'?')">📄 What permits do I need?</button>
+      <button class="qb" onclick="aiAsk('Review my proforma and flag any unusual or missing costs for Wake County.')">💰 Review my costs</button>
+      <button class="qb" onclick="aiAsk('What are the stormwater and erosion control requirements for my project based on the acreage and impervious surface?')">💧 Stormwater requirements</button>
+      <button class="qb" onclick="aiAsk('What is the typical Wake County development timeline from pre-app to Certificate of Occupancy for my project type?')">📅 Timeline estimate</button>
+      <button class="qb" onclick="aiAsk('What documents need a PE seal for my type of project in Wake County?')">🔏 What needs PE seal?</button>
+    </div>
+    <div class="ai-in-area">
+      <textarea class="ai-ta" id="aiIn" placeholder="Ask Sport anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"></textarea>
+      <button class="ai-send" id="aiSendBtn" onclick="sendAI()">Send</button>
+    </div>
+  </div>
+  <div class="sb-slim-content">
+    <button onclick="toggleSB()" style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:18px;padding:.5rem">▶</button>
+    <span style="writing-mode:vertical-rl;color:var(--muted);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;padding:.5rem 0">Sport AI</span>
+  </div>
+</div>
+</div><!-- /layout -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════ DATA ═══════════════════════
+
+const STAGES = [
+  "Pre-Application / Due Diligence",
+  "Rezoning Application (if needed)",
+  "Preliminary Plat / TRC Submittal",
+  "Construction Drawing Preparation",
+  "Stormwater & Erosion Control Permits",
+  "Building Permit Application",
+  "Construction",
+  "Final Inspections & Certificate of Occupancy"
+];
+
+const PE_ITEMS = [
+  {title:"Site Plan & Grading Plan",desc:"Verify grading, drainage, spot elevations, and earthwork volumes comply with Wake County standards and field conditions."},
+  {title:"Stormwater Management Calculations",desc:"Review stormwater calculations, BMP sizing, nitrogen/phosphorus loading, and compliance with Neuse/Jordan Lake rules."},
+  {title:"Erosion & Sediment Control Plan",desc:"Verify ESC measures are adequate for site conditions, phasing, and comply with NCDEQ and Wake County requirements."},
+  {title:"Utility Plans (Water & Sewer)",desc:"Review water/sewer design, pipe sizing, pressure calculations, and connection details per utility standards."},
+  {title:"Road & Pavement Design",desc:"Verify road cross-sections, pavement design, sight distance, and compliance with NCDOT or local standards."},
+  {title:"Impervious Surface Calculations",desc:"Verify impervious surface calculations match plans and comply with watershed protection rules."},
+  {title:"Floodplain Analysis (if applicable)",desc:"Review any work within or adjacent to the FEMA floodplain, including HEC-RAS analysis if required."},
+  {title:"Structural Plans (if applicable)",desc:"Review retaining walls, bridges, or other structural elements requiring PE certification."}
+];
+
+const FOLDERS = [
+  {
+    name:"Wake County Planning",color:"#1b3d28",icon:"🏛",
+    desc:"Zoning, rezoning, subdivision, and land use applications",
+    docs:[
+      {name:"Rezoning Petition Application",status:"pending",pe:false},
+      {name:"Preliminary Subdivision Checklist",status:"pending",pe:false},
+      {name:"Zoning Verification Request",status:"pending",pe:false},
+      {name:"Site Plan (signed by designer)",status:"pending",pe:true},
+      {name:"Land Use Simple Checklist",status:"pending",pe:false},
+    ]
+  },
+  {
+    name:"Wake County Permits & Inspections",color:"#2a5c3f",icon:"📋",
+    desc:"Building permits, inspections, certificates",
+    docs:[
+      {name:"Building Permit Application",status:"pending",pe:false},
+      {name:"Owner Affidavit",status:"pending",pe:false},
+      {name:"Energy Efficiency Certificate",status:"pending",pe:false},
+      {name:"Impervious Surface Calculations",status:"pending",pe:true},
+      {name:"Site Plan (PE sealed)",status:"pending",pe:true},
+      {name:"Worker's Compensation Exemption",status:"pending",pe:false},
+    ]
+  },
+  {
+    name:"Wake County Watershed Management",color:"#1a4a6b",icon:"💧",
+    desc:"Stormwater, erosion control, floodplain, buffer permits",
+    docs:[
+      {name:"Joint Application (Land Disturbance/SW/Floodplain)",status:"pending",pe:false},
+      {name:"Financial Responsibility Form",status:"pending",pe:false},
+      {name:"Erosion Control Plan (PE sealed)",status:"pending",pe:true},
+      {name:"Stormwater Management Plan (PE sealed)",status:"pending",pe:true},
+      {name:"Stormwater Calculations (PE sealed)",status:"pending",pe:true},
+      {name:"Preliminary Plan Checklist (Neuse/Falls)",status:"pending",pe:false},
+      {name:"Construction Plan Submittal Checklist",status:"pending",pe:false},
+      {name:"Buffer Authorization (if needed)",status:"pending",pe:false},
+      {name:"Stormwater Agreement",status:"pending",pe:false},
+      {name:"Landowner Consent Form",status:"pending",pe:false},
+    ]
+  },
+  {
+    name:"NCDOT",color:"#4a3a6b",icon:"🚗",
+    desc:"Driveway permits, encroachment, traffic studies",
+    docs:[
+      {name:"NCDOT Driveway Permit Application",status:"pending",pe:false},
+      {name:"Traffic Impact Analysis (PE sealed)",status:"pending",pe:true},
+      {name:"Encroachment Agreement (if needed)",status:"pending",pe:false},
+      {name:"Site Distance Analysis (PE sealed)",status:"pending",pe:true},
+    ]
+  },
+  {
+    name:"NC DEQ",color:"#5a3a1a",icon:"🌿",
+    desc:"NPDES stormwater, sedimentation, 401 certification",
+    docs:[
+      {name:"NPDES Construction SW Permit (if >1 acre)",status:"pending",pe:false},
+      {name:"Sedimentation Pollution Control Act Application",status:"pending",pe:false},
+      {name:"401 Water Quality Certification (if wetlands)",status:"pending",pe:false},
+      {name:"ESC Plans (PE sealed)",status:"pending",pe:true},
+      {name:"Stormwater Pollution Prevention Plan (SWPPP)",status:"pending",pe:true},
+    ]
+  },
+  {
+    name:"US Army Corps of Engineers",color:"#3a1a1a",icon:"⚓",
+    desc:"404/401 wetland and waters permits",
+    docs:[
+      {name:"Wetland Delineation Report",status:"pending",pe:false},
+      {name:"Pre-Construction Notification (PCN)",status:"pending",pe:false},
+      {name:"Nationwide Permit Application",status:"pending",pe:false},
+      {name:"Jurisdictional Determination Request",status:"pending",pe:false},
+      {name:"Impact Maps & Cross Sections (PE sealed)",status:"pending",pe:true},
+    ]
+  },
+  {
+    name:"Municipality (if applicable)",color:"#1a3a4a",icon:"🏙",
+    desc:"City/town applications for projects inside municipal limits",
+    docs:[
+      {name:"Municipal Development Application",status:"pending",pe:false},
+      {name:"Municipal Site Plan (PE sealed)",status:"pending",pe:true},
+      {name:"Municipal Utility Plans (PE sealed)",status:"pending",pe:true},
+      {name:"Municipal Stormwater Plans (PE sealed)",status:"pending",pe:true},
+    ]
+  }
+];
+
+const PERMITS = [
+  {id:"wc1",cat:"Wake County",name:"Rezoning Petition",agency:"Wake County Planning",desc:"Application for rezoning in unincorporated Wake County.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Rezoning Petition Supplemental Form.pdf",types:["all"],pe:false},
+  {id:"wc2",cat:"Wake County",name:"Site Plan Requirements & Example",agency:"Wake County Permits",desc:"Required site plan format for all permit submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/Wake County Site Plan Requirements & Example.pdf",types:["all"],pe:true},
+  {id:"wc3",cat:"Wake County",name:"Impervious Surface Calculations",agency:"Wake County Permits",desc:"Required calculation form for impervious surface.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/Impervious Surface Calculations Form.pdf",types:["all"],pe:true},
+  {id:"wc4",cat:"Wake County",name:"Owner Affidavit",agency:"Wake County Permits",desc:"Owner affidavit required for permit applications.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2020-09/owneraffidavit inspector level 3.pdf",types:["all"],pe:false},
+  {id:"wc5",cat:"Wake County",name:"Preliminary Subdivision Checklist",agency:"Wake County Planning",desc:"Required checklist for preliminary subdivision submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Preliminary Subdivision Plan Checklist.pdf",types:["Single Family Detached","Townhomes","Duplexes"],pe:false},
+  {id:"wc6",cat:"Wake County",name:"Regular Final Plat Checklist",agency:"Wake County Planning",desc:"Checklist for final plat subdivision submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Regular Final Plat Subdivison checklist.pdf",types:["Single Family Detached","Townhomes","Duplexes"],pe:false},
+  {id:"wc7",cat:"Wake County",name:"Land Use Simple Checklist",agency:"Wake County Planning",desc:"Checklist for simple land use applications.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Land Use Simple Checklist.pdf",types:["all"],pe:false},
+  {id:"wc8",cat:"Wake County",name:"Zoning Verification Request",agency:"Wake County Planning",desc:"Request to verify zoning for a parcel.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Zoning Verification Request Form.pdf",types:["all"],pe:false},
+  {id:"wc9",cat:"Wake County",name:"Energy Efficiency Certificate",agency:"Wake County Permits",desc:"Required energy certification for new construction.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2020-10/Energy Efficiency Certificate.pdf",types:["Single Family Detached","Townhomes","Duplexes","Apartments","Condos"],pe:false},
+  {id:"wc10",cat:"Wake County",name:"Minor Subdivision Checklist",agency:"Wake County Planning",desc:"Checklist for minor and minor-limited subdivision.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Minor and Minor-Limited Subdivision Checklist_0.pdf",types:["Single Family Detached","Duplexes"],pe:false},
+  {id:"wc11",cat:"Wake County",name:"Pre-Submittal Meeting (Commercial)",agency:"Wake County Planning",desc:"Form to request pre-submittal meeting for commercial projects.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Pre-submittal meeting Commercial supplemental form.pdf",types:["Commercial","Mixed Use"],pe:false},
+  {id:"ws1",cat:"Watershed",name:"Joint Application (Land Disturbance / SW / Floodplain)",agency:"Wake County Watershed",desc:"Primary application for land disturbance, stormwater management, and floodplain — subdivisions and non-residential.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/swfmsecApplication_joint_construction_2026.pdf",types:["all"],pe:false},
+  {id:"ws2",cat:"Watershed",name:"Single Lot Erosion Control Application",agency:"Wake County Watershed",desc:"Erosion control application for single lot projects.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/swfmsecApplication_joint_construction_2026_0.pdf",types:["Single Family Detached","Duplexes"],pe:false},
+  {id:"ws3",cat:"Watershed",name:"Financial Responsibility / Ownership Form",agency:"Wake County Watershed",desc:"Required form establishing financial responsibility.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Financial Responsibility Form 2026.pdf",types:["all"],pe:false},
+  {id:"ws4",cat:"Watershed",name:"Stormwater Agreement",agency:"Wake County Watershed",desc:"Stormwater control measure maintenance agreement.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/STORMWATER_AGREEMENT_2026.pdf",types:["all"],pe:false},
+  {id:"ws5",cat:"Watershed",name:"Floodplain Encroachment Application",agency:"Wake County Watershed",desc:"Required if project encroaches on FEMA floodplain.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2025-11/Wake County Flood Development Permit.pdf",types:["all"],pe:true},
+  {id:"ws6",cat:"Watershed",name:"Buffer Authorization Form (Jordan/Cape Fear)",agency:"Wake County Watershed",desc:"Required for any work within Jordan Lake buffer zones.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Cape Fear_Jordan Buffer Authorization Form.pdf",types:["all"],pe:false},
+  {id:"ws7",cat:"Watershed",name:"Preliminary Plan Checklist (Neuse Basin)",agency:"Wake County Watershed",desc:"Watershed preliminary plan checklist — Neuse River basin.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Neuse_PreliminaryPlanChecklist-V.3_Applicant_2026.pdf",types:["all"],pe:false},
+  {id:"ws8",cat:"Watershed",name:"Preliminary Plan Checklist (Falls Lake)",agency:"Wake County Watershed",desc:"Watershed preliminary plan checklist — Falls Lake area.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Falls_Preliminary_PlanChecklist-V.3_Applicant_2026.pdf",types:["all"],pe:false},
+  {id:"ws9",cat:"Watershed",name:"Construction Plan Submittal Checklist (Neuse)",agency:"Wake County Watershed",desc:"Construction plan submittal checklist for Neuse basin.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/NeuseConstructionPlanSubmittalChecklist-V.3_Applicant-2026.pdf",types:["all"],pe:false},
+  {id:"ws10",cat:"Watershed",name:"Erosion Control Submittal Checklist",agency:"Wake County Watershed",desc:"Erosion control submittal checklist for subdivisions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/ErosionControlSubmittalChecklistV.3_Applicant2026.pdf",types:["all"],pe:false},
+  {id:"ws11",cat:"Watershed",name:"Stormwater Deviation Application",agency:"Wake County Watershed",desc:"Application to request deviation from stormwater requirements.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/DEVIATION_APPLICATION_2026.pdf",types:["all"],pe:true},
+  {id:"ws12",cat:"Watershed",name:"Municipal Checklist (Rolesville/Wendell/Zebulon)",agency:"Wake County Watershed",desc:"Construction drawing checklist for municipal partner jurisdictions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/MUNICIPAL ConstructionPlanSubmittalChecklist_V.3_Applicant_2026.pdf",types:["all"],pe:false},
+  {id:"ws13",cat:"Watershed",name:"Landowner Consent Form",agency:"Wake County Watershed",desc:"Consent form for work affecting adjacent landowner property.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2023-03/Landowner Consent Form Template -Fillable Form.pdf",types:["all"],pe:false},
+  {id:"dot1",cat:"NCDOT",name:"NCDOT Driveway Permit",agency:"NC Dept of Transportation",desc:"Required for any new driveway or access to state-maintained road.",url:"https://connect.ncdot.gov/municipalities/Utilities/Pages/Encroachment-Agreements.aspx",types:["all"],pe:false},
+  {id:"dot2",cat:"NCDOT",name:"NCDOT Encroachment Agreement",agency:"NC Dept of Transportation",desc:"Required for any work within NCDOT right-of-way.",url:"https://connect.ncdot.gov/municipalities/Utilities/Pages/Encroachment-Agreements.aspx",types:["all"],pe:true},
+  {id:"dot3",cat:"NCDOT",name:"Traffic Impact Analysis (TIA)",agency:"NC Dept of Transportation",desc:"Required for larger developments — must be prepared and sealed by PE.",url:"https://connect.ncdot.gov/projects/planning/Pages/TIA.aspx",types:["Apartments","Commercial","Mixed Use"],pe:true},
+  {id:"deq1",cat:"NC DEQ",name:"NPDES Construction Stormwater Permit",agency:"NC DEQ / DEMLR",desc:"Required for land disturbance of 1+ acres. Apply through eDEQ portal.",url:"https://deq.nc.gov/about/divisions/energy-mineral-land-resources/stormwater/stormwater-program/construction-sw",types:["all"],pe:false},
+  {id:"deq2",cat:"NC DEQ",name:"Sedimentation Pollution Control Act Permit",agency:"NC DEQ / DEMLR",desc:"Required for land-disturbing activities over 1 acre.",url:"https://deq.nc.gov/about/divisions/energy-mineral-land-resources/erosion-and-sediment-control",types:["all"],pe:true},
+  {id:"deq3",cat:"NC DEQ",name:"401 Water Quality Certification",agency:"NC DEQ Division of Water Resources",desc:"Required when 404 permit is needed. Certifies state water quality standards compliance.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-permits/wastewater-branch/401-wetlands-buffer-permitting",types:["all"],pe:false},
+  {id:"deq4",cat:"NC DEQ",name:"Jordan Lake Buffer Rules Compliance",agency:"NC DEQ",desc:"Required compliance documentation for Cape Fear basin projects.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-rules/jordan-lake-rules",types:["all"],pe:false},
+  {id:"deq5",cat:"NC DEQ",name:"Neuse River Buffer Rules Compliance",agency:"NC DEQ",desc:"Required compliance for Neuse River basin projects.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-rules/neuse-river-basin-rules",types:["all"],pe:false},
+  {id:"ace1",cat:"404 / 401",name:"Nationwide Permit (NWP) Application",agency:"US Army Corps — Wilmington District",desc:"Most residential projects use NWP 29 or NWP 39. PCN required for most.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Nationwide-Permits/",types:["all"],pe:false},
+  {id:"ace2",cat:"404 / 401",name:"Individual Section 404 Permit",agency:"US Army Corps of Engineers",desc:"Required for significant wetland impacts not covered by Nationwide Permits.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Individual-Permits/",types:["all"],pe:false},
+  {id:"ace3",cat:"404 / 401",name:"Wetland Delineation Report",agency:"US Army Corps of Engineers",desc:"Documents wetland boundaries. Must be prepared by qualified professional.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/",types:["all"],pe:false},
+  {id:"ace4",cat:"404 / 401",name:"Pre-Construction Notification (PCN)",agency:"US Army Corps of Engineers",desc:"PCN required for most Nationwide Permits before starting work.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Nationwide-Permits/",types:["all"],pe:false},
+  {id:"ral1",cat:"City of Raleigh",name:"City of Raleigh Development Portal",agency:"City of Raleigh Planning",desc:"Online portal for all Raleigh development applications and permits.",url:"https://raleighnc.gov/permits",types:["all"],pe:false},
+  {id:"ral2",cat:"City of Raleigh",name:"Raleigh UDO — Unified Development Ordinance",agency:"City of Raleigh",desc:"Complete zoning, subdivision, and development standards for Raleigh.",url:"https://library.municode.com/nc/raleigh/codes/unified_development_ordinance",types:["all"],pe:false},
+  {id:"cary1",cat:"Town of Cary",name:"Cary Development Applications",agency:"Town of Cary Planning",desc:"Development permits and applications for projects within Cary.",url:"https://www.townofcary.org/permits",types:["all"],pe:false},
+  {id:"mun1",cat:"Other Municipalities",name:"Apex Development Review",agency:"Town of Apex",desc:"Development permits and applications for Apex projects.",url:"https://www.apexnc.org/298/Development-Review",types:["all"],pe:false},
+  {id:"mun2",cat:"Other Municipalities",name:"Holly Springs Development",agency:"Town of Holly Springs",desc:"Development applications for Holly Springs projects.",url:"https://www.hollyspringsnc.us/157/Development-Review",types:["all"],pe:false},
+  {id:"mun3",cat:"Other Municipalities",name:"Morrisville Development",agency:"Town of Morrisville",desc:"Building permits and development applications for Morrisville.",url:"https://www.townofmorrisville.org/businesses/building-permits-inspections",types:["all"],pe:false},
+  {id:"mun4",cat:"Other Municipalities",name:"Fuquay-Varina Development",agency:"Town of Fuquay-Varina",desc:"Development services for Fuquay-Varina projects.",url:"https://www.fuquay-varina.org/283/Development-Services",types:["all"],pe:false},
+  {id:"mun5",cat:"Other Municipalities",name:"Knightdale Development",agency:"Town of Knightdale",desc:"Development applications for Knightdale projects.",url:"https://www.knightdalenc.gov/development",types:["all"],pe:false}
+];
+
+const CHECKLIST_DATA = [
+  {e:"Wake County Planning",i:["Zoning verification obtained from Wake County","Pre-application meeting completed","Rezoning petition submitted (if needed)","Preliminary subdivision plan submitted to TRC","TRC approval received","Final plat submitted and approved","Land use permits obtained"]},
+  {e:"Wake County Permits & Inspections",i:["Building permit application submitted","Site plan reviewed and approved","Owner affidavit submitted","Impervious surface calculations submitted (PE sealed)","Energy efficiency certificate ready","All required inspections scheduled","Certificate of Occupancy issued"]},
+  {e:"Wake County Watershed Management",i:["Land disturbance permit application submitted","Erosion control plan approved (PE sealed)","Stormwater management plan approved (PE sealed)","Financial responsibility form submitted","Stormwater agreement executed","Buffer authorization obtained (if needed)","Floodplain encroachment permit (if needed)","Performance bond posted (if required)","As-built stormwater inspection scheduled"]},
+  {e:"NCDOT",i:["Driveway permit applied for","Site distance analysis completed (PE sealed)","Encroachment agreement (if needed)","Traffic Impact Analysis submitted (if required)","NCDOT approval received"]},
+  {e:"NC DEQ",i:["NPDES construction stormwater permit obtained (>1 acre)","Sedimentation & Erosion Control permit obtained","401 Water Quality Certification applied for (if wetlands impacted)","Jordan/Neuse buffer compliance documentation submitted","SWPPP prepared and posted on site (PE sealed)"]},
+  {e:"US Army Corps of Engineers (404/401)",i:["Wetland delineation completed by qualified professional","404 permit type determined (NWP vs Individual)","Pre-Construction Notification submitted (if required)","Army Corps approval/verification received","401 certification from NC DEQ obtained","Mitigation plan approved (if required)"]},
+  {e:"Municipality (if applicable)",i:["Municipal jurisdiction confirmed","Municipal development application submitted","Municipal site plan approved (PE sealed)","Municipal utility plans approved (PE sealed)","Municipal stormwater plans approved (PE sealed)","Municipal building permit obtained"]}
+];
+
+const IMAPS_GUIDE = [
+  ["Parcel ID (PIN)","Search by address → Property Info panel → PIN number"],
+  ["Owner Name","Property Info panel → Owner field"],
+  ["Lot Size (acres)","Property Info panel → Area field"],
+  ["Zoning District","Layers menu → Zoning → click parcel → Zoning Classification"],
+  ["Land Use Code","Property Info panel → Land Use Code"],
+  ["Assessed Value","Property Info panel → Total Value"],
+  ["Deed Book/Page","Property Info panel → Deed Reference"],
+  ["Flood Zone","Layers → Flood Zones → click parcel for FEMA zone"],
+  ["Watershed / Basin","Layers → Watersheds → click parcel for basin classification"],
+  ["Water Service","Layers → Utilities → Water lines near parcel boundary"],
+  ["Sewer Service","Layers → Utilities → Sewer lines near parcel boundary"],
+  ["Road Frontage","Measure tool → draw along street edge of parcel"],
+  ["Setback Requirements","Zoning district code → Wake County UDO Table 3.1"],
+  ["Adjacent Zoning","Click neighboring parcels to see their zoning"]
+];
+
+const IMAPS_FIELDS = [
+  "PIN","Owner Name","Parcel Address","Lot Size (acres)","Zoning District",
+  "Current Land Use","Assessed Value ($)","Flood Zone (Y/N)","Watershed / Basin",
+  "Water Service Available (Y/N)","Sewer Service Available (Y/N)","Road Frontage (ft)",
+  "Deed Book/Page","Adjacent Zoning North","Adjacent Zoning South"
+];
+
+const PF_DATA = [
+  {n:"PRE-DEVELOPMENT",i:[
+    {n:"Due Diligence / Title & Survey",e:3500,note:"estimate"},
+    {n:"Phase I Environmental Site Assessment",e:2500,note:"estimate"},
+    {n:"Wetland Delineation",e:2000,note:"if applicable"},
+    {n:"Geotechnical / Soils Report",e:4000,note:"if required"},
+    {n:"Legal / Closing Costs",e:3000,note:"estimate"},
+    {n:"Pre-Application & Zoning Consultation",e:1500,note:"estimate"}
+  ]},
+  {n:"REZONING & ENTITLEMENTS",i:[
+    {n:"Rezoning Application Fee",e:1200,note:"Wake County"},
+    {n:"Traffic Impact Analysis",e:8000,note:"if required — PE sealed"},
+    {n:"Community Meeting Costs",e:500,note:"estimate"},
+    {n:"Planning Consultant / Attorney",e:5000,note:"estimate"}
+  ]},
+  {n:"PRELIMINARY PLAT / TRC",i:[
+    {n:"Civil Engineering — Prelim Plat",e:12000,note:"PE sealed"},
+    {n:"Surveying",e:5000,note:"estimate"},
+    {n:"Wake County TRC/Review Fee",e:800,note:"per submission"},
+    {n:"Resubmittal Fees",e:400,note:"if needed"}
+  ]},
+  {n:"CONSTRUCTION DRAWINGS",i:[
+    {n:"Civil Engineering — Full CD Set",e:25000,note:"PE sealed"},
+    {n:"Architectural Plans",e:15000,note:"if applicable"},
+    {n:"Structural Engineering",e:8000,note:"PE sealed — if applicable"},
+    {n:"MEP Engineering",e:10000,note:"PE sealed — if applicable"},
+    {n:"Landscape Architecture",e:4000,note:"estimate"},
+    {n:"Stormwater Calculations & Report",e:3500,note:"PE sealed"}
+  ]},
+  {n:"PERMITS & FEES",i:[
+    {n:"Building Permit Fee",e:0,note:"~$800/unit"},
+    {n:"Wake County Land Disturbance Permit",e:1500,note:"Watershed Mgmt"},
+    {n:"Erosion Control Bond",e:0,note:"varies by acreage"},
+    {n:"NCDOT Driveway Permit",e:500,note:"if applicable"},
+    {n:"NCDEQ Stormwater Permit",e:1000,note:"if >1 ac impervious"},
+    {n:"404/401 Permit (Army Corps/DEQ)",e:3000,note:"if wetlands impacted"},
+    {n:"Utility Connection Fees",e:0,note:"varies by utility"},
+    {n:"Impact Fees",e:0,note:"~$3,500–5,000/unit"}
+  ]},
+  {n:"CONSTRUCTION COSTS",i:[
+    {n:"Site Work / Grading",e:0,note:"~$25k/acre"},
+    {n:"Erosion Control Installation",e:0,note:"~$3k/acre"},
+    {n:"Utilities — Water/Sewer/Electric",e:0,note:"~$8k/unit"},
+    {n:"Roads / Paving",e:0,note:"estimate"},
+    {n:"Stormwater BMPs",e:0,note:"estimate"},
+    {n:"Vertical Construction",e:0,note:"~$150/sq ft"},
+    {n:"Landscaping / Amenities",e:0,note:"estimate"},
+    {n:"Contingency (10%)",e:0,note:"= subtotal × 10%"}
+  ]}
+];
+
+const STATUS_OPTS = ["Not Started","In Progress","Submitted","Approved","Complete","N/A"];
+const PERMIT_CATS = ["All","Wake County","Watershed","NCDOT","NC DEQ","404 / 401","City of Raleigh","Town of Cary","Other Municipalities"];
+
+// ═══════════════════════ STATE ═══════════════════════
+
+let D = {}, apiKey = "", aiHist = [], activeCat = "All", role = "developer", peSealed = false;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const s = localStorage.getItem('landworksV1');
+  if (s) try { D = JSON.parse(s); } catch(e) {}
+  const k = localStorage.getItem('lsApiKey');
+  if (k) { apiKey = k; activateKey(true); }
+  const ob = localStorage.getItem('lsOnboarded');
+  if (ob) { document.getElementById('onboardModal').classList.add('hidden'); applyProfile(); }
+  buildStages(); buildPF(); buildChecklist(); buildGuide(); buildIMAPSIn();
+  buildStatCards(); buildFolders(); buildPEItems(); buildPermits(); loadForm();
+  buildMeetings(); buildSchedule(); buildHub();
+});
+
+// ═══════════════════════ ONBOARDING ═══════════════════════
+
+function selectRole(r, el) {
+  role = r;
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pe-fields').style.display = r === 'engineer' ? 'block' : 'none';
+}
+
+function goStep(n) {
+  document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('on'));
+  document.getElementById('step'+n).classList.add('on');
+  if (n === 2) {
+    const name = document.getElementById('ob-name').value;
+    if (name) { D.userName = name; D.userRole = role; }
+  }
+  if (n === 3) {
+    const k = document.getElementById('ob-api').value.trim();
+    if (k.startsWith('sk-ant')) { apiKey = k; localStorage.setItem('lsApiKey', k); activateKey(false); }
+    if (role === 'engineer') {
+      D.peNum = document.getElementById('ob-pe-num').value;
+      D.peFirm = document.getElementById('ob-firm').value;
+    }
+    applyProfile();
+    save();
+  }
+}
+
+function skipAPI() { goStep(3); }
+
+function closeOnboard() {
+  document.getElementById('onboardModal').classList.add('hidden');
+  localStorage.setItem('lsOnboarded', '1');
+  if (apiKey) addMsg('assistant', "🏗 Hey! I'm Sport, your Wake County development AI. Enter a parcel PIN to get started, or ask me anything about permits, zoning, costs, or the PE review process.");
+}
+
+function showOnboard() { document.getElementById('onboardModal').classList.remove('hidden'); }
+
+function applyProfile() {
+  if (D.userName) {
+    document.getElementById('uname').textContent = D.userName;
+    const ini = D.userName.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('avatar').textContent = ini;
+  }
+  const roleLabels = {developer:'Developer',engineer:'PE / Engineer',planner:'Planner',owner:'Property Owner'};
+  document.getElementById('roleBadge').textContent = roleLabels[D.userRole||role] || 'Developer';
+  if (D.peNum) { document.getElementById('peName').value = D.userName || ''; document.getElementById('peLic').value = D.peNum || ''; document.getElementById('peFirm').value = D.peFirm || ''; }
+}
+
+function toggleApiSteps() {
+  const s = document.getElementById('apiSteps');
+  const t = document.querySelector('.api-steps-toggle');
+  s.classList.toggle('on');
+  t.textContent = s.classList.contains('on') ? '▼ How to get a free Claude API key' : '▶ How to get a free Claude API key';
+}
+
+function connectAPIInline() {
+  const k = document.getElementById('apiInKey').value.trim();
+  if (!k.startsWith('sk-ant')) { showToast('Key should start with sk-ant-', 'e'); return; }
+  apiKey = k;
+  localStorage.setItem('lsApiKey', k);
+  activateKey(false);
+}
+
+function activateKey(silent) {
+  document.getElementById('apiInline').classList.add('hidden');
+  document.getElementById('sbModel').textContent = 'Claude · Connected ✓';
+  if (!silent) {
+    addMsg('assistant', "🏗 Sport AI connected! I'm ready to help with your Wake County land development project. Enter a PIN to analyze a parcel, or ask me about permits, zoning, proforma costs, or the PE review process.");
+    showToast('Sport AI connected!', 's');
+  }
+}
+
+// ═══════════════════════ TABS ═══════════════════════
+
+function sw(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('panel-'+id).classList.add('on');
+  if (btn && btn.classList) btn.classList.add('on');
+  else document.querySelectorAll('.tab').forEach(t => { if (t.getAttribute('onclick').includes("'"+id+"'")) t.classList.add('on'); });
+}
+
+// ═══════════════════════ PARCEL LOOKUP ═══════════════════════
+
+async function doLookup() {
+  const pin = document.getElementById('pinIn').value.trim();
+  if (!pin) { showToast('Enter a Wake County PIN', 'e'); return; }
+  document.getElementById('pPIN').value = pin;
+  document.getElementById('activePin').textContent = pin;
+  document.getElementById('pinPill').classList.add('on');
+  const box = document.getElementById('pbox');
+  box.classList.add('on');
+
+  // Show loading state
+  document.getElementById('pboxData').innerHTML = `<div style="color:var(--muted);font-size:.8rem;padding:.5rem">⏳ Looking up PIN ${pin}...</div>`;
+
+  // Try local Wake County data server first
+  let parcelData = null;
+  try {
+    const resp = await fetch(`http://127.0.0.1:7474/parcel/${encodeURIComponent(pin)}`, { signal: AbortSignal.timeout(3000) });
+    if (resp.ok) {
+      const json = await resp.json();
+      if (json.ok && json.parcel) parcelData = json.parcel;
+    }
+  } catch(e) { /* server not running — fall through to manual mode */ }
+
+  if (parcelData) {
+    // Auto-fill from local database
+    const p = parcelData;
+    const fmt$ = v => v ? '$' + Number(v).toLocaleString() : '—';
+    const flags = (p.red_flags || []).map(f =>
+      `<div style="color:${f.severity==='warning'?'var(--rust)':'var(--muted)'};font-size:.72rem;margin-top:3px">⚠ ${f.msg}</div>`
+    ).join('');
+
+    document.getElementById('pboxData').innerHTML = `
+      <div><div class="pd-l">PIN</div><div class="pd-v">${p.pin||pin}</div></div>
+      <div><div class="pd-l">REID</div><div class="pd-v">${p.reid||'—'}</div></div>
+      <div><div class="pd-l">Owner</div><div class="pd-v" style="font-weight:700">${p.owner||'—'}</div></div>
+      <div><div class="pd-l">Address</div><div class="pd-v">${p.address||'—'} ${p.city||''}</div></div>
+      <div><div class="pd-l">Acres</div><div class="pd-v">${p.acres||'—'}</div></div>
+      <div><div class="pd-l">Zoning</div><div class="pd-v" style="font-weight:700;color:var(--pine)">${p.zoning||'—'}</div></div>
+      <div><div class="pd-l">Jurisdiction</div><div class="pd-v">${p.planning_juris||'—'}</div></div>
+      <div><div class="pd-l">Township</div><div class="pd-v">${p.township||'—'}</div></div>
+      <div><div class="pd-l">Total Value</div><div class="pd-v">${fmt$(p.total_value)}</div></div>
+      <div><div class="pd-l">Land Value</div><div class="pd-v">${fmt$(p.land_value)}</div></div>
+      <div><div class="pd-l">Last Sale</div><div class="pd-v">${fmt$(p.last_sale_price)} on ${p.last_sale_date||'—'}</div></div>
+      <div><div class="pd-l">Type / Use</div><div class="pd-v">${p.type_and_use||'—'}</div></div>
+      <div><div class="pd-l">Land Class</div><div class="pd-v">${p.land_class||'—'} ${p.exempt_status?'('+p.exempt_status+')':''}</div></div>
+      <div><div class="pd-l">Year Built</div><div class="pd-v">${p.year_built||'—'}</div></div>
+      <div><div class="pd-l">Links</div><div class="pd-v">
+        <a href="${p.links.imaps}" target="_blank" style="color:var(--pine);margin-right:8px">iMAPS ↗</a>
+        <a href="${p.links.tax_portal}" target="_blank" style="color:var(--pine);margin-right:8px">Tax ↗</a>
+        <a href="${p.links.permits}" target="_blank" style="color:var(--pine)">Permits ↗</a>
+      </div></div>
+      ${flags ? `<div style="grid-column:1/-1"><div class="pd-l">Red Flags</div>${flags}</div>` : ''}
+    `;
+
+    // Auto-fill form fields
+    if (!D.imaps) D.imaps = {};
+    if (p.pin)           { D.imaps['PIN'] = p.pin; document.getElementById('pPIN').value = p.pin; }
+    if (p.address)       { D.imaps['StreetAddress'] = p.address + (p.city ? ', '+p.city : ''); setField('pAddr', D.imaps['StreetAddress']); }
+    if (p.zoning)        { D.imaps['ZoningDistrict'] = p.zoning; setField('pZone', p.zoning); }
+    if (p.acres)         { D.imaps['DeedAcres'] = p.acres; }
+    if (p.township)      { D.imaps['Township'] = p.township; }
+    if (p.planning_juris){ D.imaps['PlanningJurisdiction'] = p.planning_juris; autoSetJuris(p.planning_juris); }
+    if (p.land_class)    { D.imaps['LandClass'] = p.land_class; }
+    if (p.total_value)   { D.imaps['TotalAssessedValue'] = p.total_value; }
+    if (p.last_sale_price){ D.imaps['LastSalePrice'] = p.last_sale_price; }
+    if (p.last_sale_date){ D.imaps['LastSaleDate'] = p.last_sale_date; }
+    if (p.owner)         { D.imaps['OwnerName'] = p.owner; }
+
+    buildIMAPSIn();
+    showToast('✅ Parcel auto-filled from Wake County database', 's');
+
+    // Sales history
+    if (p.sales_history && p.sales_history.length > 0) {
+      const sh = p.sales_history.slice(0,3).map(s =>
+        `${s.sale_date||''}: $${Number(s.sale_price||0).toLocaleString()}`
+      ).join(' · ');
+      D.imaps['SalesHistory'] = sh;
+    }
+
+    // Watershed detection
+    const twp = (p.township||'').toUpperCase();
+    if (twp.includes('SWIFT CREEK')) { setField('pBasin', 'Swift Creek Watershed'); D.imaps['Watershed'] = 'Swift Creek'; }
+    else if (twp.includes('NEUSE'))  { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
+
+    if (apiKey) aiAsk(`I loaded parcel PIN ${pin} in Wake County, NC. Owner: ${p.owner||'unknown'}, ${p.acres||'?'} acres, zoning ${p.zoning||'unknown'}, ${p.planning_juris||'unincorporated Wake County'}. Total assessed value ${p.total_value ? '$'+Number(p.total_value).toLocaleString() : 'unknown'}, last sale ${p.last_sale_price ? '$'+Number(p.last_sale_price).toLocaleString()+' on '+p.last_sale_date : 'unknown'}. What are the key development opportunities and red flags for this parcel?`);
+
+  } else {
+    // Manual mode — no data server
+    document.getElementById('pboxData').innerHTML = `
+      <div><div class="pd-l">PIN</div><div class="pd-v">${pin}</div></div>
+      <div><div class="pd-l">iMAPS</div><div class="pd-v"><a href="https://imaps.wake.gov/iMAPS/?pin=${pin}" target="_blank">Open parcel in iMAPS ↗</a></div></div>
+      <div><div class="pd-l">Tax Portal</div><div class="pd-v"><a href="https://services.wake.gov/TaxPortal/Property/MainSearch?searchBy=pin&searchTerm=${pin}" target="_blank">View tax record ↗</a></div></div>
+      <div><div class="pd-l">Permits</div><div class="pd-v"><a href="https://energov.wakegov.com/energovprod/selfservice#/search?module=1&keyword=${pin}" target="_blank">Check permits ↗</a></div></div>
+      <div style="grid-column:1/-1"><div class="pd-l" style="color:var(--amber)">⚡ Auto-fill not available</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px">Run <code>python wake_county_data.py start</code> to enable automatic parcel data. Enter data manually in the iMAPS tab.</div></div>
+    `;
+    if (!D.imaps) D.imaps = {};
+    D.imaps['PIN'] = pin;
+    buildIMAPSIn();
+    if (apiKey) aiAsk(`I just loaded parcel PIN ${pin} in Wake County, NC. What are the most important due diligence steps I should take before committing to this site for development?`);
+    showToast('PIN loaded — run data server for auto-fill', 'i');
+  }
+}
+
+function clearPin() {
+  document.getElementById('pinIn').value = '';
+  document.getElementById('pinPill').classList.remove('on');
+  document.getElementById('pbox').classList.remove('on');
+}
+
+// ═══════════════════════ STAGES ═══════════════════════
+
+function buildStages() {
+  const c = document.getElementById('stageContainer');
+  c.innerHTML = '';
+  let done = 0;
+  STAGES.forEach((s, i) => {
+    const sd = (D.stages||{})[i]||{};
+    if ((sd.status||'') === 'Complete') done++;
+    const div = document.createElement('div');
+    div.className = 'stage-grid';
+    div.innerHTML = `
+      <div class="sn">${i+1}</div>
+      <div class="sname">${s}</div>
+      <select class="cs" onchange="setSt(${i},'status',this.value)">
+        ${STATUS_OPTS.map(o=>`<option ${(sd.status||'Not Started')===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+      <input type="date" value="${sd.target||''}" onchange="setSt(${i},'target',this.value)" style="font-size:.76rem;padding:3px 5px">
+      <input type="date" value="${sd.actual||''}" onchange="setSt(${i},'actual',this.value)" style="font-size:.76rem;padding:3px 5px">
+    `;
+    c.appendChild(div);
+  });
+  const pct = Math.round(done/STAGES.length*100);
+  document.getElementById('stageProg').style.width = pct+'%';
+  document.getElementById('stageProgress').textContent = `${done}/${STAGES.length} complete`;
+}
+
+function setSt(i,k,v){if(!D.stages)D.stages={};if(!D.stages[i])D.stages[i]={};D.stages[i][k]=v;buildStages();}
+
+// ═══════════════════════ STATS ═══════════════════════
+
+function buildStatCards() {
+  document.getElementById('statRow').innerHTML = `
+    <div class="stat hi"><div class="stat-lbl">Total Site Area</div><div class="stat-val" id="cS">—</div><div class="stat-unit">sq ft</div></div>
+    <div class="stat"><div class="stat-lbl">Impervious %</div><div class="stat-val" id="cI">—</div><div class="stat-unit">target &lt;24%</div></div>
+    <div class="stat"><div class="stat-lbl">Density</div><div class="stat-val" id="cD">—</div><div class="stat-unit">units / acre</div></div>
+    <div class="stat"><div class="stat-lbl">FAR</div><div class="stat-val" id="cF">—</div><div class="stat-unit">floor area ratio</div></div>
+    <div class="stat"><div class="stat-lbl">Parking Ratio</div><div class="stat-val" id="cP">—</div><div class="stat-unit">spaces / unit</div></div>
+    <div class="stat hi"><div class="stat-lbl">Stormwater Det.</div><div class="stat-val" id="cSW">—</div><div class="stat-unit">cu ft required</div></div>
+  `;
+}
+
+function calcStats() {
+  const u=+document.getElementById('sU').value||0, a=+document.getElementById('sA').value||0;
+  const g=+document.getElementById('sG').value||0, p=+document.getElementById('sP').value||0;
+  const imp=+document.getElementById('sI').value||0;
+  const site=a*43560, pct=site>0?(imp/site*100):0;
+  document.getElementById('cS').textContent=site>0?fmt(site):'—';
+  const el=document.getElementById('cI');
+  el.textContent=site>0?pct.toFixed(1)+'%':'—';
+  el.style.color=pct>24?'var(--rust)':pct>20?'var(--gold)':'';
+  document.getElementById('cD').textContent=a>0?(u/a).toFixed(2):'—';
+  document.getElementById('cF').textContent=site>0?(g/site).toFixed(3):'—';
+  document.getElementById('cP').textContent=u>0?(p/u).toFixed(2):'—';
+  document.getElementById('cSW').textContent=imp>0?fmt(Math.round(imp*.01)):'—';
+}
+
+// ═══════════════════════ PROFORMA ═══════════════════════
+
+function buildPF() {
+  const c=document.getElementById('pfContent'); c.innerHTML='';
+  let tE=0,tA=0;
+  PF_DATA.forEach((sec,si) => {
+    const sd=(D.pf||{})[si]||{}; let sE=0,sA=0,rows='';
+    sec.i.forEach((item,ii) => {
+      const id=sd[ii]||{}, e=id.e!==undefined?id.e:item.e, a=id.a||0;
+      sE+=e; sA+=a; const v=a-e;
+      rows+=`<tr>
+        <td>${item.pe?'🔏 ':''}<span style="font-size:.8rem">${item.n}</span></td>
+        <td><input class="ci" type="number" min="0" value="${e}" onchange="setPF(${si},${ii},'e',+this.value);buildPF()"></td>
+        <td><input class="ci" type="number" min="0" value="${a}" onchange="setPF(${si},${ii},'a',+this.value);buildPF()"></td>
+        <td class="cd ${v>0?'vn':v<0?'vp':''}">${v!==0?money(v):''}</td>
+        <td style="font-size:.72rem;color:var(--muted)">${item.note}</td>
+      </tr>`;
+    });
+    tE+=sE; tA+=sA; const sv=sA-sE;
+    const div=document.createElement('div'); div.className='pf-sec';
+    div.innerHTML=`<div class="pf-sh">${sec.n}</div>
+      <table class="pf-tbl">
+        <thead><tr><th style="width:40%">Item</th><th style="width:12%;text-align:right">Estimated</th><th style="width:12%;text-align:right">Actual</th><th style="width:12%;text-align:right">Variance</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="sub-row"><td>Subtotal</td><td class="cd">${money(sE)}</td><td class="cd">${money(sA)}</td><td class="cd ${sv>0?'vn':sv<0?'vp':''}">${sv!==0?money(sv):''}</td><td></td></tr></tfoot>
+      </table>`;
+    c.appendChild(div);
+  });
+  document.getElementById('totE').textContent=money(tE);
+  document.getElementById('totA').textContent=money(tA);
+  const tv=tA-tE;
+  document.getElementById('totV').textContent=money(tv);
+  document.getElementById('totV').className='cd '+(tv>0?'vn':tv<0?'vp':'');
+}
+
+function setPF(si,ii,k,v){if(!D.pf)D.pf={};if(!D.pf[si])D.pf[si]={};if(!D.pf[si][ii])D.pf[si][ii]={};D.pf[si][ii][k]=v;}
+
+// ═══════════════════════ PERMITS ═══════════════════════
+
+function buildPermits(cat) {
+  if (cat) activeCat = cat;
+  const ptype = getField('pType');
+  document.getElementById('pcatRow').innerHTML = PERMIT_CATS.map(c =>
+    `<button class="pcat ${activeCat===c?'on':''}" onclick="buildPermits('${c}')">${c}</button>`).join('');
+  const filtered = PERMITS.filter(p => activeCat==='All' || p.cat===activeCat);
+  document.getElementById('permitCount').textContent = `${filtered.length} forms`;
+  document.getElementById('permitGrid').innerHTML = filtered.map(p => {
+    const needed = !ptype || p.types.includes('all') || p.types.includes(ptype);
+    return `<div class="pc">
+      <div class="pc-agency">${p.agency}${p.pe?' · <span style="color:var(--amber)">⚠ PE Seal Required</span>':''}</div>
+      <div class="pc-name">${p.name}</div>
+      <div class="pc-desc">${p.desc}</div>
+      <div class="pc-need ${needed?'req':'opt'}">${needed?'⚠ Likely required for your project':'○ May not apply'}</div>
+      <div class="pc-actions">
+        <a class="pbtn pbtn-dl" href="${p.url}" target="_blank">📄 Open Form</a>
+        <button class="pbtn pbtn-ai" onclick="aiAsk('Walk me through how to complete the ${p.name.replace(/'/g,"\\'")} for my ${ptype||'land development'} project in Wake County. What information is needed and what are common mistakes?')">🤖 How to Complete</button>
+        ${p.pe?`<button class="pbtn pbtn-folder" onclick="sw('pe',null);showToast('This document requires PE seal — see PE Review tab','i')">🔏 Needs PE Seal</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════ FOLDERS ═══════════════════════
+
+function buildFolders() {
+  const grid = document.getElementById('folderGrid');
+  grid.innerHTML = FOLDERS.map((f,fi) => {
+    const fd = (D.folders||{})[fi]||{};
+    const docs = f.docs.map((d,di) => {
+      const dd = (fd[di]||{});
+      const status = dd.status || d.status;
+      const statusLabel = status==='ready'?'<span class="doc-ready">✓ Ready</span>':d.pe?'<span class="doc-needs-pe">⚠ Needs PE Seal</span>':'<span class="doc-pending">○ Pending</span>';
+      return `<li class="folder-doc">
+        <span class="folder-doc-name">${d.pe?'🔏 ':''}${d.name}</span>
+        <span class="folder-doc-status">${statusLabel}</span>
+      </li>`;
+    }).join('');
+    const peCount = f.docs.filter(d=>d.pe).length;
+    return `<div class="folder">
+      <div class="folder-hd" style="background:${f.color}" onclick="toggleFolder(${fi})">
+        <span class="folder-icon">${f.icon}</span>
+        <div>
+          <div class="folder-name" style="color:#fff">${f.name}</div>
+          <div class="folder-agency">${f.desc}</div>
+        </div>
+      </div>
+      <div class="folder-body" id="folder-body-${fi}">
+        <ul class="folder-doc-list">${docs}</ul>
+        ${peCount>0?`<div class="folder-meta">⚠ ${peCount} document${peCount>1?'s':''} require PE seal before submission</div>`:''}
+      </div>
+      <div class="folder-actions">
+        <button class="fbtn fbtn-primary" onclick="aiAsk('Walk me through how to prepare and organize the ${f.name} submittal package. What order do the documents go in, and what are common reasons for rejection?')">🤖 Sport: Prepare Package</button>
+        ${peCount>0?`<button class="fbtn fbtn-pe" onclick="sw('pe',null)">🔏 PE Review Needed</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFolder(fi) {
+  const body = document.getElementById('folder-body-'+fi);
+  body.classList.toggle('on');
+}
+
+// ═══════════════════════ PE REVIEW ═══════════════════════
+
+function buildPEItems() {
+  const c = document.getElementById('peReviewItems');
+  c.innerHTML = PE_ITEMS.map((item,i) => {
+    const checked = (D.peChecks||{})[i]||false;
+    return `<div class="pri">
+      <div class="pri-num ${checked?'done':''}" id="pnum-${i}">${checked?'✓':i+1}</div>
+      <div class="pri-content">
+        <div class="pri-title">${item.title}</div>
+        <div class="pri-desc">${item.desc}</div>
+        <div class="pri-chk">
+          <input type="checkbox" id="pchk-${i}" ${checked?'checked':''} onchange="setPECheck(${i},this.checked)">
+          <label for="pchk-${i}">I have reviewed and verified this item</label>
+        </div>
+        <div class="pri-actions">
+          <button class="pbtn pbtn-ai" onclick="aiAsk('As the PE reviewing this Wake County project, what should I specifically look for when reviewing ${item.title}? What are common errors that cause rejections?')">🤖 Sport: What to Look For</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setPECheck(i, val) {
+  if (!D.peChecks) D.peChecks = {};
+  D.peChecks[i] = val;
+  document.getElementById('pnum-'+i).textContent = val ? '✓' : (i+1);
+  document.getElementById('pnum-'+i).classList.toggle('done', val);
+  const allDone = PE_ITEMS.every((_,j) => D.peChecks[j]);
+  document.getElementById('peBadge').style.display = allDone ? 'none' : '';
+}
+
+function toggleSeal() {
+  peSealed = !peSealed;
+  const area = document.getElementById('peSealArea');
+  const icon = document.getElementById('peSealIcon');
+  const title = document.getElementById('peSealTitle');
+  const text = document.getElementById('peSealText');
+  if (peSealed) {
+    area.classList.add('sealed');
+    icon.textContent = '🟢';
+    const peName = document.getElementById('peName').value || 'PE';
+    const peLic = document.getElementById('peLic').value || 'N/A';
+    const today = new Date().toLocaleDateString('en-US');
+    title.textContent = `Documents Certified by ${peName} (${peLic}) — ${today}`;
+    text.textContent = 'PE certification recorded. Affix physical PE seal and wet/digital signature to all required plan sheets before submitting to review agencies.';
+    D.peSealed = true; D.peSealDate = today; D.peSealName = peName; D.peSealLic = peLic;
+    showToast('PE certification recorded — remember to apply physical seal to plans', 's');
+  } else {
+    area.classList.remove('sealed');
+    icon.textContent = '🔴';
+    title.textContent = 'Documents Not Yet Sealed';
+    text.textContent = 'Click to certify that you have reviewed all documents and are authorizing submission with your PE seal and signature.';
+    D.peSealed = false;
+    showToast('PE certification removed', 'i');
+  }
+  save();
+}
+
+function generatePEReport() {
+  const name = document.getElementById('peName').value || 'Not set';
+  const lic = document.getElementById('peLic').value || 'Not set';
+  const firm = document.getElementById('peFirm').value || 'Not set';
+  const date = document.getElementById('peDate').value || new Date().toISOString().slice(0,10);
+  const pName = getField('pName') || 'Project Name Not Set';
+  const checks = PE_ITEMS.map((item,i) => `${(D.peChecks||{})[i]?'☑':'☐'} ${item.title}`).join('\n');
+  const report = `PE REVIEW REPORT\n${'='.repeat(50)}\nProject: ${pName}\nAddress: ${getField('pAddr')||'Not set'}\nPIN: ${getField('pPIN')||'Not set'}\n\nPE INFORMATION\nName: ${name}\nNC License #: ${lic}\nFirm: ${firm}\nReview Date: ${date}\n\nREVIEW CHECKLIST\n${checks}\n\nSEAL STATUS: ${peSealed?'CERTIFIED':'NOT YET CERTIFIED'}\n${peSealed?`Certified by: ${name} (${lic}) on ${D.peSealDate||date}`:''}\n\nNOTE: This report does not replace the requirement for a physical PE seal and signature on submitted plan sets per NC BOSPE requirements.\n${'='.repeat(50)}`;
+  const blob = new Blob([report], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `PE_Review_${pName.replace(/\s+/g,'_')}_${date}.txt`;
+  a.click();
+  showToast('PE review report generated', 's');
+}
+
+// ═══════════════════════ CHECKLIST ═══════════════════════
+
+function buildChecklist() {
+  const c = document.getElementById('clContent'); c.innerHTML = '';
+  CHECKLIST_DATA.forEach((ent,ei) => {
+    const ed=(D.cl||{})[ei]||{};
+    let rows='';
+    ent.i.forEach((item,ii) => {
+      const id=ed[ii]||{};
+      rows+=`<tr>
+        <td><span class="cnum">${ii+1}</span></td>
+        <td>${item}</td>
+        <td><select class="cs" onchange="setCL(${ei},${ii},'s',this.value)">${STATUS_OPTS.map(o=>`<option ${(id.s||'Not Started')===o?'selected':''}>${o}</option>`).join('')}</select></td>
+        <td><input type="date" value="${id.d||''}" onchange="setCL(${ei},${ii},'d',this.value)" style="font-size:.76rem;padding:3px 5px"></td>
+        <td><input type="text" value="${id.n||''}" placeholder="Notes" onchange="setCL(${ei},${ii},'n',this.value)" style="font-size:.76rem;padding:3px 6px;width:100%"></td>
+      </tr>`;
+    });
+    const div=document.createElement('div'); div.className='cl-ent';
+    div.innerHTML=`<div class="cl-hd">${ent.e}</div>
+      <table class="cl-tbl"><thead><tr><th>#</th><th>Item</th><th>Status</th><th>Date</th><th>Notes</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+    c.appendChild(div);
+  });
+}
+
+function setCL(ei,ii,k,v){if(!D.cl)D.cl={};if(!D.cl[ei])D.cl[ei]={};if(!D.cl[ei][ii])D.cl[ei][ii]={};D.cl[ei][ii][k]=v;}
+
+// ═══════════════════════ iMAPS ═══════════════════════
+
+function buildGuide() {
+  document.getElementById('guideRows').innerHTML = IMAPS_GUIDE.map(([f,w])=>`<tr><td><span class="fn">${f}</span></td><td>${w}</td></tr>`).join('');
+}
+
+function buildIMAPSIn() {
+  const c=document.getElementById('imapsIn'); c.innerHTML='';
+  IMAPS_FIELDS.forEach(f=>{
+    const k=f.replace(/[^a-zA-Z]/g,''), v=(D.imaps||{})[k]||'';
+    const div=document.createElement('div'); div.className='f';
+    div.innerHTML=`<label>${f}</label><input type="text" value="${v}" placeholder="From iMAPS" oninput="setIM('${k}',this.value)">`;
+    c.appendChild(div);
+  });
+}
+
+function setIM(k,v){if(!D.imaps)D.imaps={};D.imaps[k]=v;}
+
+// ═══════════════════════ AI ═══════════════════════
+
+function toggleSB(){document.getElementById('sidebar').classList.toggle('slim');}
+
+function addMsg(role, text) {
+  const c = document.getElementById('aiMsgs');
+  const d = document.createElement('div');
+  d.className = `am ${role}`;
+  d.textContent = text;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function getCtx() {
+  return `CURRENT PROJECT:
+Name: ${getField('pName')||'Not set'} | Type: ${getField('pType')||'Not set'}
+PIN: ${getField('pPIN')||'Not set'} | Address: ${getField('pAddr')||'Not set'}
+Jurisdiction: ${getField('pJuris')||'Not set'} | Zoning: ${getField('pZone')||'Not set'}
+Watershed: ${getField('pBasin')||'Not set'}
+Units: ${document.getElementById('sU')?.value||'0'} | Lot Size: ${document.getElementById('sA')?.value||'0'} acres
+GBA: ${document.getElementById('sG')?.value||'0'} sq ft | Impervious: ${document.getElementById('sI')?.value||'0'} sq ft
+iMAPS Data: ${JSON.stringify(D.imaps||{})}
+PE Sealed: ${peSealed}`;
+}
+
+async function sendAI() {
+  const inp = document.getElementById('aiIn');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  if (!apiKey) { showToast('Connect your Claude API key first', 'e'); return; }
+  inp.value = '';
+  addMsg('user', msg);
+  aiHist.push({role:'user', content:msg});
+  document.getElementById('aiTyping').classList.add('on');
+  document.getElementById('aiSendBtn').disabled = true;
+  document.getElementById('aiMsgs').scrollTop = 99999;
+
+  const sys = `You are Sport, an expert AI assistant for Wake County, NC land development. You have deep expertise in:
+- Wake County zoning ordinances, UDO, and subdivision regulations
+- All Wake County permit processes — Planning, Permits & Inspections, Watershed Management
+- NC DEQ stormwater, NPDES, and sedimentation & erosion control requirements
+- NCDOT driveway permits, encroachments, and traffic impact analysis
+- US Army Corps Section 404/401 wetland permits and Nationwide Permits
+- Jordan Lake and Neuse River riparian buffer rules
+- City of Raleigh, Cary, Apex, Holly Springs, Morrisville, Fuquay-Varina, Knightdale, Rolesville, Wendell, Zebulon development processes
+- NC BOSPE requirements for PE seals on engineering documents
+- Civil engineering, stormwater design, erosion control design
+- AutoCAD Civil 3D for plan production
+- Land development proforma and cost estimation for Wake County
+
+Be specific and practical. Reference actual form names, agency names, and Wake County requirements. When mentioning documents that require a PE seal, note that clearly.
+
+${getCtx()}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:aiHist.slice(-12)})
+    });
+    const data = await res.json();
+    document.getElementById('aiTyping').classList.remove('on');
+    document.getElementById('aiSendBtn').disabled = false;
+    if (data.content?.[0]?.text) {
+      aiHist.push({role:'assistant', content:data.content[0].text});
+      addMsg('assistant', data.content[0].text);
+    } else if (data.error) {
+      addMsg('sys', `Error: ${data.error.message}`);
+    }
+  } catch(err) {
+    document.getElementById('aiTyping').classList.remove('on');
+    document.getElementById('aiSendBtn').disabled = false;
+    addMsg('sys', `Connection error: ${err.message}`);
+  }
+}
+
+function aiAsk(q) {
+  if (!apiKey) { showToast('Connect your Claude API key first — enter it above', 'e'); return; }
+  document.getElementById('aiIn').value = q;
+  sendAI();
+  const sb = document.getElementById('sidebar');
+  if (sb.classList.contains('slim')) sb.classList.remove('slim');
+}
+
+// ═══════════════════════ SAVE / LOAD ═══════════════════════
+
+function collectFormData() {
+  D.pName=getField('pName'); D.pDev=getField('pDev'); D.pType=getField('pType');
+  D.pPIN=getField('pPIN'); D.pAddr=getField('pAddr'); D.pZone=getField('pZone');
+  D.pJuris=getField('pJuris'); D.pBasin=getField('pBasin'); D.pDesc=getField('pDesc');
+  D.peName=getField('peName'); D.peLic=getField('peLic'); D.peFirm=getField('peFirm');
+  D.peEmail=getField('peEmail'); D.pePhone=getField('pePhone'); D.peDate=getField('peDate');
+  D.stats={u:document.getElementById('sU')?.value,a:document.getElementById('sA')?.value,g:document.getElementById('sG')?.value,p:document.getElementById('sP')?.value,i:document.getElementById('sI')?.value,f:document.getElementById('sF')?.value};
+  D._version = 4;
+  D._savedAt = new Date().toISOString();
+}
+
+function save() {
+  collectFormData();
+  // Quick-save to localStorage (fallback / auto-save)
+  localStorage.setItem('landworksV1', JSON.stringify(D));
+  const ok=document.getElementById('saveOk');
+  if (ok) { ok.classList.add('on'); setTimeout(()=>ok.classList.remove('on'),2500); }
+  showToast('Auto-saved locally','s');
+}
+
+function saveToFile() {
+  collectFormData();
+  localStorage.setItem('landworksV1', JSON.stringify(D));
+  const projectName = (D.pName||'Project').replace(/[^a-zA-Z0-9_-]/g,'_');
+  const date = new Date().toISOString().slice(0,10);
+  const filename = `LandWorks_${projectName}_${date}.json`;
+  const blob = new Blob([JSON.stringify(D, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast(`💾 Saved: ${filename}`, 's');
+}
+
+function loadFromFile() {
+  document.getElementById('fileIn').click();
+}
+
+function onFileLoad(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const loaded = JSON.parse(e.target.result);
+      D = loaded;
+      localStorage.setItem('landworksV1', JSON.stringify(D));
+      loadForm();
+      buildStages(); buildPF(); buildChecklist(); buildIMAPSIn(); buildFolders(); buildPEItems(); buildPermits();
+      buildMeetings(); buildSchedule(); buildHub();
+      if (D.pPIN) {
+        document.getElementById('pinIn').value = D.pPIN;
+        document.getElementById('activePin').textContent = D.pPIN;
+        document.getElementById('pinPill').classList.add('on');
+        document.getElementById('pbox').classList.add('on');
+      }
+      showToast(`✅ Loaded: ${file.name}`, 's');
+      // Reset file input so same file can be loaded again
+      event.target.value = '';
+    } catch(err) {
+      showToast('Error reading file: ' + err.message, 'e');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function loadForm() {
+  const fields = ['pName','pDev','pType','pPIN','pAddr','pZone','pJuris','pBasin','pDesc','peName','peLic','peFirm','peEmail','pePhone','peDate'];
+  fields.forEach(id => { const el=document.getElementById(id); if(el&&D[id]) el.value=D[id]; });
+  if (D.stats) {
+    ['u','a','g','p','i','f'].forEach(k => { const el=document.getElementById('s'+k.toUpperCase()); if(el) el.value=D.stats[k]||''; });
+    calcStats();
+  }
+  if (D.pPIN) { document.getElementById('pinIn').value=D.pPIN; document.getElementById('activePin').textContent=D.pPIN; document.getElementById('pinPill').classList.add('on'); }
+  if (D.peChecks) { PE_ITEMS.forEach((_,i) => { if(D.peChecks[i]) { const el=document.getElementById('pchk-'+i); if(el) el.checked=true; setPECheck(i,true); } }); }
+  applyProfile();
+}
+
+function exportAll() {
+  save();
+  const blob = new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `LandWorks_${(D.pName||'Project').replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('Project exported','i');
+}
+
+// ═══════════════════════ MEETING NOTES ═══════════════════════
+
+const PHASES = ['Due Diligence','Entitlement','Plans & Permits','Construction','Close-Out'];
+
+let pendingMtgActions = [];
+
+function toggleMtgForm() {
+  const w = document.getElementById('mtgFormWrap');
+  const open = w.style.display !== 'none';
+  w.style.display = open ? 'none' : 'block';
+  if (!open) {
+    document.getElementById('mtgDate').value = new Date().toISOString().slice(0,10);
+    pendingMtgActions = [];
+    renderPendingActions();
+  }
+}
+
+function addNewMtgAction() {
+  const text = document.getElementById('newActionText').value.trim();
+  if (!text) return;
+  pendingMtgActions.push({
+    text,
+    owner: document.getElementById('newActionOwner').value.trim(),
+    due: document.getElementById('newActionDue').value,
+    done: false
+  });
+  document.getElementById('newActionText').value = '';
+  document.getElementById('newActionOwner').value = '';
+  document.getElementById('newActionDue').value = '';
+  renderPendingActions();
+}
+
+function renderPendingActions() {
+  const el = document.getElementById('newMtgActions');
+  if (!el) return;
+  el.innerHTML = pendingMtgActions.map((a,i) => `
+    <div class="action-item">
+      <span>•</span>
+      <span class="action-text">${a.text}</span>
+      <span class="action-owner">${a.owner||'—'}</span>
+      <span class="action-due">${a.due||''}</span>
+      <button onclick="pendingMtgActions.splice(${i},1);renderPendingActions()" style="border:none;background:none;color:var(--rust);cursor:pointer;font-size:.9rem">✕</button>
+    </div>`).join('');
+}
+
+function saveMeeting() {
+  const date = document.getElementById('mtgDate').value;
+  const topic = document.getElementById('mtgTopic').value.trim();
+  if (!date || !topic) { showToast('Date and topic required','e'); return; }
+  if (!D.meetings) D.meetings = [];
+  const mtg = {
+    id: Date.now(),
+    date, topic,
+    attendees: document.getElementById('mtgAttendees').value.trim(),
+    notes: document.getElementById('mtgNotes').value.trim(),
+    actions: pendingMtgActions.slice()
+  };
+  D.meetings.unshift(mtg);
+  document.getElementById('mtgTopic').value = '';
+  document.getElementById('mtgAttendees').value = '';
+  document.getElementById('mtgNotes').value = '';
+  pendingMtgActions = [];
+  toggleMtgForm();
+  save();
+  buildMeetings();
+  buildHub();
+  showToast('Meeting saved','s');
+}
+
+function deleteMeeting(id) {
+  if (!confirm('Delete this meeting log?')) return;
+  D.meetings = (D.meetings||[]).filter(m => m.id !== id);
+  save(); buildMeetings(); buildHub();
+}
+
+function toggleMtgBody(id) {
+  const el = document.getElementById('mtgbody-'+id);
+  if (el) el.classList.toggle('open');
+}
+
+function toggleActionDone(mtgId, aIdx) {
+  const mtg = (D.meetings||[]).find(m => m.id === mtgId);
+  if (!mtg || !mtg.actions[aIdx]) return;
+  mtg.actions[aIdx].done = !mtg.actions[aIdx].done;
+  save(); buildMeetings(); buildHub();
+}
+
+function buildMeetings() {
+  const el = document.getElementById('mtgLog');
+  if (!el) return;
+  const meetings = D.meetings || [];
+  if (!meetings.length) {
+    el.innerHTML = '<div class="mtg-empty">No meetings logged yet. Click "+ New Meeting" to start.</div>';
+    return;
+  }
+  el.innerHTML = meetings.map(m => {
+    const actionsDone = (m.actions||[]).filter(a=>a.done).length;
+    const actionsTotal = (m.actions||[]).length;
+    return `
+    <div class="mtg-card">
+      <div class="mtg-card-hd" onclick="toggleMtgBody(${m.id})">
+        <div class="mtg-meta">
+          <span class="mtg-date">${m.date}</span>
+          <span class="mtg-topic">${m.topic}</span>
+          ${m.attendees ? `<span class="mtg-attendees">👥 ${m.attendees}</span>` : ''}
+          ${actionsTotal ? `<span class="ai-action-badge">${actionsDone}/${actionsTotal} done</span>` : ''}
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <button onclick="event.stopPropagation();deleteMeeting(${m.id})" style="border:none;background:none;color:var(--rust);cursor:pointer;font-size:.85rem" title="Delete">🗑</button>
+          <span style="color:var(--muted);font-size:.8rem">▼</span>
+        </div>
+      </div>
+      <div class="mtg-body" id="mtgbody-${m.id}">
+        ${m.notes ? `<div class="mtg-section"><h5>Notes</h5><div class="mtg-notes-text">${m.notes}</div></div>` : ''}
+        ${actionsTotal ? `
+        <div class="mtg-section"><h5>Action Items</h5>
+          <div class="action-list">
+            ${(m.actions||[]).map((a,i) => `
+              <div class="action-item ${a.done?'done-item':''}">
+                <input type="checkbox" ${a.done?'checked':''} onchange="toggleActionDone(${m.id},${i})">
+                <span class="action-text ${a.done?'struck':''}">${a.text}</span>
+                <span class="action-owner">${a.owner||'—'}</span>
+                <span class="action-due">${a.due||''}</span>
+                <span></span>
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════ SCHEDULE / MILESTONES ═══════════════════════
+
+const DEFAULT_MILESTONES = [
+  {phase:'Due Diligence', name:'Site Visit & Walkthrough'},
+  {phase:'Due Diligence', name:'Feasibility Analysis'},
+  {phase:'Due Diligence', name:'Contract / PSA Executed'},
+  {phase:'Due Diligence', name:'Environmental Phase I'},
+  {phase:'Due Diligence', name:'Survey Ordered'},
+  {phase:'Entitlement', name:'Pre-Application Meeting'},
+  {phase:'Entitlement', name:'Rezoning / UDO Application Filed'},
+  {phase:'Entitlement', name:'Traffic Impact Analysis Submitted'},
+  {phase:'Entitlement', name:'Public Hearing'},
+  {phase:'Entitlement', name:'Approval Received'},
+  {phase:'Plans & Permits', name:'Site Plan / Construction Drawings'},
+  {phase:'Plans & Permits', name:'Land Disturbing Permit'},
+  {phase:'Plans & Permits', name:'Building Permits Issued'},
+  {phase:'Plans & Permits', name:'Final Plat Submitted'},
+  {phase:'Construction', name:'Groundbreaking / Mobilization'},
+  {phase:'Construction', name:'Underground Utilities Complete'},
+  {phase:'Construction', name:'Road Base & Paving Complete'},
+  {phase:'Construction', name:'Vertical Construction Begins'},
+  {phase:'Close-Out', name:'Certificates of Occupancy Issued'},
+  {phase:'Close-Out', name:'Final Plat Recorded'},
+  {phase:'Close-Out', name:'Utilities Dedicated to County'},
+];
+
+function initMilestones() {
+  if (!D.milestones || !D.milestones.length) {
+    D.milestones = DEFAULT_MILESTONES.map((m,i) => ({
+      id: i+1, phase: m.phase, name: m.name,
+      target:'', actual:'', status:'ns', owner:'', notes:''
+    }));
+  }
+}
+
+function addCustomMilestone() {
+  const name = prompt('Milestone name:');
+  if (!name) return;
+  const phase = prompt('Phase (Due Diligence / Entitlement / Plans & Permits / Construction / Close-Out):', 'Due Diligence');
+  if (!phase) return;
+  if (!D.milestones) D.milestones = [];
+  D.milestones.push({id: Date.now(), phase, name, target:'', actual:'', status:'ns', owner:'', notes:''});
+  save(); buildSchedule(); buildHub();
+}
+
+function updateMilestone(id, field, val) {
+  const ms = (D.milestones||[]).find(m => m.id === id);
+  if (ms) { ms[field] = val; save(); buildHub(); }
+}
+
+function deleteMilestone(id) {
+  D.milestones = (D.milestones||[]).filter(m => m.id !== id);
+  save(); buildSchedule(); buildHub();
+}
+
+function buildSchedule() {
+  initMilestones();
+  const el = document.getElementById('schedGrid');
+  const fillEl = document.getElementById('schedProgressFill');
+  const pctLbl = document.getElementById('schedPctLabel');
+  if (!el) return;
+
+  const total = D.milestones.length;
+  const done = D.milestones.filter(m => m.status === 'dn').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  if (fillEl) fillEl.style.width = pct+'%';
+  if (pctLbl) pctLbl.textContent = `${pct}% complete (${done}/${total})`;
+
+  const byPhase = {};
+  D.milestones.forEach(m => { if (!byPhase[m.phase]) byPhase[m.phase] = []; byPhase[m.phase].push(m); });
+
+  const statusOpts = ['ns','ip','dn','dl'];
+  const statusLabel = {ns:'Not Started',ip:'In Progress',dn:'Complete',dl:'Delayed'};
+  const statusClass = {ns:'ns',ip:'ip',dn:'dn',dl:'dl'};
+
+  el.innerHTML = PHASES.map(phase => {
+    const items = byPhase[phase] || [];
+    if (!items.length) return '';
+    const phaseDone = items.filter(m=>m.status==='dn').length;
+    const phasePct = Math.round(phaseDone/items.length*100);
+    return `
+      <div class="sched-phase">
+        <div class="sched-phase-hd">
+          <span>${phase}</span>
+          <span class="phase-pct">${phaseDone}/${items.length} complete</span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 130px 130px 130px 130px auto;gap:.4rem;padding:.3rem .6rem;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase">
+          <span>Milestone</span><span>Target Date</span><span>Actual Date</span><span>Owner</span><span>Status</span><span></span>
+        </div>
+        ${items.map(m => `
+        <div class="ms-row" style="grid-template-columns:2fr 130px 130px 130px 130px auto">
+          <span class="ms-name">${m.name}</span>
+          <input class="ms-date" type="date" value="${m.target||''}" onchange="updateMilestone(${m.id},'target',this.value);buildSchedule()">
+          <input class="ms-date" type="date" value="${m.actual||''}" onchange="updateMilestone(${m.id},'actual',this.value)">
+          <input class="ms-date" type="text" placeholder="Owner" value="${m.owner||''}" onchange="updateMilestone(${m.id},'owner',this.value)" style="font-size:.75rem">
+          <select class="ms-status ${statusClass[m.status]}" onchange="updateMilestone(${m.id},'status',this.value);buildSchedule()">
+            ${statusOpts.map(s=>`<option value="${s}" ${m.status===s?'selected':''}>${statusLabel[s]}</option>`).join('')}
+          </select>
+          <button onclick="deleteMilestone(${m.id})" style="border:none;background:none;color:var(--rust);cursor:pointer;font-size:.85rem" title="Remove">🗑</button>
+        </div>`).join('')}
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════ PROJECT HUB ═══════════════════════
+
+const DEFAULT_CONTACTS = [
+  {id:1,role:'Developer / Owner',name:'',company:'',email:'',phone:''},
+  {id:2,role:'Attorney',name:'',company:'',email:'',phone:''},
+  {id:3,role:'Civil Engineer',name:'',company:'',email:'',phone:''},
+  {id:4,role:'Architect',name:'',company:'',email:'',phone:''},
+  {id:5,role:'General Contractor',name:'',company:'',email:'',phone:''},
+  {id:6,role:'Lender / Banker',name:'',company:'',email:'',phone:''},
+];
+
+const DEFAULT_DOCS = [
+  {id:1,name:'Contract / PSA',type:'Legal',status:'none',submitted:'',approved:''},
+  {id:2,name:'Title Search',type:'Legal',status:'none',submitted:'',approved:''},
+  {id:3,name:'Environmental Phase I',type:'Environmental',status:'none',submitted:'',approved:''},
+  {id:4,name:'Survey / Boundary',type:'Engineering',status:'none',submitted:'',approved:''},
+  {id:5,name:'Rezoning Application',type:'Entitlement',status:'none',submitted:'',approved:''},
+  {id:6,name:'Traffic Impact Analysis',type:'Entitlement',status:'none',submitted:'',approved:''},
+  {id:7,name:'Site Plan',type:'Engineering',status:'none',submitted:'',approved:''},
+  {id:8,name:'Land Disturbing Permit',type:'Permit',status:'none',submitted:'',approved:''},
+  {id:9,name:'Building Permits',type:'Permit',status:'none',submitted:'',approved:''},
+  {id:10,name:'Final Plat',type:'Engineering',status:'none',submitted:'',approved:''},
+];
+
+function initHub() {
+  if (!D.contacts || !D.contacts.length) D.contacts = DEFAULT_CONTACTS.map(c=>({...c}));
+  if (!D.docStatus || !D.docStatus.length) D.docStatus = DEFAULT_DOCS.map(d=>({...d}));
+  if (!D.currentPhase) D.currentPhase = 0;
+}
+
+function setPhase(idx) {
+  D.currentPhase = idx; save(); buildHub();
+}
+
+function addContact() {
+  const role = prompt('Contact role (e.g. Real Estate Broker):');
+  if (!role) return;
+  if (!D.contacts) D.contacts = [];
+  D.contacts.push({id:Date.now(),role,name:'',company:'',email:'',phone:''});
+  save(); buildHub();
+}
+
+function updateContact(id, field, val) {
+  const c = (D.contacts||[]).find(x=>x.id===id);
+  if (c) { c[field]=val; save(); }
+}
+
+function addDocStatus() {
+  const name = prompt('Document name:');
+  if (!name) return;
+  const type = prompt('Type (Legal / Engineering / Entitlement / Permit / Other):', 'Other');
+  if (!D.docStatus) D.docStatus = [];
+  D.docStatus.push({id:Date.now(),name,type:type||'Other',status:'none',submitted:'',approved:''});
+  save(); buildHub();
+}
+
+function updateDocStatus(id, field, val) {
+  const d = (D.docStatus||[]).find(x=>x.id===id);
+  if (d) { d[field]=val; save(); buildHub(); }
+}
+
+function buildHub() {
+  initHub();
+  // Phase stepper
+  const stepper = document.getElementById('phaseStepper');
+  if (stepper) {
+    stepper.innerHTML = PHASES.map((p,i) => {
+      const cls = i < D.currentPhase ? 'done' : i === D.currentPhase ? 'active' : '';
+      return `<div class="ps-step ${cls}" onclick="setPhase(${i})" title="Click to set current phase">${p}</div>`;
+    }).join('');
+  }
+
+  // Hub stats
+  const statsRow = document.getElementById('hubStatsRow');
+  if (statsRow) {
+    const allActions = (D.meetings||[]).flatMap(m=>m.actions||[]);
+    const openActions = allActions.filter(a=>!a.done).length;
+    const overdue = allActions.filter(a=>!a.done&&a.due&&a.due<new Date().toISOString().slice(0,10)).length;
+    const mtgCount = (D.meetings||[]).length;
+    const msTotal = (D.milestones||[]).length;
+    const msDone = (D.milestones||[]).filter(m=>m.status==='dn').length;
+    const msPct = msTotal ? Math.round(msDone/msTotal*100) : 0;
+    statsRow.innerHTML = `
+      <div class="hub-stat"><div class="hub-stat-num">${mtgCount}</div><div class="hub-stat-lbl">Meetings Logged</div></div>
+      <div class="hub-stat"><div class="hub-stat-num" style="color:${openActions?'var(--amber)':'var(--forest)'}">${openActions}</div><div class="hub-stat-lbl">Open Action Items</div></div>
+      <div class="hub-stat"><div class="hub-stat-num" style="color:${overdue?'var(--rust)':'var(--forest)'}">${overdue}</div><div class="hub-stat-lbl">Overdue Items</div></div>
+      <div class="hub-stat"><div class="hub-stat-num">${msPct}%</div><div class="hub-stat-lbl">Milestones Complete</div></div>`;
+  }
+
+  // Open action items
+  const oaList = document.getElementById('openActionsList');
+  const oaCount = document.getElementById('openActionCount');
+  if (oaList) {
+    const today = new Date().toISOString().slice(0,10);
+    const openItems = [];
+    (D.meetings||[]).forEach(m => {
+      (m.actions||[]).filter(a=>!a.done).forEach(a => {
+        openItems.push({...a, mtgDate:m.date, mtgTopic:m.topic});
+      });
+    });
+    openItems.sort((a,b) => (a.due||'9999') < (b.due||'9999') ? -1 : 1);
+    if (oaCount) oaCount.textContent = openItems.length ? `${openItems.length} open` : '';
+    oaList.innerHTML = openItems.length ? openItems.map(a => {
+      const overdue = a.due && a.due < today;
+      return `<div class="oa-item ${overdue?'oa-overdue':''}">
+        <span style="font-size:.8rem">${overdue?'🔴':'🟡'}</span>
+        <div><span class="action-text">${a.text}</span><br><span style="font-size:.7rem;color:var(--muted)">${a.mtgTopic} · ${a.mtgDate}</span></div>
+        <div style="text-align:right"><span class="action-owner">${a.owner||'—'}</span><br><span class="action-due" style="color:${overdue?'var(--rust)':'var(--muted)'}">${a.due||'No due date'}</span></div>
+      </div>`;
+    }).join('') : '<div class="mtg-empty">All caught up! No open action items.</div>';
+  }
+
+  // Contacts
+  const cGrid = document.getElementById('contactGrid');
+  if (cGrid) {
+    cGrid.innerHTML = (D.contacts||[]).map(c => `
+      <div class="contact-card">
+        <div class="contact-role">${c.role}</div>
+        <input style="border:none;background:transparent;font-weight:700;color:var(--ink);font-size:.82rem;width:100%;padding:0;margin-bottom:.1rem"
+          placeholder="Full Name" value="${c.name||''}" onchange="updateContact(${c.id},'name',this.value)">
+        <input style="border:none;background:transparent;color:var(--muted);font-size:.74rem;width:100%;padding:0;margin-bottom:.2rem"
+          placeholder="Company" value="${c.company||''}" onchange="updateContact(${c.id},'company',this.value)">
+        <div class="contact-links">
+          <input style="border:none;background:transparent;color:var(--pine);font-size:.72rem;width:50%;padding:0"
+            placeholder="email@example.com" value="${c.email||''}" onchange="updateContact(${c.id},'email',this.value)">
+          <input style="border:none;background:transparent;color:var(--muted);font-size:.72rem;width:45%;padding:0"
+            placeholder="(919) 555-0000" value="${c.phone||''}" onchange="updateContact(${c.id},'phone',this.value)">
+        </div>
+      </div>`).join('');
+  }
+
+  // Document status
+  const docBody = document.getElementById('docStatusBody');
+  if (docBody) {
+    const statusOpts = ['none','submitted','review','approved','rejected'];
+    const statusLabel = {none:'Not Started',submitted:'Submitted',review:'Under Review',approved:'Approved',rejected:'Rejected'};
+    const statusClass = {none:'ds-none',submitted:'ds-sub',review:'ds-rev',approved:'ds-app',rejected:'ds-rej'};
+    docBody.innerHTML = (D.docStatus||[]).map(d => `
+      <tr>
+        <td><strong>${d.name}</strong><br><span style="font-size:.7rem;color:var(--muted)">${d.type}</span></td>
+        <td>
+          <select onchange="updateDocStatus(${d.id},'status',this.value)" style="border:none;background:transparent;font-size:.75rem;font-weight:700;cursor:pointer">
+            ${statusOpts.map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${statusLabel[s]}</option>`).join('')}
+          </select>
+        </td>
+        <td><input type="date" value="${d.submitted||''}" onchange="updateDocStatus(${d.id},'submitted',this.value)" style="border:none;background:transparent;font-size:.75rem;color:var(--muted)"></td>
+        <td><input type="date" value="${d.approved||''}" onchange="updateDocStatus(${d.id},'approved',this.value)" style="border:none;background:transparent;font-size:.75rem;color:var(--muted)"></td>
+      </tr>`).join('');
+  }
+}
+
+// ═══════════════════════ HELPERS ═══════════════════════
+
+function getField(id){return document.getElementById(id)?.value||'';}
+function setField(id,v){const el=document.getElementById(id);if(el&&v)el.value=v;}
+function money(n){const a=Math.abs(n);return(n<0?'-$':'$')+a.toLocaleString('en-US',{maximumFractionDigits:0});}
+function fmt(n){return n.toLocaleString('en-US');}
+function showToast(msg,type='i'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast on ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),3200);}
+
+function autoSetJuris(jurisCode) {
+  const el = document.getElementById('pJuris');
+  if (!el) return;
+  const map = {
+    'WC':'Unincorporated Wake County', 'RAL':'City of Raleigh', 'CAR':'Town of Cary',
+    'APX':'Town of Apex', 'HLS':'Town of Holly Springs', 'MOR':'Town of Morrisville',
+    'FUQ':'Town of Fuquay-Varina', 'KNI':'Town of Knightdale', 'ROL':'Town of Rolesville',
+    'WEN':'Town of Wendell', 'ZEB':'Town of Zebulon', 'WKF':'Town of Wake Forest'
+  };
+  const code = (jurisCode||'').toUpperCase().slice(0,3);
+  const match = map[code] || Object.values(map).find(v => v.toUpperCase().includes(code));
+  if (match) { el.value = match; D.pJuris = match; }
+}
+
+// ═══════════════════════ WAKE COUNTY DATA SERVER ═══════════════════════
+
+async function checkDataServer() {
+  const badge = document.getElementById('serverBadge');
+  try {
+    const resp = await fetch('http://127.0.0.1:7474/stats', { signal: AbortSignal.timeout(2000) });
+    if (resp.ok) {
+      const data = await resp.json();
+      const s = data.stats || {};
+      badge.textContent = `🟢 ${(s.total_parcels||0).toLocaleString()} parcels`;
+      badge.style.display = 'inline-flex';
+      badge.title = `Wake County data: ${s.total_parcels?.toLocaleString()||'?'} parcels · Last refresh: ${s.last_refresh?.run_at?.slice(0,10)||'unknown'} · DB: ${s.db_size_mb||'?'} MB`;
+      showToast(`Data server: ${s.total_parcels?.toLocaleString()||'?'} parcels loaded`, 's');
+      return true;
+    }
+  } catch(e) { /* not running */ }
+  badge.textContent = '🔴 Data Server Offline';
+  badge.style.display = 'inline-flex';
+  badge.title = 'Wake County data server not running. Run: python wake_county_data.py start';
+  return false;
+}
+
+async function triggerServerRefresh() {
+  showToast('🔄 Refreshing Wake County data...', 'i');
+  try {
+    const resp = await fetch('http://127.0.0.1:7474/refresh', { method:'POST', signal: AbortSignal.timeout(300000) });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.ok) {
+        showToast(`✅ Refreshed: ${data.result.new} new, ${data.result.changed} changed`, 's');
+        checkDataServer();
+      }
+    }
+  } catch(e) {
+    showToast('Refresh failed — is the server running?', 'e');
+  }
+}
+
+// ═══════════════════════ INIT ═══════════════════════
+// Check data server on load (non-blocking)
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => checkDataServer(), 1500);
+});
+</script>
+</body>
+</html>
