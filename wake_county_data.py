@@ -228,49 +228,41 @@ def download_realestate_data():
         print("ERROR: Install requests: pip install requests --break-system-packages")
         sys.exit(1)
 
-    filename = get_today_filename()
-    url = f"https://services.wake.gov/realestate/{filename}"
-    local_path = DATA_DIR / filename
+    # Check if any recent local file already exists (use most recent)
+    for days_back in range(8):
+        d = datetime.date.today() - datetime.timedelta(days=days_back)
+        fname = f"RealEstData{d.strftime('%m%d%Y')}.xlsx"
+        local = DATA_DIR / fname
+        if local.exists():
+            print(f"  ✓ Using local file: {fname} ({days_back} days old)")
+            return local
 
-    # Check if we already downloaded today
-    if local_path.exists():
-        print(f"  ✓ Already downloaded today: {filename}")
-        return local_path
-
-    # Try today's file
-    print(f"  → Downloading {url}")
-    resp = requests.get(url, timeout=120, stream=True)
-
-    if resp.status_code == 200:
-        with open(local_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                f.write(chunk)
-        print(f"  ✓ Downloaded: {filename} ({local_path.stat().st_size / 1_000_000:.1f} MB)")
-        return local_path
-
-    # Try yesterday's file (Wake County sometimes posts next morning)
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-    filename_y = f"RealEstData{yesterday.strftime('%m%d%Y')}.xlsx"
-    url_y = f"https://services.wake.gov/realestate/{filename_y}"
-    local_path_y = DATA_DIR / filename_y
-
-    if local_path_y.exists():
-        print(f"  ✓ Using yesterday's file: {filename_y}")
-        return local_path_y
-
-    print(f"  → Trying yesterday's file: {url_y}")
-    resp2 = requests.get(url_y, timeout=120, stream=True)
-    if resp2.status_code == 200:
-        with open(local_path_y, "wb") as f:
-            for chunk in resp2.iter_content(chunk_size=8192):
-                f.write(chunk)
-        print(f"  ✓ Downloaded: {filename_y}")
-        return local_path_y
+    # Try downloading up to 7 days back (handles weekends/holidays)
+    tried = []
+    for days_back in range(8):
+        d = datetime.date.today() - datetime.timedelta(days=days_back)
+        fname = f"RealEstData{d.strftime('%m%d%Y')}.xlsx"
+        url = f"https://services.wake.gov/realestate/{fname}"
+        local = DATA_DIR / fname
+        tried.append(url)
+        print(f"  → Trying {url}")
+        try:
+            resp = requests.get(url, timeout=120, stream=True)
+            if resp.status_code == 200:
+                with open(local, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                size_mb = local.stat().st_size / 1_000_000
+                print(f"  ✓ Downloaded: {fname} ({size_mb:.1f} MB)")
+                return local
+        except Exception as e:
+            print(f"  ⚠ Error: {e}")
+            continue
 
     raise RuntimeError(
-        f"Could not download Wake County data.\n"
-        f"Tried:\n  {url}\n  {url_y}\n"
-        f"Check https://services.wake.gov/realestate/ manually."
+        f"Could not download Wake County data after trying 8 dates.\n"
+        f"Last tried: {tried[-1]}\n"
+        f"Check https://services.wake.gov/realestate/ manually for available files."
     )
 
 
