@@ -675,23 +675,52 @@ textarea{resize:vertical;min-height:68px;}
 
 <!-- ── STATS ── -->
 <div class="panel" id="panel-stats">
+
+  <!-- Calculated metrics bar -->
   <div class="stat-row" id="statRow"></div>
+
+  <!-- Existing Conditions (auto-filled from parcel lookup) -->
   <div class="card">
-    <div class="card-hd"><h3>📥 Input Values</h3></div>
+    <div class="card-hd card-hd-sky"><h3>🏛 Existing Conditions <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.65)">— auto-filled from Wake County records</span></h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Site Area (acres)</label><input type="number" id="exAcres" step="0.01" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Site Area (sq ft)</label><input type="text" id="exSqft" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Existing Land Class</label><input type="text" id="exLandClass" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Existing Use</label><input type="text" id="exUse" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Heated Area (sq ft)</label><input type="text" id="exHeated" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Year Built</label><input type="text" id="exYearBuilt" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Assessed Value</label><input type="text" id="exTotalVal" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Land Value</label><input type="text" id="exLandVal" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Building Value</label><input type="text" id="exBldgVal" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Last Sale Price</label><input type="text" id="exSalePrice" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Last Sale Date</label><input type="text" id="exSaleDate" placeholder="—" style="background:var(--foam)" readonly></div>
+        <div class="f"><label>Owner</label><input type="text" id="exOwner" placeholder="—" style="background:var(--foam)" readonly></div>
+      </div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.75rem">These fields are read-only. Look up a PIN above to populate from Wake County records.</p>
+    </div>
+  </div>
+
+  <!-- Proposed Project (user input) -->
+  <div class="card">
+    <div class="card-hd"><h3>🏗 Proposed Project <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.65)">— enter your development program</span></h3></div>
     <div class="card-body">
       <div class="fg">
         <div class="f"><label>Total Units</label><input type="number" id="sU" min="0" oninput="calcStats()" placeholder="0"></div>
-        <div class="f"><label>Lot Size (acres)</label><input type="number" id="sA" min="0" step="0.01" oninput="calcStats()" placeholder="0.00"></div>
+        <div class="f"><label>Net Site Area (acres)</label><input type="number" id="sA" min="0" step="0.01" oninput="calcStats()" placeholder="0.00"></div>
         <div class="f"><label>Gross Building Area (sq ft)</label><input type="number" id="sG" min="0" oninput="calcStats()" placeholder="0"></div>
         <div class="f"><label>Parking Spaces</label><input type="number" id="sP" min="0" oninput="calcStats()" placeholder="0"></div>
         <div class="f"><label>Impervious Surface (sq ft)</label><input type="number" id="sI" min="0" oninput="calcStats()" placeholder="0"></div>
         <div class="f"><label>Road Frontage (ft)</label><input type="number" id="sF" min="0" placeholder="0"></div>
+        <div class="f"><label>Open Space (sq ft)</label><input type="number" id="sOS" min="0" oninput="calcStats()" placeholder="0"></div>
+        <div class="f"><label>Avg Unit Size (sq ft)</label><input type="number" id="sUS" min="0" oninput="calcStats()" placeholder="0"></div>
       </div>
     </div>
   </div>
+
   <div class="actions">
     <button class="btn btn-p" onclick="save()">💾 Save</button>
-    <button class="btn btn-g" onclick="aiAsk('Review my project statistics for Wake County compliance. Flag any issues with impervious surface limits, density, parking ratios, or FAR based on typical Wake County zoning standards.')">🤖 Sport: Review Stats</button>
+    <button class="btn btn-g" onclick="aiAsk('Review my project statistics for Wake County compliance. Flag any issues with impervious surface limits, density, parking ratios, or FAR based on typical Wake County zoning standards. Existing conditions: '+document.getElementById(\'exAcres\').value+\' acres, \'+document.getElementById(\'exUse\').value+\'. Proposed: \'+document.getElementById(\'sU\').value+\' units, \'+document.getElementById(\'sA\').value+\' net acres, \'+document.getElementById(\'sI\').value+\' sq ft impervious.')">🤖 Sport: Review Stats</button>
   </div>
 </div>
 
@@ -1492,11 +1521,28 @@ async function doLookup() {
     else if (twp.includes('NEUSE') || ['RA','RAL','WC','WF','WKF','WE','WEN','ZE','ZEB','KN','KNI','RO','ROL'].includes((p.planning_juris||'').toUpperCase()))
                                           { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
 
-    // Auto-populate Statistics tab from parcel data
+    // Auto-populate Existing Conditions in Statistics tab
+    const fmt$ = v => v ? '$' + Number(v).toLocaleString() : '';
+    const setRO = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
     if (p.acres) {
-      const acresEl = document.getElementById('sA');
-      if (acresEl && (!acresEl.value || acresEl.value === '0' || acresEl.value === '0.00')) {
-        acresEl.value = parseFloat(p.acres).toFixed(2);
+      setRO('exAcres', parseFloat(p.acres).toFixed(2));
+      setRO('exSqft', Math.round(p.acres * 43560).toLocaleString() + ' sq ft');
+    }
+    setRO('exLandClass', p.land_class);
+    setRO('exUse', p.type_and_use);
+    setRO('exHeated', p.heated_area ? Number(p.heated_area).toLocaleString() : '');
+    setRO('exYearBuilt', p.year_built && p.year_built !== '0' ? p.year_built : 'None');
+    setRO('exTotalVal', fmt$(p.total_value));
+    setRO('exLandVal', fmt$(p.land_value));
+    setRO('exBldgVal', fmt$(p.building_value));
+    setRO('exSalePrice', fmt$(p.last_sale_price));
+    setRO('exSaleDate', p.last_sale_date);
+    setRO('exOwner', p.owner);
+    // Also seed the proposed net site area if not yet set
+    if (p.acres) {
+      const propAcres = document.getElementById('sA');
+      if (propAcres && (!propAcres.value || propAcres.value === '0' || propAcres.value === '0.00')) {
+        propAcres.value = parseFloat(p.acres).toFixed(2);
         calcStats();
       }
     }
@@ -1565,11 +1611,12 @@ function setSt(i,k,v){if(!D.stages)D.stages={};if(!D.stages[i])D.stages[i]={};D.
 
 function buildStatCards() {
   document.getElementById('statRow').innerHTML = `
-    <div class="stat hi"><div class="stat-lbl">Total Site Area</div><div class="stat-val" id="cS">—</div><div class="stat-unit">sq ft</div></div>
+    <div class="stat hi"><div class="stat-lbl">Net Site Area</div><div class="stat-val" id="cS">—</div><div class="stat-unit">sq ft</div></div>
     <div class="stat"><div class="stat-lbl">Impervious %</div><div class="stat-val" id="cI">—</div><div class="stat-unit">target &lt;24%</div></div>
     <div class="stat"><div class="stat-lbl">Density</div><div class="stat-val" id="cD">—</div><div class="stat-unit">units / acre</div></div>
     <div class="stat"><div class="stat-lbl">FAR</div><div class="stat-val" id="cF">—</div><div class="stat-unit">floor area ratio</div></div>
     <div class="stat"><div class="stat-lbl">Parking Ratio</div><div class="stat-val" id="cP">—</div><div class="stat-unit">spaces / unit</div></div>
+    <div class="stat"><div class="stat-lbl">Open Space %</div><div class="stat-val" id="cOS">—</div><div class="stat-unit">of site area</div></div>
     <div class="stat hi"><div class="stat-lbl">Stormwater Det.</div><div class="stat-val" id="cSW">—</div><div class="stat-unit">cu ft required</div></div>
   `;
 }
@@ -1578,6 +1625,7 @@ function calcStats() {
   const u=+document.getElementById('sU').value||0, a=+document.getElementById('sA').value||0;
   const g=+document.getElementById('sG').value||0, p=+document.getElementById('sP').value||0;
   const imp=+document.getElementById('sI').value||0;
+  const os=+(document.getElementById('sOS')?.value||0);
   const site=a*43560, pct=site>0?(imp/site*100):0;
   document.getElementById('cS').textContent=site>0?fmt(site):'—';
   const el=document.getElementById('cI');
@@ -1586,6 +1634,8 @@ function calcStats() {
   document.getElementById('cD').textContent=a>0?(u/a).toFixed(2):'—';
   document.getElementById('cF').textContent=site>0?(g/site).toFixed(3):'—';
   document.getElementById('cP').textContent=u>0?(p/u).toFixed(2):'—';
+  const osEl=document.getElementById('cOS');
+  if(osEl) osEl.textContent=site>0&&os>0?(os/site*100).toFixed(1)+'%':'—';
   document.getElementById('cSW').textContent=imp>0?fmt(Math.round(imp*.01)):'—';
 }
 
@@ -2010,7 +2060,8 @@ function loadForm() {
     ['u','a','g','p','i','f'].forEach(k => { const el=document.getElementById('s'+k.toUpperCase()); if(el) el.value=D.stats[k]||''; });
     calcStats();
   }
-  if (D.pPIN) { document.getElementById('pinIn').value=D.pPIN; document.getElementById('activePin').textContent=D.pPIN; document.getElementById('pinPill').classList.add('on'); }
+  // Restore active PIN pill but leave the search bar empty on fresh load
+  if (D.pPIN) { document.getElementById('activePin').textContent=D.pPIN; document.getElementById('pinPill').classList.add('on'); }
   if (D.peChecks) { PE_ITEMS.forEach((_,i) => { if(D.peChecks[i]) { const el=document.getElementById('pchk-'+i); if(el) el.checked=true; setPECheck(i,true); } }); }
   applyProfile();
 }
