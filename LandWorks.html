@@ -1522,7 +1522,6 @@ async function doLookup() {
                                           { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
 
     // Auto-populate Existing Conditions in Statistics tab
-    const fmt$ = v => v ? '$' + Number(v).toLocaleString() : '';
     const setRO = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
     if (p.acres) {
       setRO('exAcres', parseFloat(p.acres).toFixed(2));
