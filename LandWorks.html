@@ -1943,10 +1943,16 @@ async function generateSitePlan() {
     _lastSitePlanSVG = svgStr;
     container.innerHTML = svgStr;
 
-    // Update stats badge
-    const unitsShown = container.querySelector('[data-units]')?.getAttribute('data-units') || opts.units;
+    // Switch to Site Plan tab so user sees the result
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.getElementById('panel-siteplan').classList.add('on');
+    document.querySelectorAll('.tab').forEach(t => {
+      if (t.getAttribute('onclick')?.includes("'siteplan'")) t.classList.add('on');
+    });
+
     document.getElementById('spStats').textContent =
-      `${opts.unitW}′W × ${opts.unitD}′D · actual parcel boundary`;
+      `${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary`;
     showToast('Site plan generated from GIS data', 's');
 
   } catch(e) {
