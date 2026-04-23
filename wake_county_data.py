@@ -18,6 +18,7 @@ import json
 import sqlite3
 import datetime
 from pathlib import Path
+from typing import Optional
 
 # ── Config ────────────────────────────────────────────────────────────────────
 DATA_DIR = Path.home() / ".wake_county_data"
@@ -113,7 +114,7 @@ def analyze_red_flags(row: dict) -> list:
 
 
 # ── ArcGIS Query ──────────────────────────────────────────────────────────────
-def fetch_parcel_from_arcgis(pin: str) -> dict | None:
+def fetch_parcel_from_arcgis(pin: str) -> Optional[dict]:
     try:
         import requests
     except ImportError:
@@ -194,7 +195,7 @@ def _epoch_to_date(val):
 
 
 # ── Cache Logic ───────────────────────────────────────────────────────────────
-def get_cached_parcel(pin: str) -> dict | None:
+def get_cached_parcel(pin: str) -> Optional[dict]:
     conn = get_db()
     row = conn.execute("SELECT * FROM parcels WHERE pin=?", (pin,)).fetchone()
     conn.close()
@@ -234,7 +235,7 @@ def cache_parcel(row: dict):
     conn.close()
 
 
-def lookup_parcel(pin: str) -> dict | None:
+def lookup_parcel(pin: str) -> Optional[dict]:
     """Return parcel data — from cache if fresh, else live from ArcGIS."""
     pin = pin.strip()
     cached = get_cached_parcel(pin)

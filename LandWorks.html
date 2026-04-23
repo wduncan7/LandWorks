@@ -938,8 +938,16 @@ textarea{resize:vertical;min-height:68px;}
       <div><h4>🤖 Sport AI</h4><div class="sb-model" id="sbModel">Not connected</div></div>
       <button onclick="toggleSB()" style="background:none;border:none;color:var(--mint);cursor:pointer;font-size:14px">◀</button>
     </div>
+    <div id="sbKeyArea" style="padding:.6rem .9rem;border-bottom:1px solid var(--border);display:none;">
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Claude API Key</div>
+      <div style="display:flex;gap:6px;">
+        <input id="sbApiKey" type="password" placeholder="sk-ant-api03-..." style="flex:1;padding:.4rem .6rem;border:1.5px solid var(--border);border-radius:6px;font-size:.78rem;background:var(--cream);outline:none;">
+        <button onclick="connectSBKey()" style="padding:.4rem .7rem;background:var(--amber);color:var(--forest);border:none;border-radius:6px;font-size:.75rem;font-weight:700;cursor:pointer;">Connect</button>
+      </div>
+      <a href="https://console.anthropic.com" target="_blank" style="font-size:.7rem;color:var(--pine);">Get a free API key ↗</a>
+    </div>
     <div class="ai-msgs" id="aiMsgs">
-      <div class="am sys">Sport AI is not connected. Enter your Claude API key to activate.</div>
+      <div class="am sys">Sport AI is not connected. Enter your Claude API key above to activate.</div>
     </div>
     <div class="ai-typing" id="aiTyping"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     <div class="qbtns">
@@ -1217,6 +1225,11 @@ window.addEventListener('DOMContentLoaded', () => {
   if (s) try { D = JSON.parse(s); } catch(e) {}
   const k = localStorage.getItem('lsApiKey');
   if (k) { apiKey = k; activateKey(true); }
+  else {
+    // Show the key entry panel in the sidebar
+    const kArea = document.getElementById('sbKeyArea');
+    if (kArea) kArea.style.display = 'block';
+  }
   const ob = localStorage.getItem('lsOnboarded');
   if (ob) { document.getElementById('onboardModal').classList.add('hidden'); applyProfile(); }
   buildStages(); buildPF(); buildChecklist(); buildGuide(); buildIMAPSIn();
@@ -1291,10 +1304,22 @@ function connectAPIInline() {
 function activateKey(silent) {
   document.getElementById('apiInline').classList.add('hidden');
   document.getElementById('sbModel').textContent = 'Claude · Connected ✓';
+  document.getElementById('sbModel').style.color = 'var(--mint)';
+  // Hide key entry area in sidebar
+  const kArea = document.getElementById('sbKeyArea');
+  if (kArea) kArea.style.display = 'none';
   if (!silent) {
     addMsg('assistant', "🏗 Sport AI connected! I'm ready to help with your Wake County land development project. Enter a PIN to analyze a parcel, or ask me about permits, zoning, proforma costs, or the PE review process.");
     showToast('Sport AI connected!', 's');
   }
+}
+
+function connectSBKey() {
+  const k = document.getElementById('sbApiKey').value.trim();
+  if (!k.startsWith('sk-ant')) { showToast('Key should start with sk-ant-', 'e'); return; }
+  apiKey = k;
+  localStorage.setItem('lsApiKey', k);
+  activateKey(false);
 }
 
 // ═══════════════════════ TABS ═══════════════════════
@@ -1324,10 +1349,11 @@ async function doLookup() {
   // Try local Wake County data server first
   let parcelData = null;
   try {
-    const resp = await fetch(`http://127.0.0.1:7474/parcel/${encodeURIComponent(pin)}`, { signal: AbortSignal.timeout(3000) });
+    const resp = await fetch(`http://127.0.0.1:7474/parcel/${encodeURIComponent(pin)}`, { signal: AbortSignal.timeout(5000) });
     if (resp.ok) {
       const json = await resp.json();
-      if (json.ok && json.parcel) parcelData = json.parcel;
+      // API returns parcel fields directly (not wrapped in {ok, parcel})
+      if (json && json.pin) parcelData = json;
     }
   } catch(e) { /* server not running — fall through to manual mode */ }
 
@@ -1355,9 +1381,9 @@ async function doLookup() {
       <div><div class="pd-l">Land Class</div><div class="pd-v">${p.land_class||'—'} ${p.exempt_status?'('+p.exempt_status+')':''}</div></div>
       <div><div class="pd-l">Year Built</div><div class="pd-v">${p.year_built||'—'}</div></div>
       <div><div class="pd-l">Links</div><div class="pd-v">
-        <a href="${p.links.imaps}" target="_blank" style="color:var(--pine);margin-right:8px">iMAPS ↗</a>
-        <a href="${p.links.tax_portal}" target="_blank" style="color:var(--pine);margin-right:8px">Tax ↗</a>
-        <a href="${p.links.permits}" target="_blank" style="color:var(--pine)">Permits ↗</a>
+        <a href="https://imaps.wake.gov/iMAPS/?pin=${p.pin||pin}" target="_blank" style="color:var(--pine);margin-right:8px">iMAPS ↗</a>
+        <a href="https://services.wake.gov/TaxPortal/Property/MainSearch?searchBy=pin&searchTerm=${p.pin||pin}" target="_blank" style="color:var(--pine);margin-right:8px">Tax ↗</a>
+        <a href="https://energov.wakegov.com/energovprod/selfservice#/search?module=1&keyword=${p.pin||pin}" target="_blank" style="color:var(--pine)">Permits ↗</a>
       </div></div>
       ${flags ? `<div style="grid-column:1/-1"><div class="pd-l">Red Flags</div>${flags}</div>` : ''}
     `;
@@ -1754,8 +1780,13 @@ ${getCtx()}`;
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:aiHist.slice(-12)})
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,system:sys,messages:aiHist.slice(-12)})
     });
     const data = await res.json();
     document.getElementById('aiTyping').classList.remove('on');
@@ -1803,13 +1834,31 @@ function save() {
   showToast('Auto-saved locally','s');
 }
 
-function saveToFile() {
+async function saveToFile() {
   collectFormData();
   localStorage.setItem('landworksV1', JSON.stringify(D));
   const projectName = (D.pName||'Project').replace(/[^a-zA-Z0-9_-]/g,'_');
   const date = new Date().toISOString().slice(0,10);
   const filename = `LandWorks_${projectName}_${date}.json`;
   const blob = new Blob([JSON.stringify(D, null, 2)], {type:'application/json'});
+
+  // Use Save As dialog if supported (Chrome/Edge), fallback to download
+  if (window.showSaveFilePicker) {
+    try {
+      const fh = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'LandWorks Project', accept: {'application/json': ['.json']} }]
+      });
+      const writable = await fh.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      showToast(`💾 Saved: ${fh.name}`, 's');
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return; // user cancelled
+    }
+  }
+  // Fallback: auto-download
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
