@@ -627,7 +627,7 @@ textarea{resize:vertical;min-height:68px;}
           <input type="text" id="pPIN" placeholder="Wake County PIN" oninput="document.getElementById('pinIn').value=this.value">
         </div>
         <div class="f w2"><label>Project Address</label><input type="text" id="pAddr" placeholder="Street address, Wake County, NC"></div>
-        <div class="f w2"><label>Zoning District</label><input type="text" id="pZone" placeholder="e.g. R-40, R-20W, GR, NB, CB (from iMAPS)"></div>
+        <div class="f w2"><label>Zoning District <span style="color:var(--amber);font-size:.65rem;font-weight:400">— look up in iMAPS (not available from Wake County ArcGIS)</span></label><input type="text" id="pZone" placeholder="Open iMAPS → click parcel → Zoning Classification layer"></div>
         <div class="f"><label>Municipality / Jurisdiction</label>
           <select id="pJuris">
             <option value="">— Select —</option>
