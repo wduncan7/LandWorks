@@ -1965,151 +1965,209 @@ async function generateSitePlan() {
 }
 
 function buildSitePlanSVG(rings, opts) {
-  const ring = rings[0];   // outer boundary
+  const ring = rings[0];
 
-  // Bounding box in NC State Plane feet
   let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
   ring.forEach(([x,y]) => { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); });
-  const Wft = maxX - minX, Hft = maxY - minY;
+  const Wft = maxX-minX, Hft = maxY-minY;
 
   // SVG viewport
-  const SVG_W=780, SVG_H=580, HEAD=30, PAD=55;
-  const avW = SVG_W - 2*PAD, avH = SVG_H - HEAD - PAD - 20;
-  const scale = Math.min(avW/Wft, avH/Hft);
+  // ── SVG viewport — tall enough for portrait parcel + legend sidebar ──
+  const SVG_W=1020, SVG_H=880, HEAD=32, PL=55, PR=165, PT=8, PB=48;
+  const avW=SVG_W-PL-PR, avH=SVG_H-HEAD-PT-PB;
+  const scale=Math.min(avW/Wft, avH/Hft);
+  const fp=ft=>ft*scale;
 
-  const tx = x => ((x - minX) * scale + PAD).toFixed(2);
-  const ty = y => (HEAD + (maxY - y) * scale + 10).toFixed(2);
-  const ftToPx = ft => (ft * scale).toFixed(2);
+  const tx=x=>PL+(x-minX)*scale;
+  const ty=y=>HEAD+PT+(maxY-y)*scale;
 
-  // Parcel polygon path
-  const parcelPts = ring.map(([x,y]) => `${tx(x)},${ty(y)}`).join(' ');
+  const pts=ring.map(([x,y])=>`${tx(x).toFixed(2)},${ty(y).toFixed(2)}`).join(' ');
+  const bL=tx(minX),bR=tx(maxX),bT=ty(maxY),bB=ty(minY);
+  const bW=bR-bL,bH=bB-bT;
 
-  // Key dimensions in px
-  const fPx  = opts.fSetbk * scale,   rPx  = opts.rSetbk * scale;
-  const sPx  = opts.sSetbk * scale,   bPx  = opts.buffer * scale;
-  const rowPx= opts.rowDed * scale;
+  // ── setback / buffer dims (px) ──
+  const rowPx=fp(opts.rowDed), bufPx=fp(opts.buffer);
+  const fPx=fp(opts.fSetbk),   sPx=fp(opts.sSetbk),  rPx=fp(opts.rSetbk);
 
-  // Bounding box corners in SVG coords
-  const bL = parseFloat(tx(minX)), bR = parseFloat(tx(maxX));
-  const bT = parseFloat(ty(maxY)), bB = parseFloat(ty(minY));
-  const bW = bR - bL, bH = bB - bT;
+  // ── buildable zone bounding box ──
+  const bzL=bL+sPx, bzR=bR-sPx;
+  const bzT=bT+rowPx+fPx, bzB=bB-rPx-bufPx;
+  const bzW=bzR-bzL, bzH=bzB-bzT;
+  const midX=bL+bW/2;
 
-  // Buildable envelope (simplified rectangular approximation)
-  const envL = bL + sPx, envR = bR - sPx;
-  const envT = bT + fPx + rowPx;           // front setback + ROW
-  const envB = bB - rPx - bPx;             // rear setback + buffer
-  const envW = envR - envL, envH = envB - envT;
+  // ── road / unit dims ──
+  const uW=fp(opts.unitW), uD=fp(opts.unitD);
+  const alW=fp(opts.laneW||24);   // alley / parking lane depth
+  const spW=fp(28);               // spine road (2-lane collector)
+  const brW=fp(22);               // branch / cross road
 
-  // Unit layout
-  const uWpx = opts.unitW * scale, uDpx = opts.unitD * scale;
-  const lanePx = opts.laneW * scale;
-  const rowH = uDpx + lanePx;
-  const unitsPerRow = Math.max(1, Math.floor(envW / uWpx));
-  const numRows     = Math.max(1, Math.floor(envH / rowH));
+  // ── building clusters flanking the spine ──
+  // Each cluster = UPB attached units. Two clusters per "court" (L + R of spine).
+  const UPB=6;
+  const bldgW=UPB*uW, bldgZ=uD+alW;  // bldg footprint depth incl alley
 
-  let unitRects = '', unitCount = 0;
-  const target = opts.units || unitsPerRow * numRows;
+  // Building X positions (touching both the spine gap and the buildable edge)
+  const spL=midX-spW/2, spR=midX+spW/2;
+  const gap=fp(8);
+  const lBR=spL-gap, lBL=lBR-bldgW;   // left building: right→left
+  const rBL=spR+gap, rBR=rBL+bldgW;   // right building: left→right
 
-  for (let row = 0; row < numRows && unitCount < target; row++) {
-    const y0 = envT + row * rowH;
-    const rowUnits = Math.min(unitsPerRow, target - unitCount);
-    const rowTotalW = rowUnits * uWpx;
-    const xOff = envL + (envW - rowTotalW) / 2;
-    for (let col = 0; col < rowUnits; col++) {
-      const x0 = xOff + col * uWpx;
-      const fill = row % 2 === 0 ? '#b8882a' : '#d4a843';
-      unitRects += `<rect x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${(uWpx-1).toFixed(1)}" height="${uDpx.toFixed(1)}" fill="${fill}" stroke="#7a5c10" stroke-width="0.6" rx="1"/>`;
-    }
-    // Access lane
-    if (row < numRows - 1) {
-      const lY = y0 + uDpx;
-      unitRects += `<rect x="${envL.toFixed(1)}" y="${lY.toFixed(1)}" width="${envW.toFixed(1)}" height="${lanePx.toFixed(1)}" fill="#c8c0b0" opacity="0.8"/>`;
-    }
-    unitCount += rowUnits;
+  // Court pitch: building + alley + cross-road
+  const courtPitch=bldgZ+brW;
+  const target=opts.units||96;
+  const nCourts=Math.ceil(target/(UPB*2));
+
+  // ── build SVG string ──
+  let b='';
+
+  // defs + clip path to parcel polygon
+  b+=`<defs><clipPath id="pc"><polygon points="${pts}"/></clipPath></defs>`;
+
+  // site fill
+  b+=`<polygon points="${pts}" fill="#daf0e6"/>`;
+
+  // riparian buffer band
+  b+=`<rect x="${bL.toFixed(1)}" y="${bzB.toFixed(1)}" width="${bW.toFixed(1)}" height="${(bB-bzB+rPx).toFixed(1)}" fill="#a8d8ea" opacity="0.55" clip-path="url(#pc)"/>`;
+  b+=`<line x1="${bL.toFixed(1)}" y1="${bzB.toFixed(1)}" x2="${bR.toFixed(1)}" y2="${bzB.toFixed(1)}" stroke="#2c7fb8" stroke-width="1.2" stroke-dasharray="7,4"/>`;
+  b+=`<text x="${(bL+6).toFixed(1)}" y="${(bzB+12).toFixed(1)}" font-family="sans-serif" font-size="8" fill="#2c7fb8">${opts.buffer}′ Riparian Buffer</text>`;
+
+  // ROW dedication band (north/top)
+  b+=`<rect x="${bL.toFixed(1)}" y="${bT.toFixed(1)}" width="${bW.toFixed(1)}" height="${rowPx.toFixed(1)}" fill="#b0aa95" opacity="0.6" clip-path="url(#pc)"/>`;
+  b+=`<text x="${(bL+6).toFixed(1)}" y="${(bT+rowPx*0.65).toFixed(1)}" font-family="sans-serif" font-size="8" fill="#5a5440">${opts.rowDed}′ ROW Dedication</text>`;
+
+  // setback dashed box
+  b+=`<rect x="${bzL.toFixed(1)}" y="${bzT.toFixed(1)}" width="${bzW.toFixed(1)}" height="${bzH.toFixed(1)}" fill="none" stroke="#e07820" stroke-width="1" stroke-dasharray="5,3" opacity="0.75"/>`;
+  b+=`<text x="${(bzL+3).toFixed(1)}" y="${(bzT-3).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#e07820">F${opts.fSetbk}′  S${opts.sSetbk}′  R${opts.rSetbk}′ setbacks</text>`;
+
+  // ── unit building courts ──
+  const cA='#c49a3a', cB='#a07822';
+  let unitSVG='';
+  let unitCount=0;
+
+  for(let c=0;c<nCourts&&unitCount<target;c++){
+    const cT=bzT+c*courtPitch;
+    const alY=cT+uD;
+    const crY=cT+bldgZ;
+    const fill=c%2===0?cA:cB;
+
+    // left building units
+    const lN=Math.min(UPB,target-unitCount);
+    for(let u=0;u<lN;u++)
+      unitSVG+=`<rect x="${(lBL+u*uW).toFixed(1)}" y="${cT.toFixed(1)}" width="${(uW-0.8).toFixed(1)}" height="${uD.toFixed(1)}" fill="${fill}" stroke="#6a4e10" stroke-width="0.7" rx="1"/>`;
+    unitCount+=lN;
+
+    // left alley
+    unitSVG+=`<rect x="${lBL.toFixed(1)}" y="${alY.toFixed(1)}" width="${bldgW.toFixed(1)}" height="${alW.toFixed(1)}" fill="#d5d0c6" opacity="0.9"/>`;
+
+    // right building units
+    const rN=Math.min(UPB,target-unitCount);
+    for(let u=0;u<rN;u++)
+      unitSVG+=`<rect x="${(rBL+u*uW).toFixed(1)}" y="${cT.toFixed(1)}" width="${(uW-0.8).toFixed(1)}" height="${uD.toFixed(1)}" fill="${fill}" stroke="#6a4e10" stroke-width="0.7" rx="1"/>`;
+    unitCount+=rN;
+
+    // right alley
+    unitSVG+=`<rect x="${rBL.toFixed(1)}" y="${alY.toFixed(1)}" width="${bldgW.toFixed(1)}" height="${alW.toFixed(1)}" fill="#d5d0c6" opacity="0.9"/>`;
+
+    // cross-road connecting L alley → spine → R alley
+    unitSVG+=`<rect x="${(lBL-fp(4)).toFixed(1)}" y="${crY.toFixed(1)}" width="${(rBR-lBL+fp(8)).toFixed(1)}" height="${brW.toFixed(1)}" fill="#c4bfb4" opacity="0.95"/>`;
+    unitSVG+=`<line x1="${(lBL+fp(2)).toFixed(1)}" y1="${(crY+brW/2).toFixed(1)}" x2="${(rBR-fp(2)).toFixed(1)}" y2="${(crY+brW/2).toFixed(1)}" stroke="#eceae0" stroke-width="0.7" stroke-dasharray="8,6"/>`;
+  }
+  // clip courts to parcel polygon
+  b+=`<g clip-path="url(#pc)">${unitSVG}</g>`;
+
+  // rear zone (below last court)
+  const rearT=bzT+nCourts*courtPitch;
+  const rearH=bzB-rearT;
+
+  // stormwater detention pond (SW quadrant of rear zone)
+  const pW=bzW*0.42, pH=Math.max(fp(80),Math.min(rearH*0.72,fp(220)));
+  const pCX=bzL+pW/2, pCY=rearT+fp(12)+pH/2;
+  if(rearH>fp(25)){
+    b+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}" rx="${(pW/2).toFixed(1)}" ry="${(pH/2).toFixed(1)}" fill="#5aaecc" stroke="#2a6e8a" stroke-width="1.5" opacity="0.85" clip-path="url(#pc)"/>`;
+    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY-7).toFixed(1)}" font-family="sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="bold">Wet Detention</text>`;
+    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY+6).toFixed(1)}" font-family="sans-serif" font-size="9" fill="white" text-anchor="middle">Pond</text>`;
   }
 
-  // Buffer zone (bottom of buildable area)
-  const bufZoneY = envB, bufZoneH = bPx;
+  // open space / amenity area (NE quadrant of rear zone)
+  const osX=bzL+pW+fp(14), osW=bzR-osX, osH=rearH-fp(10);
+  if(osW>fp(40)&&osH>fp(20)){
+    b+=`<rect x="${osX.toFixed(1)}" y="${(rearT+fp(5)).toFixed(1)}" width="${osW.toFixed(1)}" height="${osH.toFixed(1)}" fill="#72c46c" opacity="0.45" rx="6" clip-path="url(#pc)"/>`;
+    b+=`<text x="${(osX+osW/2).toFixed(1)}" y="${(rearT+fp(5)+osH/2-5).toFixed(1)}" font-family="sans-serif" font-size="9" fill="#1f5c1a" text-anchor="middle" font-weight="bold">Open Space</text>`;
+    b+=`<text x="${(osX+osW/2).toFixed(1)}" y="${(rearT+fp(5)+osH/2+8).toFixed(1)}" font-family="sans-serif" font-size="8.5" fill="#1f5c1a" text-anchor="middle">/ Amenity</text>`;
+  }
 
-  // Scale bar: pick a nice round number
-  const niceScaleFt = [25,50,100,200,500].find(v => v*scale > 40 && v*scale < 180) || 100;
-  const scaleBarPx = niceScaleFt * scale;
-  const sbY = SVG_H - 14;
+  // ── spine collector road (drawn after units so it overlaps cross-roads) ──
+  const spineBot=rearT+fp(28);
+  b+=`<rect x="${spL.toFixed(1)}" y="${bT.toFixed(1)}" width="${spW.toFixed(1)}" height="${(spineBot-bT).toFixed(1)}" fill="#c0bbb0" clip-path="url(#pc)"/>`;
+  b+=`<line x1="${midX.toFixed(1)}" y1="${bT.toFixed(1)}" x2="${midX.toFixed(1)}" y2="${spineBot.toFixed(1)}" stroke="#eceae0" stroke-width="0.8" stroke-dasharray="10,8"/>`;
 
-  // ROW strip (top of parcel)
-  const rowStripH = rowPx;
+  // cul-de-sac at south end of spine
+  const cdR=spW*1.9;
+  b+=`<circle cx="${midX.toFixed(1)}" cy="${spineBot.toFixed(1)}" r="${cdR.toFixed(1)}" fill="#c0bbb0" clip-path="url(#pc)"/>`;
+  b+=`<circle cx="${midX.toFixed(1)}" cy="${spineBot.toFixed(1)}" r="${(cdR*0.42).toFixed(1)}" fill="#72c46c" opacity="0.6" clip-path="url(#pc)"/>`;
 
+  // entry mouth through ROW strip
+  b+=`<rect x="${spL.toFixed(1)}" y="${bT.toFixed(1)}" width="${spW.toFixed(1)}" height="${rowPx.toFixed(1)}" fill="#c0bbb0"/>`;
+  b+=`<text x="${midX.toFixed(1)}" y="${(bT+rowPx*0.72).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Entry</text>`;
+
+  // ── parcel boundary (on top of all fill) ──
+  b+=`<polygon points="${pts}" fill="none" stroke="#1b3d28" stroke-width="2.5"/>`;
+
+  // ── unit count badge ──
+  b+=`<rect x="${(bzL+4).toFixed(1)}" y="${(bzT+4).toFixed(1)}" width="116" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.2" opacity="0.93"/>`;
+  b+=`<text x="${(bzL+62).toFixed(1)}" y="${(bzT+18).toFixed(1)}" font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units</text>`;
+  b+=`<text x="${(bzL+62).toFixed(1)}" y="${(bzT+28).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary</text>`;
+
+  // ── parcel dimensions ──
+  b+=`<text x="${(bL+bW/2).toFixed(1)}" y="${(bB+18).toFixed(1)}" font-family="monospace" font-size="9" fill="#555" text-anchor="middle">← ${Wft.toFixed(0)} ft →</text>`;
+  const dRX=bR+14,dRY=bT+bH/2;
+  b+=`<text x="${dRX.toFixed(1)}" y="${dRY.toFixed(1)}" font-family="monospace" font-size="9" fill="#555" text-anchor="middle" transform="rotate(90,${dRX.toFixed(1)},${dRY.toFixed(1)})">${Hft.toFixed(0)} ft</text>`;
+
+  // ── north arrow ──
+  const naX=SVG_W-PR+22, naY=HEAD+28;
+  b+=`<circle cx="${naX}" cy="${naY}" r="15" fill="white" stroke="#555" stroke-width="1.2"/>`;
+  b+=`<polygon points="${naX},${naY-11} ${naX-4},${naY+4} ${naX},${naY+2} ${naX+4},${naY+4}" fill="#1b3d28"/>`;
+  b+=`<text x="${naX}" y="${naY+10}" font-family="sans-serif" font-size="9" fill="#333" text-anchor="middle">N</text>`;
+
+  // ── scale bar ──
+  const nFt=[25,50,100,200,500].find(v=>v*scale>40&&v*scale<155)||100;
+  const sbX=PL, sbY=SVG_H-22, sbPx=nFt*scale;
+  b+=`<line x1="${sbX}" y1="${sbY}" x2="${(sbX+sbPx).toFixed(1)}" y2="${sbY}" stroke="#333" stroke-width="2.5"/>`;
+  b+=`<line x1="${sbX}" y1="${sbY-4}" x2="${sbX}" y2="${sbY+4}" stroke="#333" stroke-width="1.5"/>`;
+  b+=`<line x1="${(sbX+sbPx).toFixed(1)}" y1="${sbY-4}" x2="${(sbX+sbPx).toFixed(1)}" y2="${sbY+4}" stroke="#333" stroke-width="1.5"/>`;
+  b+=`<text x="${(sbX+sbPx/2).toFixed(1)}" y="${sbY+12}" font-family="sans-serif" font-size="8.5" fill="#333" text-anchor="middle">${nFt} ft</text>`;
+
+  // ── legend ──
+  const lX=SVG_W-PR+5, lY=HEAD+56;
+  const LI=[
+    [cA,       'Townhome unit'],
+    ['#c0bbb0','Collector road'],
+    ['#d5d0c6','Parking / alley'],
+    ['#5aaecc','Stormwater pond'],
+    ['#72c46c','Open space'],
+    ['#a8d8ea','Riparian buffer'],
+    ['#b0aa95','ROW dedication'],
+  ];
+  b+=`<rect x="${(lX-3).toFixed(1)}" y="${(lY-20).toFixed(1)}" width="${(PR-12).toFixed(1)}" height="${LI.length*17+32}" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>`;
+  b+=`<text x="${(lX+70).toFixed(1)}" y="${(lY-6).toFixed(1)}" font-family="sans-serif" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">LEGEND</text>`;
+  LI.forEach(([col,lbl],i)=>{
+    const ly=lY+i*17;
+    b+=`<rect x="${lX.toFixed(1)}" y="${ly.toFixed(1)}" width="12" height="11" fill="${col}" stroke="#aaa" stroke-width="0.5"/>`;
+    b+=`<text x="${(lX+16).toFixed(1)}" y="${(ly+9).toFixed(1)}" font-family="sans-serif" font-size="8" fill="#333">${lbl}</text>`;
+  });
+  const sbLY=lY+LI.length*17;
+  b+=`<rect x="${lX.toFixed(1)}" y="${sbLY.toFixed(1)}" width="12" height="11" fill="none" stroke="#e07820" stroke-width="1" stroke-dasharray="3,2"/>`;
+  b+=`<text x="${(lX+16).toFixed(1)}" y="${(sbLY+9).toFixed(1)}" font-family="sans-serif" font-size="8" fill="#333">Setback / buffer line</text>`;
+
+  // footer
+  b+=`<text x="${SVG_W/2}" y="${SVG_H-3}" font-family="sans-serif" font-size="7" fill="#bbb" text-anchor="middle">Conceptual only — not for engineering or permitting — export SVG and refine in AutoCAD</text>`;
+
+  const niceScale=Math.round(96/scale);
   return `<svg viewBox="0 0 ${SVG_W} ${SVG_H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${SVG_W}px" data-units="${unitCount}">
-  <!-- header -->
   <rect width="${SVG_W}" height="${HEAD}" fill="#1b3d28"/>
-  <text x="12" y="13" font-family="serif" font-size="12" fill="white" font-weight="bold">CONCEPTUAL SITE PLAN — ${opts.address || 'PIN '+opts.pin}</text>
-  <text x="12" y="25" font-family="sans-serif" font-size="9" fill="#9dd4b0">${opts.acres} ac gross · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D · 1″≈${Math.round(96/scale)} ft · NC State Plane (actual GIS boundary)</text>
-
-  <!-- site fill -->
-  <polygon points="${parcelPts}" fill="#d4f0df" stroke="none"/>
-
-  <!-- ROW dedication strip -->
-  <rect x="${bL.toFixed(1)}" y="${bT.toFixed(1)}" width="${bW.toFixed(1)}" height="${rowStripH.toFixed(1)}" fill="#aaa890" opacity="0.5"/>
-  <text x="${(bL+4).toFixed(1)}" y="${(bT+rowStripH/2+4).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#555">${opts.rowDed}′ ROW Dedication</text>
-
-  <!-- riparian buffer zone -->
-  <rect x="${bL.toFixed(1)}" y="${bufZoneY.toFixed(1)}" width="${bW.toFixed(1)}" height="${bufZoneH.toFixed(1)}" fill="#7ec8e3" opacity="0.45"/>
-  <line x1="${bL.toFixed(1)}" y1="${bufZoneY.toFixed(1)}" x2="${bR.toFixed(1)}" y2="${bufZoneY.toFixed(1)}" stroke="#2c5f8a" stroke-width="1" stroke-dasharray="6,3"/>
-  <text x="${(bL+4).toFixed(1)}" y="${(bufZoneY+11).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#2c5f8a">${opts.buffer}′ Riparian Buffer</text>
-
-  <!-- setback lines -->
-  <rect x="${envL.toFixed(1)}" y="${(bT+rowPx+fPx).toFixed(1)}" width="${envW.toFixed(1)}" height="${(envH).toFixed(1)}" fill="none" stroke="#e67e22" stroke-width="1" stroke-dasharray="5,3" opacity="0.8"/>
-  <text x="${(envL+2).toFixed(1)}" y="${(bT+rowPx+fPx-3).toFixed(1)}" font-family="sans-serif" font-size="7" fill="#e67e22">Setbacks: F${opts.fSetbk}′ S${opts.sSetbk}′ R${opts.rSetbk}′</text>
-
-  <!-- unit footprints -->
-  ${unitRects}
-
-  <!-- entry drive -->
-  <rect x="${(bL+bW/2-18).toFixed(1)}" y="${bT.toFixed(1)}" width="36" height="${(fPx+rowPx).toFixed(1)}" fill="#aaa890"/>
-  <text x="${(bL+bW/2).toFixed(1)}" y="${(bT+fPx/2+rowPx/2+4).toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">Entry</text>
-
-  <!-- parcel boundary (on top) -->
-  <polygon points="${parcelPts}" fill="none" stroke="#1b3d28" stroke-width="2.5"/>
-
-  <!-- parcel dimensions -->
-  <text x="${(bL+bW/2).toFixed(1)}" y="${(bB+18).toFixed(1)}" font-family="monospace" font-size="9" fill="#555" text-anchor="middle">← ${Wft.toFixed(0)} ft →</text>
-  <text x="${(bR+14).toFixed(1)}" y="${(bT+bH/2).toFixed(1)}" font-family="monospace" font-size="9" fill="#555" text-anchor="start" transform="rotate(90,${(bR+14).toFixed(1)},${(bT+bH/2).toFixed(1)})">${Hft.toFixed(0)} ft</text>
-
-  <!-- north arrow -->
-  <g transform="translate(${SVG_W-28},${HEAD+24})">
-    <circle cx="0" cy="0" r="14" fill="white" stroke="#555" stroke-width="1.2"/>
-    <polygon points="0,-10 -4,4 0,2 4,4" fill="#1b3d28"/>
-    <text x="0" y="9" font-family="sans-serif" font-size="9" fill="#333" text-anchor="middle">N</text>
-  </g>
-
-  <!-- scale bar -->
-  <line x1="${PAD}" y1="${sbY}" x2="${(PAD+scaleBarPx).toFixed(1)}" y2="${sbY}" stroke="#333" stroke-width="2"/>
-  <line x1="${PAD}" y1="${(sbY-4)}" x2="${PAD}" y2="${(sbY+4)}" stroke="#333" stroke-width="1.5"/>
-  <line x1="${(PAD+scaleBarPx).toFixed(1)}" y1="${(sbY-4)}" x2="${(PAD+scaleBarPx).toFixed(1)}" y2="${(sbY+4)}" stroke="#333" stroke-width="1.5"/>
-  <text x="${(PAD+scaleBarPx/2).toFixed(1)}" y="${sbY+12}" font-family="sans-serif" font-size="8.5" fill="#333" text-anchor="middle">${niceScaleFt} ft</text>
-
-  <!-- legend -->
-  <rect x="${SVG_W-145}" y="${HEAD+42}" width="136" height="102" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
-  <text x="${SVG_W-77}" y="${HEAD+56}" font-family="sans-serif" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">LEGEND</text>
-  <rect x="${SVG_W-140}" y="${HEAD+62}" width="11" height="10" fill="#b8882a"/>
-  <text x="${SVG_W-126}" y="${HEAD+71}" font-family="sans-serif" font-size="8" fill="#333">Unit (even row)</text>
-  <rect x="${SVG_W-140}" y="${HEAD+76}" width="11" height="10" fill="#d4a843"/>
-  <text x="${SVG_W-126}" y="${HEAD+85}" font-family="sans-serif" font-size="8" fill="#333">Unit (odd row)</text>
-  <rect x="${SVG_W-140}" y="${HEAD+90}" width="11" height="10" fill="#c8c0b0"/>
-  <text x="${SVG_W-126}" y="${HEAD+99}" font-family="sans-serif" font-size="8" fill="#333">Access lane</text>
-  <rect x="${SVG_W-140}" y="${HEAD+104}" width="11" height="10" fill="#7ec8e3" opacity="0.6"/>
-  <text x="${SVG_W-126}" y="${HEAD+113}" font-family="sans-serif" font-size="8" fill="#333">Riparian buffer</text>
-  <rect x="${SVG_W-140}" y="${HEAD+118}" width="11" height="10" fill="none" stroke="#e67e22" stroke-width="1" stroke-dasharray="3,2"/>
-  <text x="${SVG_W-126}" y="${HEAD+127}" font-family="sans-serif" font-size="8" fill="#333">Setback line</text>
-  <rect x="${SVG_W-140}" y="${HEAD+132}" width="11" height="10" fill="#aaa890"/>
-  <text x="${SVG_W-126}" y="${HEAD+141}" font-family="sans-serif" font-size="8" fill="#333">ROW / Entry</text>
-
-  <!-- unit count badge -->
-  <rect x="${(bL+4).toFixed(1)}" y="${(bT+rowPx+fPx+4).toFixed(1)}" width="100" height="28" rx="4" fill="white" stroke="#1b3d28" stroke-width="1" opacity="0.9"/>
-  <text x="${(bL+54).toFixed(1)}" y="${(bT+rowPx+fPx+17).toFixed(1)}" font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units</text>
-  <text x="${(bL+54).toFixed(1)}" y="${(bT+rowPx+fPx+27).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′ × ${opts.unitD}′ ea.</text>
-
-  <text x="${SVG_W/2}" y="${SVG_H-2}" font-family="sans-serif" font-size="7" fill="#bbb" text-anchor="middle">Conceptual only — not for engineering or permitting — export SVG and refine in AutoCAD</text>
+  <text x="12" y="14" font-family="serif" font-size="12" fill="white" font-weight="bold">CONCEPTUAL SITE PLAN — ${opts.address||'PIN '+opts.pin}</text>
+  <text x="12" y="26" font-family="sans-serif" font-size="9" fill="#9dd4b0">${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D · 1″≈${niceScale}ft · NC State Plane (actual GIS boundary)</text>
+  ${b}
 </svg>`;
 }
 
