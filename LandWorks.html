@@ -1946,6 +1946,23 @@ Return ONLY a JSON block — no other text:
       prog = JSON.parse(raw[0]);
     }
 
+    // Sanity-check Sport's numbers before filling in
+    const grossSqft = (parseFloat(acres)||0) * 43560;
+    const netSqft   = (prog.net_acres||0) * 43560;
+    // GBA must be units × avg_unit_sqft (not acreage-based)
+    if (prog.gba_sqft && prog.units && prog.avg_unit_sqft) {
+      const expected = prog.units * prog.avg_unit_sqft;
+      if (prog.gba_sqft > expected * 2) prog.gba_sqft = expected; // Sport multiplied wrong
+    }
+    // Impervious can't exceed 24% of gross site (Jordan Lake default)
+    if (grossSqft > 0 && prog.impervious_sqft > grossSqft * 0.24) {
+      prog.impervious_sqft = Math.round(grossSqft * 0.22);
+    }
+    // Open space can't exceed 25% of net site
+    if (netSqft > 0 && prog.open_space_sqft > netSqft * 0.25) {
+      prog.open_space_sqft = Math.round(netSqft * 0.15);
+    }
+
     // Fill in Proposed Project fields
     const setV = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
     setV('sU',  prog.units);
