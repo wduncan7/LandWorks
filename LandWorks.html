@@ -814,7 +814,12 @@ textarea{resize:vertical;min-height:68px;}
     <div>
       <h2>Wake County iMAPS</h2>
       <p>Official parcel mapping — zoning, ownership, acreage, utilities, flood zones, and more.</p>
-      <a class="imaps-btn" href="https://imaps.wake.gov" target="_blank">🔗 Open iMAPS</a>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem;">
+        <a class="imaps-btn" href="https://imaps.wake.gov" target="_blank">🔗 Open iMAPS</a>
+        <a class="imaps-btn" href="https://streamstats.usgs.gov/ss/" target="_blank" style="background:var(--sky)">💧 USGS StreamStats</a>
+        <a class="imaps-btn" href="https://www.ncdot.gov/projects/trafficimpactanalysis/" target="_blank" style="background:var(--lavender)">🚗 NCDOT TIA</a>
+        <a class="imaps-btn" href="https://www.nconemap.gov/" target="_blank" style="background:var(--pine)">🌿 NC OneMap</a>
+      </div>
     </div>
   </div>
   <div class="card">
@@ -1487,6 +1492,15 @@ async function doLookup() {
     else if (twp.includes('NEUSE') || ['RA','RAL','WC','WF','WKF','WE','WEN','ZE','ZEB','KN','KNI','RO','ROL'].includes((p.planning_juris||'').toUpperCase()))
                                           { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
 
+    // Auto-populate Statistics tab from parcel data
+    if (p.acres) {
+      const acresEl = document.getElementById('sA');
+      if (acresEl && (!acresEl.value || acresEl.value === '0' || acresEl.value === '0.00')) {
+        acresEl.value = parseFloat(p.acres).toFixed(2);
+        calcStats();
+      }
+    }
+
     // Add to multi-parcel list if not already there
     addToParcelList(p);
 
@@ -1802,11 +1816,27 @@ function setIM(k,v){if(!D.imaps)D.imaps={};D.imaps[k]=v;}
 
 function toggleSB(){document.getElementById('sidebar').classList.toggle('slim');}
 
+function mdToHtml(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^#{1,3} (.+)$/gm,'<div style="font-weight:700;margin:.4rem 0 .1rem;color:var(--forest)">$1</div>')
+    .replace(/^- (.+)$/gm,'<div style="padding-left:.8rem">• $1</div>')
+    .replace(/^\d+\. (.+)$/gm,'<div style="padding-left:.8rem">$1</div>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
 function addMsg(role, text) {
   const c = document.getElementById('aiMsgs');
   const d = document.createElement('div');
   d.className = `am ${role}`;
-  d.textContent = text;
+  if (role === 'assistant') {
+    d.innerHTML = mdToHtml(text);
+  } else {
+    d.textContent = text;
+  }
   c.appendChild(d);
   c.scrollTop = c.scrollHeight;
 }
