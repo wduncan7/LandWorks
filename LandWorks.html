@@ -556,6 +556,7 @@ textarea{resize:vertical;min-height:68px;}
   <div class="s-wrap">
     <input class="s-in" id="pinIn" type="text" placeholder="Wake County PIN (e.g. 0785123456)" onkeydown="if(event.key==='Enter')doLookup()">
     <button class="s-btn" onclick="doLookup()">Look Up</button>
+    <button class="s-btn" style="border-radius:var(--r);margin-left:6px;background:rgba(255,255,255,.15);color:var(--white);font-size:.75rem;white-space:nowrap" onclick="lookupNextPin()" title="Add a second parcel to this project">+ Add Parcel</button>
   </div>
   <div class="pin-pill" id="pinPill">
     📋 Active: <strong id="activePin"></strong>
@@ -591,6 +592,9 @@ textarea{resize:vertical;min-height:68px;}
   </div>
   <div class="pbox-data" id="pboxData"></div>
 </div>
+
+<!-- MULTI-PARCEL LIST -->
+<div id="parcelListWrap" style="display:none;padding:0 1.5rem;"></div>
 
 <!-- API INLINE -->
 <div class="api-inline" id="apiInline">
@@ -1219,6 +1223,7 @@ const PERMIT_CATS = ["All","Wake County","Watershed","NCDOT","NC DEQ","404 / 401
 // ═══════════════════════ STATE ═══════════════════════
 
 let D = {}, apiKey = "", aiHist = [], activeCat = "All", role = "developer", peSealed = false;
+let parcelList = []; // Multi-parcel tracking
 
 window.addEventListener('DOMContentLoaded', () => {
   const s = localStorage.getItem('landworksV1');
@@ -1305,12 +1310,16 @@ function activateKey(silent) {
   document.getElementById('apiInline').classList.add('hidden');
   document.getElementById('sbModel').textContent = 'Claude · Connected ✓';
   document.getElementById('sbModel').style.color = 'var(--mint)';
-  // Hide key entry area in sidebar
   const kArea = document.getElementById('sbKeyArea');
   if (kArea) kArea.style.display = 'none';
+  // Always clear the static "not connected" message
+  const msgs = document.getElementById('aiMsgs');
+  msgs.innerHTML = '';
   if (!silent) {
     addMsg('assistant', "🏗 Sport AI connected! I'm ready to help with your Wake County land development project. Enter a PIN to analyze a parcel, or ask me about permits, zoning, proforma costs, or the PE review process.");
     showToast('Sport AI connected!', 's');
+  } else {
+    addMsg('assistant', "🏗 Welcome back! Sport AI is connected. Enter a PIN to look up a parcel, or ask me anything about Wake County development.");
   }
 }
 
@@ -1330,6 +1339,73 @@ function sw(id, btn) {
   document.getElementById('panel-'+id).classList.add('on');
   if (btn && btn.classList) btn.classList.add('on');
   else document.querySelectorAll('.tab').forEach(t => { if (t.getAttribute('onclick').includes("'"+id+"'")) t.classList.add('on'); });
+}
+
+// ═══════════════════════ MULTI-PARCEL ═══════════════════════
+
+function addToParcelList(p) {
+  if (!p || !p.pin) return;
+  if (parcelList.find(x => x.pin === p.pin)) return; // already in list
+  parcelList.push(p);
+  D.parcelList = parcelList;
+  renderParcelList();
+}
+
+function removeParcel(pin) {
+  parcelList = parcelList.filter(x => x.pin !== pin);
+  D.parcelList = parcelList;
+  renderParcelList();
+}
+
+function renderParcelList() {
+  const el = document.getElementById('parcelListWrap');
+  if (!el) return;
+  if (parcelList.length === 0) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  const totalAcres = parcelList.reduce((s, p) => s + (parseFloat(p.acres)||0), 0);
+  const totalValue = parcelList.reduce((s, p) => s + (parseFloat(p.total_value)||0), 0);
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="background:var(--foam);border:1px solid var(--mint);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+        <strong style="color:var(--forest);font-size:.85rem">📌 Project Parcels (${parcelList.length})</strong>
+        <span style="font-size:.75rem;color:var(--muted)">${totalAcres.toFixed(2)} ac total · $${totalValue.toLocaleString()} combined value</span>
+      </div>
+      ${parcelList.map(p => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.3rem .5rem;background:var(--white);border-radius:5px;margin-bottom:4px;font-size:.78rem;">
+          <span style="font-family:'JetBrains Mono',monospace;color:var(--pine);font-weight:700">${p.pin}</span>
+          <span style="color:var(--ink)">${p.address||''}${p.city ? ', '+p.city : ''}</span>
+          <span style="color:var(--muted)">${p.acres||'—'} ac</span>
+          <button onclick="removeParcel('${p.pin}')" style="background:none;border:none;color:var(--rust);cursor:pointer;font-size:11px;padding:2px 5px;">✕</button>
+        </div>
+      `).join('')}
+      <button onclick="lookupNextPin()" style="margin-top:.4rem;padding:.3rem .8rem;background:var(--forest);color:var(--white);border:none;border-radius:5px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Add Another Parcel</button>
+    </div>
+  `;
+}
+
+function lookupNextPin() {
+  const pin = prompt('Enter the next Wake County PIN to add to this project:');
+  if (!pin || !pin.trim()) return;
+  document.getElementById('pinIn').value = pin.trim();
+  doLookupAdditional(pin.trim());
+}
+
+async function doLookupAdditional(pin) {
+  showToast(`Looking up PIN ${pin}...`, 'i');
+  try {
+    const resp = await fetch(`http://127.0.0.1:7474/parcel/${encodeURIComponent(pin)}`, { signal: AbortSignal.timeout(5000) });
+    if (resp.ok) {
+      const json = await resp.json();
+      if (json && json.pin) {
+        addToParcelList(json);
+        showToast(`✅ PIN ${pin} added: ${json.address||''}, ${(json.acres||0)} ac`, 's');
+        return;
+      }
+    }
+  } catch(e) {}
+  // If fetch failed, add as stub
+  addToParcelList({ pin, address: 'Manual entry', acres: 0 });
+  showToast(`PIN ${pin} added (data server lookup failed)`, 'i');
 }
 
 // ═══════════════════════ PARCEL LOOKUP ═══════════════════════
@@ -1371,7 +1447,7 @@ async function doLookup() {
       <div><div class="pd-l">Owner</div><div class="pd-v" style="font-weight:700">${p.owner||'—'}</div></div>
       <div><div class="pd-l">Address</div><div class="pd-v">${p.address||'—'} ${p.city||''}</div></div>
       <div><div class="pd-l">Acres</div><div class="pd-v">${p.acres||'—'}</div></div>
-      <div><div class="pd-l">Zoning</div><div class="pd-v" style="font-weight:700;color:var(--pine)">${p.zoning||'—'}</div></div>
+      <div><div class="pd-l">Prop Desc</div><div class="pd-v" style="font-size:.75rem">${p.propdesc||p.zoning||'—'}</div></div>
       <div><div class="pd-l">Jurisdiction</div><div class="pd-v">${p.planning_juris||'—'}</div></div>
       <div><div class="pd-l">Township</div><div class="pd-v">${p.township||'—'}</div></div>
       <div><div class="pd-l">Total Value</div><div class="pd-v">${fmt$(p.total_value)}</div></div>
@@ -1392,7 +1468,8 @@ async function doLookup() {
     if (!D.imaps) D.imaps = {};
     if (p.pin)           { D.imaps['PIN'] = p.pin; document.getElementById('pPIN').value = p.pin; }
     if (p.address)       { D.imaps['StreetAddress'] = p.address + (p.city ? ', '+p.city : ''); setField('pAddr', D.imaps['StreetAddress']); }
-    if (p.zoning)        { D.imaps['ZoningDistrict'] = p.zoning; setField('pZone', p.zoning); }
+    // Note: Wake County ArcGIS does not include zoning — user should verify in iMAPS
+    // p.zoning / p.propdesc contains the legal property description, not the zoning district
     if (p.acres)         { D.imaps['DeedAcres'] = p.acres; }
     if (p.township)      { D.imaps['Township'] = p.township; }
     if (p.planning_juris){ D.imaps['PlanningJurisdiction'] = p.planning_juris; autoSetJuris(p.planning_juris); }
@@ -1402,21 +1479,19 @@ async function doLookup() {
     if (p.last_sale_date){ D.imaps['LastSaleDate'] = p.last_sale_date; }
     if (p.owner)         { D.imaps['OwnerName'] = p.owner; }
 
+    // Watershed detection from township
+    const twp = (p.township||'').toUpperCase();
+    if (twp.includes('SWIFT CREEK'))      { setField('pBasin', 'Cape Fear Basin (Jordan Lake)'); D.imaps['Watershed'] = 'Swift Creek / Cape Fear'; }
+    else if (twp.includes('JORDAN'))      { setField('pBasin', 'Cape Fear Basin (Jordan Lake)'); D.imaps['Watershed'] = 'Cape Fear / Jordan Lake'; }
+    else if (twp.includes('FALLS'))       { setField('pBasin', 'Falls Lake Watershed'); D.imaps['Watershed'] = 'Falls Lake'; }
+    else if (twp.includes('NEUSE') || ['RA','RAL','WC','WF','WKF','WE','WEN','ZE','ZEB','KN','KNI','RO','ROL'].includes((p.planning_juris||'').toUpperCase()))
+                                          { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
+
+    // Add to multi-parcel list if not already there
+    addToParcelList(p);
+
     buildIMAPSIn();
     showToast('✅ Parcel auto-filled from Wake County database', 's');
-
-    // Sales history
-    if (p.sales_history && p.sales_history.length > 0) {
-      const sh = p.sales_history.slice(0,3).map(s =>
-        `${s.sale_date||''}: $${Number(s.sale_price||0).toLocaleString()}`
-      ).join(' · ');
-      D.imaps['SalesHistory'] = sh;
-    }
-
-    // Watershed detection
-    const twp = (p.township||'').toUpperCase();
-    if (twp.includes('SWIFT CREEK')) { setField('pBasin', 'Swift Creek Watershed'); D.imaps['Watershed'] = 'Swift Creek'; }
-    else if (twp.includes('NEUSE'))  { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
 
     if (apiKey) aiAsk(`I loaded parcel PIN ${pin} in Wake County, NC. Owner: ${p.owner||'unknown'}, ${p.acres||'?'} acres, zoning ${p.zoning||'unknown'}, ${p.planning_juris||'unincorporated Wake County'}. Total assessed value ${p.total_value ? '$'+Number(p.total_value).toLocaleString() : 'unknown'}, last sale ${p.last_sale_price ? '$'+Number(p.last_sale_price).toLocaleString()+' on '+p.last_sale_date : 'unknown'}. What are the key development opportunities and red flags for this parcel?`);
 
@@ -2318,14 +2393,21 @@ function showToast(msg,type='i'){const t=document.getElementById('toast');t.text
 function autoSetJuris(jurisCode) {
   const el = document.getElementById('pJuris');
   if (!el) return;
+  // Maps both 2-letter and 3-letter Wake County planning jurisdiction codes
   const map = {
-    'WC':'Unincorporated Wake County', 'RAL':'City of Raleigh', 'CAR':'Town of Cary',
-    'APX':'Town of Apex', 'HLS':'Town of Holly Springs', 'MOR':'Town of Morrisville',
-    'FUQ':'Town of Fuquay-Varina', 'KNI':'Town of Knightdale', 'ROL':'Town of Rolesville',
-    'WEN':'Town of Wendell', 'ZEB':'Town of Zebulon', 'WKF':'Town of Wake Forest'
+    'WC':'Unincorporated Wake County', 'RA':'City of Raleigh', 'RAL':'City of Raleigh',
+    'CA':'Town of Cary', 'CAR':'Town of Cary', 'AP':'Town of Apex', 'APX':'Town of Apex',
+    'HL':'Town of Holly Springs', 'HLS':'Town of Holly Springs',
+    'MO':'Town of Morrisville', 'MOR':'Town of Morrisville',
+    'FU':'Town of Fuquay-Varina', 'FUQ':'Town of Fuquay-Varina',
+    'KN':'Town of Knightdale', 'KNI':'Town of Knightdale',
+    'RO':'Town of Rolesville', 'ROL':'Town of Rolesville',
+    'WE':'Town of Wendell', 'WEN':'Town of Wendell',
+    'ZE':'Town of Zebulon', 'ZEB':'Town of Zebulon',
+    'WF':'Town of Wake Forest', 'WKF':'Town of Wake Forest'
   };
-  const code = (jurisCode||'').toUpperCase().slice(0,3);
-  const match = map[code] || Object.values(map).find(v => v.toUpperCase().includes(code));
+  const code = (jurisCode||'').toUpperCase().trim();
+  const match = map[code] || map[code.slice(0,3)] || map[code.slice(0,2)];
   if (match) { el.value = match; D.pJuris = match; }
 }
 
