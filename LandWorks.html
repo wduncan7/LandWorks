@@ -569,6 +569,7 @@ textarea{resize:vertical;min-height:68px;}
 <div class="tabs">
   <button class="tab on" onclick="sw('overview',this)">📋 Project Overview</button>
   <button class="tab" onclick="sw('stats',this)">📊 Statistics</button>
+  <button class="tab" onclick="sw('siteplan',this)">🗺 Site Plan</button>
   <button class="tab" onclick="sw('proforma',this)">💰 Proforma</button>
   <button class="tab" onclick="sw('permits',this)">📄 Permit Library</button>
   <button class="tab" onclick="sw('folders',this)">📁 Submittal Folders</button>
@@ -722,7 +723,42 @@ textarea{resize:vertical;min-height:68px;}
   <div class="actions">
     <button class="btn btn-p" onclick="save()">💾 Save</button>
     <button class="btn" style="background:var(--amber);color:var(--forest);font-weight:700" onclick="trialRun()">⚡ Trial Run — Auto-fill Program</button>
-    <button class="btn btn-g" onclick="aiAsk('Review my project statistics for Wake County compliance. Flag any issues with impervious surface limits, density, parking ratios, or FAR based on typical Wake County zoning standards. Existing conditions: '+document.getElementById(\'exAcres\').value+\' acres, \'+document.getElementById(\'exUse\').value+\'. Proposed: \'+document.getElementById(\'sU\').value+\' units, \'+document.getElementById(\'sA\').value+\' net acres, \'+document.getElementById(\'sI\').value+\' sq ft impervious.')">🤖 Sport: Review Stats</button>
+    <button class="btn btn-g" onclick="aiAsk('Review my project statistics for Wake County compliance. Flag any issues with impervious surface limits, density, parking ratios, or FAR based on typical Wake County zoning standards. Existing conditions: '+document.getElementById(\'exAcres\').value+\' acres, \'+document.getElementById(\'exUse\').value+\'. Proposed: \'+document.getElementById(\'sU\').value+\' units, \'+document.getElementById(\'sA\').value+\' net acres, \'+document.getElementById(\'sI\').value+\' sq ft impervious.')">🤖 Sport: Review Compliance</button>
+  </div>
+</div>
+
+<!-- ── SITE PLAN ── -->
+<div class="panel" id="panel-siteplan">
+  <div class="card">
+    <div class="card-hd card-hd-sky"><h3>📐 Site Plan Inputs <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— dimensions used to generate layout</span></h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Unit Width (ft)</label><input type="number" id="spUnitW" value="22" min="14" max="40" placeholder="22"></div>
+        <div class="f"><label>Unit Depth (ft)</label><input type="number" id="spUnitD" value="45" min="30" max="80" placeholder="45"></div>
+        <div class="f"><label>Front Setback (ft)</label><input type="number" id="spFront" value="20" min="0" placeholder="20"></div>
+        <div class="f"><label>Rear Setback (ft)</label><input type="number" id="spRear" value="20" min="0" placeholder="20"></div>
+        <div class="f"><label>Side Setback (ft)</label><input type="number" id="spSide" value="10" min="0" placeholder="10"></div>
+        <div class="f"><label>Riparian Buffer (ft)</label><input type="number" id="spBuffer" value="50" min="0" placeholder="50"></div>
+        <div class="f"><label>Access Lane Width (ft)</label><input type="number" id="spLane" value="24" min="16" placeholder="24"></div>
+        <div class="f"><label>ROW Dedication (ft)</label><input type="number" id="spROW" value="30" min="0" placeholder="30"></div>
+      </div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Geometry fetched from Wake County GIS. Layout is conceptual — export SVG and refine in AutoCAD.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><h3>🏗 Generated Site Plan</h3>
+      <span id="spStats" style="font-size:.72rem;color:var(--mint)"></span>
+    </div>
+    <div class="card-body" style="padding:.5rem;overflow-x:auto;">
+      <div id="sitePlanContainer" style="min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;">
+        Click <strong>Generate Site Plan</strong> below to fetch the actual parcel boundary from Wake County GIS and lay out units.
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" style="background:var(--sky);color:white;font-weight:700" onclick="generateSitePlan()">🗺 Generate Site Plan</button>
+    <button class="btn btn-s" onclick="exportSitePlanSVG()">⬇ Export SVG</button>
+    <button class="btn btn-g" onclick="aiAsk('Based on my site plan for '+getField('pType')+' on '+document.getElementById(\'spUnitW\').value+'ft wide × '+document.getElementById(\'spUnitD\').value+'ft deep units, '+document.getElementById(\'sU\').value+' units proposed on '+document.getElementById(\'exAcres\').value+' acres: What are the key site design considerations, typical HOA amenities for this product type, and any Wake County design standards I should know?')">🤖 Sport: Design Review</button>
   </div>
 </div>
 
@@ -1862,6 +1898,225 @@ function buildIMAPSIn() {
 }
 
 function setIM(k,v){if(!D.imaps)D.imaps={};D.imaps[k]=v;}
+
+// ═══════════════════════ SITE PLAN ═══════════════════════
+
+let _lastSitePlanSVG = '';
+
+async function generateSitePlan() {
+  const pin = document.getElementById('activePin')?.textContent || getField('pPIN');
+  if (!pin || pin === '—' || pin === '') { showToast('Look up a PIN first', 'e'); return; }
+
+  const container = document.getElementById('sitePlanContainer');
+  container.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center">⏳ Fetching parcel geometry from Wake County GIS...</div>';
+  showToast('Fetching parcel boundary...', 'i');
+
+  // Read inputs
+  const opts = {
+    pin,
+    unitW:   parseFloat(document.getElementById('spUnitW')?.value  || 22),
+    unitD:   parseFloat(document.getElementById('spUnitD')?.value  || 45),
+    fSetbk:  parseFloat(document.getElementById('spFront')?.value  || 20),
+    rSetbk:  parseFloat(document.getElementById('spRear')?.value   || 20),
+    sSetbk:  parseFloat(document.getElementById('spSide')?.value   || 10),
+    buffer:  parseFloat(document.getElementById('spBuffer')?.value || 50),
+    laneW:   parseFloat(document.getElementById('spLane')?.value   || 24),
+    rowDed:  parseFloat(document.getElementById('spROW')?.value    || 30),
+    units:   parseInt(document.getElementById('sU')?.value         || 0),
+    address: getField('pAddr') || '',
+    acres:   document.getElementById('exAcres')?.value || '?',
+    type:    getField('pType') || 'Development',
+  };
+
+  try {
+    // Fetch geometry through local proxy (avoids any CORS issues)
+    const resp = await fetch(`http://127.0.0.1:7474/geometry/${encodeURIComponent(pin)}`,
+                             { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`Geometry fetch failed: ${resp.status}`);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const rings = data.geometry?.rings;
+    if (!rings || !rings.length) throw new Error('No polygon geometry returned');
+
+    const svgStr = buildSitePlanSVG(rings, opts);
+    _lastSitePlanSVG = svgStr;
+    container.innerHTML = svgStr;
+
+    // Update stats badge
+    const unitsShown = container.querySelector('[data-units]')?.getAttribute('data-units') || opts.units;
+    document.getElementById('spStats').textContent =
+      `${opts.unitW}′W × ${opts.unitD}′D · actual parcel boundary`;
+    showToast('Site plan generated from GIS data', 's');
+
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--rust);padding:1rem;font-size:.83rem">
+      ⚠ Could not fetch geometry: ${e.message}<br>
+      <span style="color:var(--muted)">Make sure the data server is running: <code>python3 wake_county_data.py serve</code></span>
+    </div>`;
+    showToast('Geometry fetch failed', 'e');
+  }
+}
+
+function buildSitePlanSVG(rings, opts) {
+  const ring = rings[0];   // outer boundary
+
+  // Bounding box in NC State Plane feet
+  let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+  ring.forEach(([x,y]) => { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); });
+  const Wft = maxX - minX, Hft = maxY - minY;
+
+  // SVG viewport
+  const SVG_W=780, SVG_H=580, HEAD=30, PAD=55;
+  const avW = SVG_W - 2*PAD, avH = SVG_H - HEAD - PAD - 20;
+  const scale = Math.min(avW/Wft, avH/Hft);
+
+  const tx = x => ((x - minX) * scale + PAD).toFixed(2);
+  const ty = y => (HEAD + (maxY - y) * scale + 10).toFixed(2);
+  const ftToPx = ft => (ft * scale).toFixed(2);
+
+  // Parcel polygon path
+  const parcelPts = ring.map(([x,y]) => `${tx(x)},${ty(y)}`).join(' ');
+
+  // Key dimensions in px
+  const fPx  = opts.fSetbk * scale,   rPx  = opts.rSetbk * scale;
+  const sPx  = opts.sSetbk * scale,   bPx  = opts.buffer * scale;
+  const rowPx= opts.rowDed * scale;
+
+  // Bounding box corners in SVG coords
+  const bL = parseFloat(tx(minX)), bR = parseFloat(tx(maxX));
+  const bT = parseFloat(ty(maxY)), bB = parseFloat(ty(minY));
+  const bW = bR - bL, bH = bB - bT;
+
+  // Buildable envelope (simplified rectangular approximation)
+  const envL = bL + sPx, envR = bR - sPx;
+  const envT = bT + fPx + rowPx;           // front setback + ROW
+  const envB = bB - rPx - bPx;             // rear setback + buffer
+  const envW = envR - envL, envH = envB - envT;
+
+  // Unit layout
+  const uWpx = opts.unitW * scale, uDpx = opts.unitD * scale;
+  const lanePx = opts.laneW * scale;
+  const rowH = uDpx + lanePx;
+  const unitsPerRow = Math.max(1, Math.floor(envW / uWpx));
+  const numRows     = Math.max(1, Math.floor(envH / rowH));
+
+  let unitRects = '', unitCount = 0;
+  const target = opts.units || unitsPerRow * numRows;
+
+  for (let row = 0; row < numRows && unitCount < target; row++) {
+    const y0 = envT + row * rowH;
+    const rowUnits = Math.min(unitsPerRow, target - unitCount);
+    const rowTotalW = rowUnits * uWpx;
+    const xOff = envL + (envW - rowTotalW) / 2;
+    for (let col = 0; col < rowUnits; col++) {
+      const x0 = xOff + col * uWpx;
+      const fill = row % 2 === 0 ? '#b8882a' : '#d4a843';
+      unitRects += `<rect x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${(uWpx-1).toFixed(1)}" height="${uDpx.toFixed(1)}" fill="${fill}" stroke="#7a5c10" stroke-width="0.6" rx="1"/>`;
+    }
+    // Access lane
+    if (row < numRows - 1) {
+      const lY = y0 + uDpx;
+      unitRects += `<rect x="${envL.toFixed(1)}" y="${lY.toFixed(1)}" width="${envW.toFixed(1)}" height="${lanePx.toFixed(1)}" fill="#c8c0b0" opacity="0.8"/>`;
+    }
+    unitCount += rowUnits;
+  }
+
+  // Buffer zone (bottom of buildable area)
+  const bufZoneY = envB, bufZoneH = bPx;
+
+  // Scale bar: pick a nice round number
+  const niceScaleFt = [25,50,100,200,500].find(v => v*scale > 40 && v*scale < 180) || 100;
+  const scaleBarPx = niceScaleFt * scale;
+  const sbY = SVG_H - 14;
+
+  // ROW strip (top of parcel)
+  const rowStripH = rowPx;
+
+  return `<svg viewBox="0 0 ${SVG_W} ${SVG_H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${SVG_W}px" data-units="${unitCount}">
+  <!-- header -->
+  <rect width="${SVG_W}" height="${HEAD}" fill="#1b3d28"/>
+  <text x="12" y="13" font-family="serif" font-size="12" fill="white" font-weight="bold">CONCEPTUAL SITE PLAN — ${opts.address || 'PIN '+opts.pin}</text>
+  <text x="12" y="25" font-family="sans-serif" font-size="9" fill="#9dd4b0">${opts.acres} ac gross · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D · 1″≈${Math.round(96/scale)} ft · NC State Plane (actual GIS boundary)</text>
+
+  <!-- site fill -->
+  <polygon points="${parcelPts}" fill="#d4f0df" stroke="none"/>
+
+  <!-- ROW dedication strip -->
+  <rect x="${bL.toFixed(1)}" y="${bT.toFixed(1)}" width="${bW.toFixed(1)}" height="${rowStripH.toFixed(1)}" fill="#aaa890" opacity="0.5"/>
+  <text x="${(bL+4).toFixed(1)}" y="${(bT+rowStripH/2+4).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#555">${opts.rowDed}′ ROW Dedication</text>
+
+  <!-- riparian buffer zone -->
+  <rect x="${bL.toFixed(1)}" y="${bufZoneY.toFixed(1)}" width="${bW.toFixed(1)}" height="${bufZoneH.toFixed(1)}" fill="#7ec8e3" opacity="0.45"/>
+  <line x1="${bL.toFixed(1)}" y1="${bufZoneY.toFixed(1)}" x2="${bR.toFixed(1)}" y2="${bufZoneY.toFixed(1)}" stroke="#2c5f8a" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="${(bL+4).toFixed(1)}" y="${(bufZoneY+11).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#2c5f8a">${opts.buffer}′ Riparian Buffer</text>
+
+  <!-- setback lines -->
+  <rect x="${envL.toFixed(1)}" y="${(bT+rowPx+fPx).toFixed(1)}" width="${envW.toFixed(1)}" height="${(envH).toFixed(1)}" fill="none" stroke="#e67e22" stroke-width="1" stroke-dasharray="5,3" opacity="0.8"/>
+  <text x="${(envL+2).toFixed(1)}" y="${(bT+rowPx+fPx-3).toFixed(1)}" font-family="sans-serif" font-size="7" fill="#e67e22">Setbacks: F${opts.fSetbk}′ S${opts.sSetbk}′ R${opts.rSetbk}′</text>
+
+  <!-- unit footprints -->
+  ${unitRects}
+
+  <!-- entry drive -->
+  <rect x="${(bL+bW/2-18).toFixed(1)}" y="${bT.toFixed(1)}" width="36" height="${(fPx+rowPx).toFixed(1)}" fill="#aaa890"/>
+  <text x="${(bL+bW/2).toFixed(1)}" y="${(bT+fPx/2+rowPx/2+4).toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">Entry</text>
+
+  <!-- parcel boundary (on top) -->
+  <polygon points="${parcelPts}" fill="none" stroke="#1b3d28" stroke-width="2.5"/>
+
+  <!-- parcel dimensions -->
+  <text x="${(bL+bW/2).toFixed(1)}" y="${(bB+18).toFixed(1)}" font-family="monospace" font-size="9" fill="#555" text-anchor="middle">← ${Wft.toFixed(0)} ft →</text>
+  <text x="${(bR+14).toFixed(1)}" y="${(bT+bH/2).toFixed(1)}" font-family="monospace" font-size="9" fill="#555" text-anchor="start" transform="rotate(90,${(bR+14).toFixed(1)},${(bT+bH/2).toFixed(1)})">${Hft.toFixed(0)} ft</text>
+
+  <!-- north arrow -->
+  <g transform="translate(${SVG_W-28},${HEAD+24})">
+    <circle cx="0" cy="0" r="14" fill="white" stroke="#555" stroke-width="1.2"/>
+    <polygon points="0,-10 -4,4 0,2 4,4" fill="#1b3d28"/>
+    <text x="0" y="9" font-family="sans-serif" font-size="9" fill="#333" text-anchor="middle">N</text>
+  </g>
+
+  <!-- scale bar -->
+  <line x1="${PAD}" y1="${sbY}" x2="${(PAD+scaleBarPx).toFixed(1)}" y2="${sbY}" stroke="#333" stroke-width="2"/>
+  <line x1="${PAD}" y1="${(sbY-4)}" x2="${PAD}" y2="${(sbY+4)}" stroke="#333" stroke-width="1.5"/>
+  <line x1="${(PAD+scaleBarPx).toFixed(1)}" y1="${(sbY-4)}" x2="${(PAD+scaleBarPx).toFixed(1)}" y2="${(sbY+4)}" stroke="#333" stroke-width="1.5"/>
+  <text x="${(PAD+scaleBarPx/2).toFixed(1)}" y="${sbY+12}" font-family="sans-serif" font-size="8.5" fill="#333" text-anchor="middle">${niceScaleFt} ft</text>
+
+  <!-- legend -->
+  <rect x="${SVG_W-145}" y="${HEAD+42}" width="136" height="102" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="${SVG_W-77}" y="${HEAD+56}" font-family="sans-serif" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">LEGEND</text>
+  <rect x="${SVG_W-140}" y="${HEAD+62}" width="11" height="10" fill="#b8882a"/>
+  <text x="${SVG_W-126}" y="${HEAD+71}" font-family="sans-serif" font-size="8" fill="#333">Unit (even row)</text>
+  <rect x="${SVG_W-140}" y="${HEAD+76}" width="11" height="10" fill="#d4a843"/>
+  <text x="${SVG_W-126}" y="${HEAD+85}" font-family="sans-serif" font-size="8" fill="#333">Unit (odd row)</text>
+  <rect x="${SVG_W-140}" y="${HEAD+90}" width="11" height="10" fill="#c8c0b0"/>
+  <text x="${SVG_W-126}" y="${HEAD+99}" font-family="sans-serif" font-size="8" fill="#333">Access lane</text>
+  <rect x="${SVG_W-140}" y="${HEAD+104}" width="11" height="10" fill="#7ec8e3" opacity="0.6"/>
+  <text x="${SVG_W-126}" y="${HEAD+113}" font-family="sans-serif" font-size="8" fill="#333">Riparian buffer</text>
+  <rect x="${SVG_W-140}" y="${HEAD+118}" width="11" height="10" fill="none" stroke="#e67e22" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="${SVG_W-126}" y="${HEAD+127}" font-family="sans-serif" font-size="8" fill="#333">Setback line</text>
+  <rect x="${SVG_W-140}" y="${HEAD+132}" width="11" height="10" fill="#aaa890"/>
+  <text x="${SVG_W-126}" y="${HEAD+141}" font-family="sans-serif" font-size="8" fill="#333">ROW / Entry</text>
+
+  <!-- unit count badge -->
+  <rect x="${(bL+4).toFixed(1)}" y="${(bT+rowPx+fPx+4).toFixed(1)}" width="100" height="28" rx="4" fill="white" stroke="#1b3d28" stroke-width="1" opacity="0.9"/>
+  <text x="${(bL+54).toFixed(1)}" y="${(bT+rowPx+fPx+17).toFixed(1)}" font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units</text>
+  <text x="${(bL+54).toFixed(1)}" y="${(bT+rowPx+fPx+27).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′ × ${opts.unitD}′ ea.</text>
+
+  <text x="${SVG_W/2}" y="${SVG_H-2}" font-family="sans-serif" font-size="7" fill="#bbb" text-anchor="middle">Conceptual only — not for engineering or permitting — export SVG and refine in AutoCAD</text>
+</svg>`;
+}
+
+function exportSitePlanSVG() {
+  if (!_lastSitePlanSVG) { showToast('Generate a site plan first', 'e'); return; }
+  const pin = document.getElementById('activePin')?.textContent || 'parcel';
+  const blob = new Blob([_lastSitePlanSVG], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SitePlan_${pin}_${new Date().toISOString().slice(0,10)}.svg`;
+  a.click();
+  showToast('SVG exported — open in AutoCAD or Inkscape', 's');
+}
 
 // ═══════════════════════ TRIAL RUN ═══════════════════════
 

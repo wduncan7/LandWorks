@@ -266,6 +266,36 @@ def serve():
     def ping():
         return jsonify({"status": "ok", "service": "wake_county_data", "port": API_PORT})
 
+    @app.route("/geometry/<pin>")
+    def get_geometry(pin):
+        """Fetch parcel boundary polygon from Wake County ArcGIS in NC State Plane feet."""
+        try:
+            import requests as _req
+        except ImportError:
+            return jsonify({"error": "requests not installed"}), 500
+        params = {
+            "where":          f"PIN_NUM='{pin}'",
+            "outFields":      "PIN_NUM,DEED_ACRES,SITE_ADDRESS,CITY_DECODE",
+            "returnGeometry": "true",
+            "outSR":          "2264",   # NC State Plane, US Feet
+            "f":              "json",
+        }
+        try:
+            resp = _req.get(PARCEL_SERVICE_URL, params=params,
+                            headers={"User-Agent": "Mozilla/5.0 LandWorks/1.0"}, timeout=20)
+            data = resp.json()
+            features = data.get("features", [])
+            if not features:
+                return jsonify({"error": f"PIN {pin} not found"}), 404
+            feat = features[0]
+            return jsonify({
+                "pin":        pin,
+                "geometry":   feat.get("geometry", {}),
+                "attributes": feat.get("attributes", {}),
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     @app.route("/parcel/<pin>")
     def get_parcel(pin):
         force = request.args.get("force", "false").lower() == "true"
