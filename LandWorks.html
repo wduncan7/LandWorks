@@ -668,6 +668,7 @@ textarea{resize:vertical;min-height:68px;}
   <div class="actions">
     <button class="btn btn-p" onclick="save()">💾 Save Project</button>
     <button class="btn btn-s" onclick="exportAll()">📤 Export</button>
+    <button class="btn" style="background:var(--amber);color:var(--forest);font-weight:700" onclick="trialRun()">⚡ Trial Run</button>
     <button class="btn btn-g" onclick="aiAsk('Analyze my project overview and tell me: 1) Key risks, 2) Permits I will need, 3) Recommended next steps. Be specific to Wake County.')">🤖 Sport: Full Analysis</button>
     <span class="ok" id="saveOk">✓ Saved</span>
   </div>
@@ -720,6 +721,7 @@ textarea{resize:vertical;min-height:68px;}
 
   <div class="actions">
     <button class="btn btn-p" onclick="save()">💾 Save</button>
+    <button class="btn" style="background:var(--amber);color:var(--forest);font-weight:700" onclick="trialRun()">⚡ Trial Run — Auto-fill Program</button>
     <button class="btn btn-g" onclick="aiAsk('Review my project statistics for Wake County compliance. Flag any issues with impervious surface limits, density, parking ratios, or FAR based on typical Wake County zoning standards. Existing conditions: '+document.getElementById(\'exAcres\').value+\' acres, \'+document.getElementById(\'exUse\').value+\'. Proposed: \'+document.getElementById(\'sU\').value+\' units, \'+document.getElementById(\'sA\').value+\' net acres, \'+document.getElementById(\'sI\').value+\' sq ft impervious.')">🤖 Sport: Review Stats</button>
   </div>
 </div>
@@ -1860,6 +1862,124 @@ function buildIMAPSIn() {
 }
 
 function setIM(k,v){if(!D.imaps)D.imaps={};D.imaps[k]=v;}
+
+// ═══════════════════════ TRIAL RUN ═══════════════════════
+
+async function trialRun() {
+  const pin = document.getElementById('activePin')?.textContent || getField('pPIN');
+  const type = getField('pType');
+  if (!pin || pin === '—' || pin === '') { showToast('Look up a PIN first', 'e'); return; }
+  if (!type) { showToast('Select a Project Type in Project Overview first', 'e'); return; }
+  if (!apiKey) { showToast('Connect your Claude API key first', 'e'); return; }
+
+  // Open sidebar and show loading
+  const sb = document.getElementById('sidebar');
+  if (sb.classList.contains('slim')) sb.classList.remove('slim');
+  addMsg('assistant', `⏳ Generating ${type} development program for PIN ${pin}...`);
+  showToast('Sport is analyzing the site...', 'i');
+
+  const acres   = document.getElementById('exAcres')?.value || '?';
+  const juris   = getField('pJuris') || 'Unincorporated Wake County';
+  const basin   = getField('pBasin') || 'Unknown';
+  const lclass  = document.getElementById('exLandClass')?.value || '?';
+  const useEx   = document.getElementById('exUse')?.value || 'Unknown';
+  const zoning  = getField('pZone') || 'Unknown — needs iMAPS verification';
+  const address = getField('pAddr') || '';
+
+  const prompt = `You are a Wake County, NC land development expert. Analyze this parcel and generate a realistic ${type} development program.
+
+PARCEL:
+- PIN: ${pin} | Address: ${address}
+- Gross Site: ${acres} acres | Jurisdiction: ${juris}
+- Watershed: ${basin} | Land Class: ${lclass} | Existing Use: ${useEx}
+- Zoning: ${zoning}
+
+Rules to apply:
+- Swift Creek / Jordan Lake watershed = 24% impervious hard cap unless engineered SW controls used
+- Falls Lake watershed = 12% impervious low-density or 24% high-density with controls
+- Raleigh UDO townhome: min 1.5 parking/unit, typical density 6-14 du/ac
+- Wake County: typical SFD density 1-4 du/ac, apartments up to 20+ du/ac with proper zoning
+- Deduct ~10-15% of gross site for ROW dedication
+- Deduct riparian buffers (50ft each side of streams) and wetlands (estimate 5-10% of site if near streams)
+- Open space: typically 10-15% of net site for residential
+
+Return ONLY a JSON block — no other text:
+\`\`\`json
+{
+  "units": <integer>,
+  "net_acres": <decimal 2 places>,
+  "gba_sqft": <integer>,
+  "parking": <integer>,
+  "impervious_sqft": <integer>,
+  "road_frontage_ft": <integer>,
+  "open_space_sqft": <integer>,
+  "avg_unit_sqft": <integer>,
+  "density_note": "<1 sentence>",
+  "key_constraints": ["<constraint>", "<constraint>", "<constraint>"],
+  "recommended_zoning": "<Raleigh UDO or Wake County zoning district>",
+  "summary": "<2-3 sentences plain English>"
+}
+\`\`\``;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 900,
+        messages: [{ role: 'user', content: prompt }] })
+    });
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+
+    // Extract JSON from code block or raw object
+    const m = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/) || [null, text];
+    let prog;
+    try { prog = JSON.parse(m[1]); } catch(e) {
+      const raw = text.match(/\{[\s\S]*\}/);
+      if (!raw) { addMsg('sys', 'Sport could not parse a program. Try again or adjust project type.'); return; }
+      prog = JSON.parse(raw[0]);
+    }
+
+    // Fill in Proposed Project fields
+    const setV = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+    setV('sU',  prog.units);
+    setV('sA',  prog.net_acres);
+    setV('sG',  prog.gba_sqft);
+    setV('sP',  prog.parking);
+    setV('sI',  prog.impervious_sqft);
+    setV('sF',  prog.road_frontage_ft);
+    setV('sOS', prog.open_space_sqft);
+    setV('sUS', prog.avg_unit_sqft);
+    calcStats();
+
+    // Build sidebar message
+    const msgs = document.getElementById('aiMsgs');
+    msgs.lastChild?.remove(); // remove the "generating..." message
+    let msg = `**Trial Run: ${type} — ${prog.units} units**\n\n${prog.summary}\n\n`;
+    if (prog.density_note) msg += `**Density:** ${prog.density_note}\n\n`;
+    if (prog.key_constraints?.length) msg += `**Key Constraints:**\n${prog.key_constraints.map(c=>'- '+c).join('\n')}\n\n`;
+    if (prog.recommended_zoning) msg += `**Zoning needed:** ${prog.recommended_zoning}\n\n`;
+    msg += `_All values pre-filled in Statistics. Adjust any field or tell me what to change._`;
+    addMsg('assistant', msg);
+
+    // Switch to stats tab so user sees the filled fields
+    sw('stats', null);
+    document.querySelectorAll('.tab').forEach(t => { if (t.getAttribute('onclick')?.includes("'stats'")) t.classList.add('on'); });
+
+    showToast(`✅ Trial run: ${prog.units} units pre-filled`, 's');
+    save();
+
+  } catch(err) {
+    addMsg('sys', `Trial run error: ${err.message}`);
+    showToast('Trial run failed', 'e');
+  }
+}
 
 // ═══════════════════════ AI ═══════════════════════
 
