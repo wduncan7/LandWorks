@@ -1431,6 +1431,34 @@ function removeParcel(pin) {
   renderParcelList();
 }
 
+function syncExistingConditions() {
+  // Aggregate Existing Conditions across ALL parcels in the project list
+  if (parcelList.length === 0) return;
+  const setRO = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+  const totalAcres     = parcelList.reduce((s, p) => s + (parseFloat(p.acres)||0), 0);
+  const totalSqft      = Math.round(totalAcres * 43560);
+  const totalAssessed  = parcelList.reduce((s, p) => s + (parseFloat(p.total_value)||0), 0);
+  const totalLandVal   = parcelList.reduce((s, p) => s + (parseFloat(p.land_value)||0), 0);
+  const totalBldgVal   = parcelList.reduce((s, p) => s + (parseFloat(p.building_value)||0), 0);
+  const totalSalePrice = parcelList.reduce((s, p) => s + (parseFloat(p.last_sale_price)||0), 0);
+  // Text fields: show combined or "Various" when different across parcels
+  const uniq = (key) => { const vals = [...new Set(parcelList.map(p=>p[key]).filter(Boolean))]; return vals.length === 1 ? vals[0] : vals.length > 1 ? vals.join(' / ') : ''; };
+  setRO('exAcres',     totalAcres.toFixed(2));
+  setRO('exSqft',      totalSqft.toLocaleString() + ' sq ft');
+  setRO('exTotalVal',  totalAssessed  ? '$' + totalAssessed.toLocaleString()  : '');
+  setRO('exLandVal',   totalLandVal   ? '$' + totalLandVal.toLocaleString()   : '');
+  setRO('exBldgVal',   totalBldgVal   ? '$' + totalBldgVal.toLocaleString()   : '');
+  setRO('exSalePrice', totalSalePrice ? '$' + totalSalePrice.toLocaleString() : '');
+  setRO('exLandClass', uniq('land_class'));
+  setRO('exUse',       uniq('type_and_use'));
+  setRO('exOwner',     uniq('owner'));
+  setRO('exSaleDate',  uniq('last_sale_date'));
+  if (parcelList.length > 1) { setRO('exHeated', '—'); setRO('exYearBuilt', '—'); }
+  // Update proposed net site area with total acreage
+  const propAcres = document.getElementById('sA');
+  if (propAcres) { propAcres.value = totalAcres.toFixed(2); calcStats(); }
+}
+
 function renderParcelList() {
   const el = document.getElementById('parcelListWrap');
   if (!el) return;
@@ -1440,6 +1468,8 @@ function renderParcelList() {
   if (parcelList.length === 0) { el.innerHTML = ''; el.style.display = 'none'; return; }
   const totalAcres = parcelList.reduce((s, p) => s + (parseFloat(p.acres)||0), 0);
   const totalValue = parcelList.reduce((s, p) => s + (parseFloat(p.total_value)||0), 0);
+  // Sync Existing Conditions to combined totals
+  syncExistingConditions();
   el.style.display = 'block';
   el.innerHTML = `
     <div style="background:var(--foam);border:1px solid var(--mint);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:1rem;">
@@ -2081,8 +2111,8 @@ function buildSitePlanSVG(parcelsData, opts) {
   const devZoneH = numRows * bldgPitch - bldgGap;
   const devL     = midX - devZoneW / 2;
   const devR     = devL + devZoneW;
-  const boulY    = bzT + fp(28);             // entry boulevard top Y
-  const devTop   = boulY + entryW + fp(10);  // buildings start below boulevard
+  const boulY    = bzT + fp(55);             // entry boulevard top Y (55ft approach from setback line)
+  const devTop   = boulY + entryW + fp(22);  // buildings start 22ft below boulevard (stoop + landscape)
   const devBot   = devTop + devZoneH;
   const cdCY_ref = devBot + cdRad + fp(12);  // cul-de-sac centre Y (shared reference)
   const rearTop  = cdCY_ref + cdRad + fp(18);
