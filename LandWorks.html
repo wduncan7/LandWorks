@@ -2049,52 +2049,53 @@ function buildSitePlanSVG(parcelsData, opts) {
   const bzT=bT+rowPx+fPx, bzB=bB-rPx-bufPx;
   const bzW=bzR-bzL, bzH=bzB-bzT;
 
-  // ── Unit & road dims ──
-  // Units stack N↔S (long axis of building runs N-S, units attached side by side).
-  // uH = one unit's N-S height (the 22-ft "width" of each attached unit)
-  // uD = one unit's E-W depth (45 ft, from street face to alley)
-  const UPB     = 6;                   // units per building (6-plex)
-  const uH      = fp(opts.unitW);      // N-S per unit  (22 ft → ~11 px)
-  const uD      = fp(opts.unitD);      // E-W depth     (45 ft → ~23 px)
-  const bldgH   = UPB * uH;           // full building height N-S (132 ft)
-  const allyW   = fp(20);              // private rear alley
-  const collW   = fp(26);             // central collector road
-  const bldgGap = fp(14);             // gap between successive buildings (utility/landscape)
-  const bldgPitch = bldgH + bldgGap; // N-S pitch between building rows
+  // ── Unit & road dims (MULTI-SPINE layout) ──
+  // One "spine module" = [alley 20ft][bldg 45ft][collector 26ft][bldg 45ft][alley 20ft] = 156ft wide
+  // Multiple spines placed side-by-side fill wide parcels; connected by an E-W entry boulevard at north
+  const UPB       = 6;
+  const uH        = fp(opts.unitW);          // N-S per unit (22 ft)
+  const uD        = fp(opts.unitD);          // E-W building depth (45 ft)
+  const bldgH     = UPB * uH;               // full building height N-S (132 ft)
+  const allyW     = fp(20);                 // private rear alley
+  const collW     = fp(26);                 // spine collector road width
+  const bldgGap   = fp(14);                 // landscape gap between rows
+  const bldgPitch = bldgH + bldgGap;
+  const spineGap  = fp(30);                 // landscape strip between adjacent spines
+  const entryW    = fp(26);                 // E-W entry boulevard width
+  const cdRad     = collW * 2.0;            // cul-de-sac radius (52 ft → 104 ft dia, fire OK)
+  const modW      = allyW*2 + uD*2 + collW; // one full spine module width (156 ft)
 
-  // ── Cluster geometry: centred on parcel midX ──
-  // Order E→W: [open space] [alley] [building] [collector] [building] [alley] [open space]
-  const collL  = midX - collW/2;
-  const collR  = midX + collW/2;
-  const lBldgR = collL;               // left building's street face = left edge of collector
-  const lBldgL = lBldgR - uD;        // left building's alley face
-  const lAllyL = lBldgL - allyW;     // left alley outer edge
-  const rBldgL = collR;              // right building's street face
-  const rBldgR = rBldgL + uD;       // right building's alley face
-  const rAllyR = rBldgR + allyW;    // right alley outer edge
+  // ── Number of spines: scales with unit count × parcel width ──
+  const target          = Math.max(1, opts.units || 96);
+  const numBldgs        = Math.ceil(target / UPB);
+  const idealCols       = Math.max(1, Math.ceil(Math.sqrt(numBldgs / 2)));
+  const maxColsByWidth  = Math.max(1, Math.floor(bzW / (modW + spineGap)));
+  const numCols         = Math.min(idealCols, maxColsByWidth);
 
-  // ── How many buildings per side to hit target unit count ──
-  const target      = opts.units || 96;
-  const numBldgs    = Math.ceil(target / UPB);   // total buildings needed
-  const numPerSide  = Math.ceil(numBldgs / 2);   // buildings per side of collector
+  // ── Buildings per spine (rows) ──
+  const bldgsPerColTotal = Math.ceil(numBldgs / numCols);
+  const numRows          = Math.ceil(bldgsPerColTotal / 2);
 
-  // Development zone: starts fp(50) south of bzT (entry approach), then buildings stack south
-  const devTop      = bzT + fp(50);
-  const devH        = numPerSide * bldgPitch - bldgGap;  // total height of building cluster
+  // ── Development zone: spans numCols × modW + gaps, centred on parcel ──
+  const devZoneW = numCols * modW + (numCols - 1) * spineGap;
+  const devZoneH = numRows * bldgPitch - bldgGap;
+  const devL     = midX - devZoneW / 2;
+  const devR     = devL + devZoneW;
+  const boulY    = bzT + fp(28);             // entry boulevard top Y
+  const devTop   = boulY + entryW + fp(10);  // buildings start below boulevard
+  const devBot   = devTop + devZoneH;
+  const cdCY_ref = devBot + cdRad + fp(12);  // cul-de-sac centre Y (shared reference)
+  const rearTop  = cdCY_ref + cdRad + fp(18);
+  const rearH    = Math.max(0, bzB - rearTop - fp(8));
 
-  // Rear zone: between end of dev cluster and bzB
-  const devBot      = devTop + devH;
-  const rearZoneTop = devBot + fp(50);  // fp(50) below last building = cul-de-sac space
-  const rearZoneH   = bzB - rearZoneTop;
+  // ── Open-space flanks E/W of dev zone ──
+  const flankLW = devL - bzL;
+  const flankRW = bzR - devR;
 
-  // ── Open-space flanks E/W of cluster ──
-  const flankLW = lAllyL - bzL;      // left flank width
-  const flankRW = bzR - rAllyR;      // right flank width
-
-  // ── Start building SVG ──
+  // ── Start SVG ──
   let b = '';
 
-  // Clip path = union of ALL parcel rings (multiple polygons = union in SVG nonzero fill rule)
+  // Clip path + fill patterns
   const clipPolygons = parcelPolygons.map(({rings}) =>
     rings.map(r => `<polygon points="${r}"/>`).join('')
   ).join('');
@@ -2103,12 +2104,13 @@ function buildSitePlanSVG(parcelsData, opts) {
     <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="8" stroke="#5a9e4a" stroke-width="1.2" opacity="0.35"/>
     </pattern>
+    <pattern id="pkg" patternUnits="userSpaceOnUse" width="6" height="6">
+      <line x1="0" y1="6" x2="6" y2="0" stroke="#aaa" stroke-width="0.7" opacity="0.7"/>
+    </pattern>
   </defs>`;
 
-  // ── Base site fill (one fill rect per parcel) ──
-  parcelPolygons.forEach(({rings}) => {
-    rings.forEach(r => { b+=`<polygon points="${r}" fill="#d8f0e2"/>`; });
-  });
+  // Base site fill
+  parcelPolygons.forEach(({rings}) => { rings.forEach(r => { b+=`<polygon points="${r}" fill="#d8f0e2"/>`; }); });
 
   // ── Riparian buffer ──
   b+=`<rect x="${bL.toFixed(1)}" y="${bzB.toFixed(1)}" width="${bW.toFixed(1)}" height="${(bB-bzB+rPx).toFixed(1)}"
@@ -2131,176 +2133,203 @@ function buildSitePlanSVG(parcelsData, opts) {
       font-family="sans-serif" font-size="7.5" fill="#e07820">
       F${opts.fSetbk}′  S${opts.sSetbk}′  R${opts.rSetbk}′ setbacks</text>`;
 
-  // ── Conservation / open-space flanks (E & W of cluster) ──
-  if(flankLW > fp(20)){
+  // ── Conservation / open-space flanks ──
+  if(flankLW > fp(15)){
     b+=`<rect x="${bzL.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankLW.toFixed(1)}" height="${bzH.toFixed(1)}"
         fill="url(#hatch)" clip-path="url(#pc)"/>`;
     b+=`<rect x="${bzL.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankLW.toFixed(1)}" height="${bzH.toFixed(1)}"
         fill="#72c46c" opacity="0.28" clip-path="url(#pc)"/>`;
-    const flkMX=(bzL+flankLW/2).toFixed(1), flkMY=(bzT+bzH/2).toFixed(1);
-    b+=`<text x="${flkMX}" y="${flkMY}" font-family="sans-serif" font-size="9" fill="#1f5c1a"
-        text-anchor="middle" font-weight="bold" transform="rotate(-90,${flkMX},${flkMY})">Conservation / Open Space</text>`;
+    if(flankLW > fp(60)){
+      const flkMX=(bzL+flankLW/2).toFixed(1), flkMY=(bzT+bzH/2).toFixed(1);
+      b+=`<text x="${flkMX}" y="${flkMY}" font-family="sans-serif" font-size="9" fill="#1f5c1a"
+          text-anchor="middle" font-weight="bold" transform="rotate(-90,${flkMX},${flkMY})">Conservation / Open Space</text>`;
+    }
   }
-  if(flankRW > fp(20)){
-    const fx=rAllyR;
-    b+=`<rect x="${fx.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankRW.toFixed(1)}" height="${bzH.toFixed(1)}"
+  if(flankRW > fp(15)){
+    b+=`<rect x="${devR.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankRW.toFixed(1)}" height="${bzH.toFixed(1)}"
         fill="url(#hatch)" clip-path="url(#pc)"/>`;
-    b+=`<rect x="${fx.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankRW.toFixed(1)}" height="${bzH.toFixed(1)}"
+    b+=`<rect x="${devR.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankRW.toFixed(1)}" height="${bzH.toFixed(1)}"
         fill="#72c46c" opacity="0.28" clip-path="url(#pc)"/>`;
-    const flkMX=(fx+flankRW/2).toFixed(1), flkMY=(bzT+bzH/2).toFixed(1);
-    b+=`<text x="${flkMX}" y="${flkMY}" font-family="sans-serif" font-size="9" fill="#1f5c1a"
-        text-anchor="middle" font-weight="bold" transform="rotate(90,${flkMX},${flkMY})">Conservation / Open Space</text>`;
+    if(flankRW > fp(60)){
+      const flkMX=(devR+flankRW/2).toFixed(1), flkMY=(bzT+bzH/2).toFixed(1);
+      b+=`<text x="${flkMX}" y="${flkMY}" font-family="sans-serif" font-size="9" fill="#1f5c1a"
+          text-anchor="middle" font-weight="bold" transform="rotate(90,${flkMX},${flkMY})">Conservation / Open Space</text>`;
+    }
   }
 
-  // ── Rear zone: stormwater pond + amenity ──
-  if(rearZoneH > fp(20)){
-    // Stormwater pond (centred on cluster, oval)
-    const pW = (rAllyR-lAllyL)*0.85;
-    const pH = Math.min(rearZoneH*0.78, fp(240));
-    const pCX = midX, pCY = rearZoneTop + fp(8) + pH/2;
+  // ── Stormwater pond + HOA amenity (rear zone below cul-de-sacs) ──
+  if(rearH > fp(30)){
+    const pW = Math.min(devZoneW * 0.65, fp(380));
+    const pH = Math.min(rearH * 0.72, fp(160));
+    const pCX = midX, pCY = rearTop + fp(8) + pH/2;
     b+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}" rx="${(pW/2).toFixed(1)}" ry="${(pH/2).toFixed(1)}"
         fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88" clip-path="url(#pc)"/>`;
-    // Ripple lines inside pond
     for(let ri=1;ri<=3;ri++){
       b+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}"
           rx="${(pW/2*0.25*ri).toFixed(1)}" ry="${(pH/2*0.25*ri).toFixed(1)}"
           fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
     }
-    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY-8).toFixed(1)}"
+    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY-7).toFixed(1)}"
         font-family="sans-serif" font-size="9.5" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
-    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY+6).toFixed(1)}"
-        font-family="sans-serif" font-size="8" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
-
-    // Amenity/HOA green area (right of pond, if room)
-    const amX=pCX+pW/2+fp(10), amW=bzR-amX-fp(5);
-    if(amW > fp(30)){
-      b+=`<rect x="${amX.toFixed(1)}" y="${(rearZoneTop+fp(5)).toFixed(1)}"
-          width="${amW.toFixed(1)}" height="${(rearZoneH-fp(10)).toFixed(1)}"
+    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY+7).toFixed(1)}"
+        font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
+    const amX=pCX+pW/2+fp(12), amW=devR-amX-fp(5);
+    if(amW > fp(35)){
+      b+=`<rect x="${amX.toFixed(1)}" y="${(rearTop+fp(4)).toFixed(1)}"
+          width="${amW.toFixed(1)}" height="${(rearH-fp(8)).toFixed(1)}"
           fill="#5cb85c" opacity="0.4" rx="5" clip-path="url(#pc)"/>`;
-      b+=`<text x="${(amX+amW/2).toFixed(1)}" y="${(rearZoneTop+rearZoneH/2).toFixed(1)}"
-          font-family="sans-serif" font-size="8" fill="#1f5c1a" text-anchor="middle" font-weight="bold">HOA</text>`;
-      b+=`<text x="${(amX+amW/2).toFixed(1)}" y="${(rearZoneTop+rearZoneH/2+11).toFixed(1)}"
-          font-family="sans-serif" font-size="8" fill="#1f5c1a" text-anchor="middle">Amenity</text>`;
+      b+=`<text x="${(amX+amW/2).toFixed(1)}" y="${(rearTop+rearH/2+4).toFixed(1)}"
+          font-family="sans-serif" font-size="8" fill="#1f5c1a" text-anchor="middle" font-weight="bold">HOA Amenity</text>`;
     }
   }
 
-  // ── Private alleys (full height of dev zone, behind buildings) ──
-  b+=`<rect x="${lAllyL.toFixed(1)}" y="${devTop.toFixed(1)}"
-      width="${allyW.toFixed(1)}" height="${devH.toFixed(1)}" fill="#d0cbc0" opacity="0.9" clip-path="url(#pc)"/>`;
-  b+=`<rect x="${rBldgR.toFixed(1)}" y="${devTop.toFixed(1)}"
-      width="${allyW.toFixed(1)}" height="${devH.toFixed(1)}" fill="#d0cbc0" opacity="0.9" clip-path="url(#pc)"/>`;
-  // Alley labels (rotated)
-  const aLX=(lAllyL+allyW/2).toFixed(1), aLY=(devTop+devH/2).toFixed(1);
-  b+=`<text x="${aLX}" y="${aLY}" font-family="sans-serif" font-size="6.5" fill="#888"
-      text-anchor="middle" transform="rotate(-90,${aLX},${aLY})">PRIVATE ALLEY — 20′</text>`;
-  const aRX=(rBldgR+allyW/2).toFixed(1), aRY=(devTop+devH/2).toFixed(1);
-  b+=`<text x="${aRX}" y="${aRY}" font-family="sans-serif" font-size="6.5" fill="#888"
-      text-anchor="middle" transform="rotate(90,${aRX},${aRY})">PRIVATE ALLEY — 20′</text>`;
+  // ── Entry boulevard (E-W, connects all spines) ──
+  b+=`<rect x="${devL.toFixed(1)}" y="${boulY.toFixed(1)}" width="${devZoneW.toFixed(1)}" height="${entryW.toFixed(1)}"
+      fill="#bebab0" clip-path="url(#pc)"/>`;
+  b+=`<line x1="${devL.toFixed(1)}" y1="${(boulY+entryW/2).toFixed(1)}" x2="${devR.toFixed(1)}" y2="${(boulY+entryW/2).toFixed(1)}"
+      stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="10,7"/>`;
+  b+=`<text x="${midX.toFixed(1)}" y="${(boulY+entryW*0.7).toFixed(1)}"
+      font-family="sans-serif" font-size="6.5" fill="#666" text-anchor="middle">ENTRY BOULEVARD — 26′</text>`;
 
-  // ── Buildings: left column (face east toward collector) ──
+  // ── Main entry drive (from ROW to boulevard) ──
+  const entRW = fp(28);
+  b+=`<rect x="${(midX-entRW/2).toFixed(1)}" y="${bT.toFixed(1)}"
+      width="${entRW.toFixed(1)}" height="${(boulY-bT+entryW).toFixed(1)}"
+      fill="#bebab0" clip-path="url(#pc)"/>`;
+  b+=`<line x1="${midX.toFixed(1)}" y1="${bT.toFixed(1)}" x2="${midX.toFixed(1)}" y2="${boulY.toFixed(1)}"
+      stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="8,6"/>`;
+
+  // Entry gate monuments
+  [-1,1].forEach(side=>{
+    const gx = midX + side*(entRW/2+fp(2));
+    b+=`<rect x="${(gx-(side<0?fp(8):0)).toFixed(1)}" y="${(boulY-fp(14)).toFixed(1)}"
+        width="${fp(8).toFixed(1)}" height="${fp(12).toFixed(1)}"
+        fill="#d4a843" stroke="#5a3e08" stroke-width="0.8" rx="1"/>`;
+  });
+  b+=`<text x="${midX.toFixed(1)}" y="${(boulY-fp(2)).toFixed(1)}"
+      font-family="sans-serif" font-size="6" fill="#5a3e08" text-anchor="middle">Entry Gate</text>`;
+
+  // Clubhouse (left of entry, in approach zone)
+  const clbX=devL+fp(5), clbW=fp(48), clbH=fp(28), clbY=boulY-fp(36);
+  if(clbY > bzT){
+    b+=`<rect x="${clbX.toFixed(1)}" y="${clbY.toFixed(1)}"
+        width="${clbW.toFixed(1)}" height="${clbH.toFixed(1)}"
+        fill="#5a4a7a" opacity="0.75" rx="3" clip-path="url(#pc)"/>`;
+    b+=`<text x="${(clbX+clbW/2).toFixed(1)}" y="${(clbY+clbH/2+4).toFixed(1)}"
+        font-family="sans-serif" font-size="7" fill="white" text-anchor="middle" font-weight="bold">Clubhouse</text>`;
+  }
+
+  // ── Per-spine buildings, roads, cul-de-sacs ──
   const cA='#c49a3a', cB='#a87c22';
   let bldgSVG='', unitCount=0, bnum=101;
 
-  for(let i=0; i<numPerSide; i++){
-    const by = devTop + i*bldgPitch;
-    const bh = Math.min(bldgH, (target-unitCount)*uH);
-    if(bh <= 0) break;
-    const fill = i%2===0 ? cA : cB;
+  for(let c=0; c<numCols; c++){
+    const spL  = devL + c*(modW+spineGap);  // left outer edge of this module
+    const aLIR = spL + allyW;               // left alley inner edge
+    const lBL  = aLIR;                      // left bldg left
+    const lBR  = lBL + uD;                  // left bldg right = collector left
+    const cCL  = lBR;                       // collector left
+    const cCR  = cCL + collW;              // collector right
+    const rBL  = cCR;                       // right bldg left
+    const rBR  = rBL + uD;                 // right bldg right
+    const aROR = rBR + allyW;              // right alley outer edge
+    const cMX  = (cCL+cCR)/2;             // spine centre X
 
-    // Left building
-    if(unitCount < target){
-      const lU = Math.min(UPB, target-unitCount);
-      const lh = lU*uH;
-      bldgSVG+=`<rect x="${lBldgL.toFixed(1)}" y="${by.toFixed(1)}"
-          width="${uD.toFixed(1)}" height="${lh.toFixed(1)}"
-          fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
-      // Unit party-wall dividers
-      for(let u=1;u<lU;u++)
-        bldgSVG+=`<line x1="${lBldgL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
-            x2="${lBldgR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
-            stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
-      // Building label
-      bldgSVG+=`<text x="${(lBldgL+uD/2).toFixed(1)}" y="${(by+lh/2+4).toFixed(1)}"
-          font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
-          opacity="0.9">${bnum++}</text>`;
-      unitCount += lU;
+    // Alleys
+    bldgSVG+=`<rect x="${spL.toFixed(1)}" y="${devTop.toFixed(1)}"
+        width="${allyW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#d0cbc0" opacity="0.9"/>`;
+    bldgSVG+=`<rect x="${rBR.toFixed(1)}" y="${devTop.toFixed(1)}"
+        width="${allyW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#d0cbc0" opacity="0.9"/>`;
+
+    // Collector road
+    bldgSVG+=`<rect x="${cCL.toFixed(1)}" y="${devTop.toFixed(1)}"
+        width="${collW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#bebab0"/>`;
+    bldgSVG+=`<line x1="${cMX.toFixed(1)}" y1="${devTop.toFixed(1)}" x2="${cMX.toFixed(1)}" y2="${devBot.toFixed(1)}"
+        stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="10,8"/>`;
+    // Road label (only if tall enough)
+    if(devZoneH > fp(100)){
+      const rLY=(devTop+devZoneH/2).toFixed(1);
+      bldgSVG+=`<text x="${cMX.toFixed(1)}" y="${rLY}" font-family="sans-serif" font-size="6.5" fill="#888"
+          text-anchor="middle" transform="rotate(90,${cMX.toFixed(1)},${rLY})">SPINE ${c+1} — 26′ R/W</text>`;
     }
 
-    // Right building
-    if(unitCount < target){
-      const rU = Math.min(UPB, target-unitCount);
-      const rh = rU*uH;
-      bldgSVG+=`<rect x="${rBldgL.toFixed(1)}" y="${by.toFixed(1)}"
-          width="${uD.toFixed(1)}" height="${rh.toFixed(1)}"
-          fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
-      for(let u=1;u<rU;u++)
-        bldgSVG+=`<line x1="${rBldgL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
-            x2="${rBldgR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
-            stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
-      bldgSVG+=`<text x="${(rBldgL+uD/2).toFixed(1)}" y="${(by+rh/2+4).toFixed(1)}"
-          font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
-          opacity="0.9">${bnum++}</text>`;
-      unitCount += rU;
+    // Building rows
+    for(let r=0; r<numRows; r++){
+      const by  = devTop + r*bldgPitch;
+      const fill = r%2===0 ? cA : cB;
+
+      // Left building
+      if(unitCount < target){
+        const lU=Math.min(UPB, target-unitCount), lh=lU*uH;
+        bldgSVG+=`<rect x="${lBL.toFixed(1)}" y="${by.toFixed(1)}"
+            width="${uD.toFixed(1)}" height="${lh.toFixed(1)}"
+            fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
+        for(let u=1;u<lU;u++)
+          bldgSVG+=`<line x1="${lBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
+              x2="${lBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
+              stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+        bldgSVG+=`<text x="${(lBL+uD/2).toFixed(1)}" y="${(by+lh/2+4).toFixed(1)}"
+            font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
+            opacity="0.9">${bnum++}</text>`;
+        unitCount+=lU;
+      }
+      // Right building
+      if(unitCount < target){
+        const rU=Math.min(UPB, target-unitCount), rh=rU*uH;
+        bldgSVG+=`<rect x="${rBL.toFixed(1)}" y="${by.toFixed(1)}"
+            width="${uD.toFixed(1)}" height="${rh.toFixed(1)}"
+            fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
+        for(let u=1;u<rU;u++)
+          bldgSVG+=`<line x1="${rBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
+              x2="${rBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
+              stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+        bldgSVG+=`<text x="${(rBL+uD/2).toFixed(1)}" y="${(by+rh/2+4).toFixed(1)}"
+            font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
+            opacity="0.9">${bnum++}</text>`;
+        unitCount+=rU;
+      }
+      // Cross-connector / landscape strip between rows
+      if(r < numRows-1){
+        const gY=by+bldgH;
+        bldgSVG+=`<rect x="${spL.toFixed(1)}" y="${gY.toFixed(1)}"
+            width="${modW.toFixed(1)}" height="${bldgGap.toFixed(1)}" fill="#c8c2b5" opacity="0.65"/>`;
+      }
     }
 
-    // Gap cross-connector road (between buildings)
-    if(i < numPerSide-1){
-      const gY = by + bldgH;
-      bldgSVG+=`<rect x="${lAllyL.toFixed(1)}" y="${gY.toFixed(1)}"
-          width="${(rAllyR-lAllyL).toFixed(1)}" height="${bldgGap.toFixed(1)}"
-          fill="#c8c2b5" opacity="0.7"/>`;
+    // Alley labels
+    const allyMY=(devTop+devZoneH/2).toFixed(1);
+    bldgSVG+=`<text x="${(spL+allyW/2).toFixed(1)}" y="${allyMY}" font-family="sans-serif" font-size="5.5" fill="#999"
+        text-anchor="middle" transform="rotate(-90,${(spL+allyW/2).toFixed(1)},${allyMY})">PRIV. ALLEY 20′</text>`;
+    bldgSVG+=`<text x="${(rBR+allyW/2).toFixed(1)}" y="${allyMY}" font-family="sans-serif" font-size="5.5" fill="#999"
+        text-anchor="middle" transform="rotate(90,${(rBR+allyW/2).toFixed(1)},${allyMY})">PRIV. ALLEY 20′</text>`;
+
+    // Visitor parking pockets (between boulevard and first building row)
+    const pkH=fp(16), pkW=fp(20), pkY=boulY+entryW+fp(4);
+    if(pkY+pkH < devTop){
+      b+=`<rect x="${(cCL-pkW-fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
+          width="${pkW.toFixed(1)}" height="${pkH.toFixed(1)}"
+          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2" clip-path="url(#pc)"/>`;
+      b+=`<text x="${(cCL-pkW/2-fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
+          font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
+      b+=`<rect x="${(cCR+fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
+          width="${pkW.toFixed(1)}" height="${pkH.toFixed(1)}"
+          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2" clip-path="url(#pc)"/>`;
+      b+=`<text x="${(cCR+pkW/2+fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
+          font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
     }
+
+    // Cul-de-sac at south end of each spine
+    b+=`<rect x="${cCL.toFixed(1)}" y="${devBot.toFixed(1)}"
+        width="${collW.toFixed(1)}" height="${(cdCY_ref-devBot+cdRad*0.5).toFixed(1)}"
+        fill="#bebab0" clip-path="url(#pc)"/>`;
+    b+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${cdRad.toFixed(1)}"
+        fill="#bebab0" clip-path="url(#pc)"/>`;
+    b+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${(cdRad*0.38).toFixed(1)}"
+        fill="#5cb85c" opacity="0.55" clip-path="url(#pc)"/>`;
+    b+=`<text x="${cMX.toFixed(1)}" y="${(cdCY_ref+3).toFixed(1)}"
+        font-family="sans-serif" font-size="5.5" fill="#1f5c1a" text-anchor="middle">island</text>`;
   }
   b+=`<g clip-path="url(#pc)">${bldgSVG}</g>`;
-
-  // ── Visitor parking bays flanking entry ──
-  const pkgY = bzT + fp(12);
-  const pkgH = fp(28), pkgW = fp(22);
-  if(pkgY+pkgH < devTop){
-    // Left parking
-    b+=`<rect x="${(lAllyL).toFixed(1)}" y="${pkgY.toFixed(1)}"
-        width="${pkgW.toFixed(1)}" height="${pkgH.toFixed(1)}"
-        fill="#d0cbc0" stroke="#aaa" stroke-width="0.7" rx="2" clip-path="url(#pc)"/>`;
-    b+=`<text x="${(lAllyL+pkgW/2).toFixed(1)}" y="${(pkgY+pkgH/2+4).toFixed(1)}"
-        font-family="sans-serif" font-size="6.5" fill="#666" text-anchor="middle">Parking</text>`;
-    // Right parking
-    b+=`<rect x="${(rAllyR-pkgW).toFixed(1)}" y="${pkgY.toFixed(1)}"
-        width="${pkgW.toFixed(1)}" height="${pkgH.toFixed(1)}"
-        fill="#d0cbc0" stroke="#aaa" stroke-width="0.7" rx="2" clip-path="url(#pc)"/>`;
-    b+=`<text x="${(rAllyR-pkgW/2).toFixed(1)}" y="${(pkgY+pkgH/2+4).toFixed(1)}"
-        font-family="sans-serif" font-size="6.5" fill="#666" text-anchor="middle">Parking</text>`;
-  }
-
-  // ── Collector road (N-S, drawn on top of everything in cluster) ──
-  const collTop = bT;
-  const collBot = devBot + fp(55);  // extends past buildings to cul-de-sac
-  b+=`<rect x="${collL.toFixed(1)}" y="${collTop.toFixed(1)}"
-      width="${collW.toFixed(1)}" height="${(collBot-collTop).toFixed(1)}"
-      fill="#bebab0" clip-path="url(#pc)"/>`;
-  // Centreline dashes
-  b+=`<line x1="${midX.toFixed(1)}" y1="${collTop.toFixed(1)}" x2="${midX.toFixed(1)}" y2="${collBot.toFixed(1)}"
-      stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="12,9"/>`;
-  // Road label
-  b+=`<text x="${midX.toFixed(1)}" y="${(devTop+devH/2).toFixed(1)}"
-      font-family="sans-serif" font-size="7" fill="#888"
-      text-anchor="middle" transform="rotate(90,${midX.toFixed(1)},${(devTop+devH/2).toFixed(1)})">COLLECTOR — 26′ R/W</text>`;
-
-  // ── Cul-de-sac ──
-  const cdCY = collBot;
-  const cdR  = collW * 2.0;          // 52-ft radius = 104-ft diameter (fire code OK)
-  const cdRI = cdR * 0.38;           // landscaped centre island
-  b+=`<circle cx="${midX.toFixed(1)}" cy="${cdCY.toFixed(1)}" r="${cdR.toFixed(1)}"
-      fill="#bebab0" clip-path="url(#pc)"/>`;
-  b+=`<circle cx="${midX.toFixed(1)}" cy="${cdCY.toFixed(1)}" r="${cdRI.toFixed(1)}"
-      fill="#5cb85c" opacity="0.55" clip-path="url(#pc)"/>`;
-  b+=`<text x="${midX.toFixed(1)}" y="${(cdCY+3.5).toFixed(1)}"
-      font-family="sans-serif" font-size="6.5" fill="#1f5c1a" text-anchor="middle">island</text>`;
-
-  // ── Entry drive through ROW strip ──
-  b+=`<rect x="${collL.toFixed(1)}" y="${bT.toFixed(1)}"
-      width="${collW.toFixed(1)}" height="${rowPx.toFixed(1)}" fill="#bebab0"/>`;
-  b+=`<text x="${midX.toFixed(1)}" y="${(bT+rowPx*0.7).toFixed(1)}"
-      font-family="sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Entry</text>`;
 
   // ── Parcel boundaries (on top) — each parcel gets its own colour ──
   const parcelColors = ['#1b3d28','#2c5f8a','#8b3a2a','#5a4a7a','#b8882a'];
@@ -2325,11 +2354,11 @@ function buildSitePlanSVG(parcelsData, opts) {
   });
 
   // ── Unit count badge ──
-  b+=`<rect x="${(bzL+4).toFixed(1)}" y="${(bzT+4).toFixed(1)}"
-      width="122" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.3" opacity="0.94"/>`;
-  b+=`<text x="${(bzL+65).toFixed(1)}" y="${(bzT+18).toFixed(1)}"
-      font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units</text>`;
-  b+=`<text x="${(bzL+65).toFixed(1)}" y="${(bzT+28).toFixed(1)}"
+  b+=`<rect x="${(bL+4).toFixed(1)}" y="${(bT+4).toFixed(1)}"
+      width="138" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.3" opacity="0.94"/>`;
+  b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+18).toFixed(1)}"
+      font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units · ${numCols} spine${numCols>1?'s':''}</text>`;
+  b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+28).toFixed(1)}"
       font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary</text>`;
 
   // ── Parcel dimensions ──
