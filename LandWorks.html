@@ -624,8 +624,10 @@ textarea{resize:vertical;min-height:68px;}
             <option>Commercial</option><option>Mixed Use</option>
           </select>
         </div>
-        <div class="f"><label>Parcel ID (PIN)</label>
-          <input type="text" id="pPIN" placeholder="Wake County PIN" oninput="document.getElementById('pinIn').value=this.value">
+        <div class="f w2"><label>Parcel ID(s) / PIN(s) <span style="color:var(--muted);font-size:.65rem;font-weight:400">— auto-populated from parcel list above</span></label>
+          <input type="text" id="pPIN" placeholder="Add parcels above — PINs appear here" readonly
+            style="background:var(--foam);cursor:default;color:var(--ink)"
+            title="PINs are set by the parcel lookup. Add parcels using '+ Add Another Parcel' above.">
         </div>
         <div class="f w2"><label>Project Address</label><input type="text" id="pAddr" placeholder="Street address, Wake County, NC"></div>
         <div class="f w2"><label>Zoning District <span style="color:var(--amber);font-size:.65rem;font-weight:400">— look up in iMAPS (not available from Wake County ArcGIS)</span></label><input type="text" id="pZone" placeholder="Open iMAPS → click parcel → Zoning Classification layer"></div>
@@ -1432,6 +1434,9 @@ function removeParcel(pin) {
 function renderParcelList() {
   const el = document.getElementById('parcelListWrap');
   if (!el) return;
+  // Always sync the pPIN readonly field
+  const pPINEl = document.getElementById('pPIN');
+  if (pPINEl) pPINEl.value = parcelList.map(p => p.pin).join(', ');
   if (parcelList.length === 0) { el.innerHTML = ''; el.style.display = 'none'; return; }
   const totalAcres = parcelList.reduce((s, p) => s + (parseFloat(p.acres)||0), 0);
   const totalValue = parcelList.reduce((s, p) => s + (parseFloat(p.total_value)||0), 0);
@@ -1904,16 +1909,25 @@ function setIM(k,v){if(!D.imaps)D.imaps={};D.imaps[k]=v;}
 let _lastSitePlanSVG = '';
 
 async function generateSitePlan() {
-  const pin = document.getElementById('activePin')?.textContent || getField('pPIN');
-  if (!pin || pin === '—' || pin === '') { showToast('Look up a PIN first', 'e'); return; }
+  // Build list of PINs — from parcelList (multi-parcel) or fallback to activePin
+  let pins = parcelList.length > 0
+    ? parcelList.map(p => p.pin)
+    : [document.getElementById('activePin')?.textContent || getField('pPIN')].filter(p => p && p !== '—' && p !== '');
+
+  if (pins.length === 0) { showToast('Look up a PIN first', 'e'); return; }
 
   const container = document.getElementById('sitePlanContainer');
-  container.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center">⏳ Fetching parcel geometry from Wake County GIS...</div>';
-  showToast('Fetching parcel boundary...', 'i');
+  const pinLabel = pins.length === 1 ? pins[0] : `${pins.length} parcels`;
+  container.innerHTML = `<div style="color:var(--muted);padding:2rem;text-align:center">⏳ Fetching geometry for ${pinLabel} from Wake County GIS...</div>`;
+  showToast(`Fetching ${pins.length} parcel boundary${pins.length>1?'s':''}...`, 'i');
 
-  // Read inputs
+  // Combined acreage from parcelList; fallback to single field
+  const totalAcres = parcelList.length > 0
+    ? parcelList.reduce((s, p) => s + (parseFloat(p.acres)||0), 0).toFixed(2)
+    : (document.getElementById('exAcres')?.value || '?');
+
   const opts = {
-    pin,
+    pin:     pins.join(', '),
     unitW:   parseFloat(document.getElementById('spUnitW')?.value  || 22),
     unitD:   parseFloat(document.getElementById('spUnitD')?.value  || 45),
     fSetbk:  parseFloat(document.getElementById('spFront')?.value  || 20),
@@ -1923,23 +1937,27 @@ async function generateSitePlan() {
     laneW:   parseFloat(document.getElementById('spLane')?.value   || 24),
     rowDed:  parseFloat(document.getElementById('spROW')?.value    || 30),
     units:   parseInt(document.getElementById('sU')?.value         || 0),
-    address: getField('pAddr') || '',
-    acres:   document.getElementById('exAcres')?.value || '?',
+    address: parcelList.length > 0
+               ? parcelList.map(p => p.address||p.pin).join(' + ')
+               : (getField('pAddr') || ''),
+    acres:   totalAcres,
     type:    getField('pType') || 'Development',
   };
 
   try {
-    // Fetch geometry through local proxy (avoids any CORS issues)
-    const resp = await fetch(`http://127.0.0.1:7474/geometry/${encodeURIComponent(pin)}`,
-                             { signal: AbortSignal.timeout(15000) });
-    if (!resp.ok) throw new Error(`Geometry fetch failed: ${resp.status}`);
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error);
+    // Fetch all parcel geometries in parallel
+    const parcelsData = await Promise.all(pins.map(async pin => {
+      const resp = await fetch(`http://127.0.0.1:7474/geometry/${encodeURIComponent(pin)}`,
+                               { signal: AbortSignal.timeout(15000) });
+      if (!resp.ok) throw new Error(`Geometry fetch failed for ${pin}: HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data.error) throw new Error(`${pin}: ${data.error}`);
+      const rings = data.geometry?.rings;
+      if (!rings || !rings.length) throw new Error(`No polygon geometry returned for ${pin}`);
+      return { pin, rings };
+    }));
 
-    const rings = data.geometry?.rings;
-    if (!rings || !rings.length) throw new Error('No polygon geometry returned');
-
-    const svgStr = buildSitePlanSVG(rings, opts);
+    const svgStr = buildSitePlanSVG(parcelsData, opts);
     _lastSitePlanSVG = svgStr;
     container.innerHTML = svgStr;
 
@@ -1952,8 +1970,8 @@ async function generateSitePlan() {
     });
 
     document.getElementById('spStats').textContent =
-      `${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary`;
-    showToast('Site plan generated from GIS data', 's');
+      `${pins.length} parcel${pins.length>1?'s':''} · ${totalAcres} ac · ${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary`;
+    showToast(`Site plan generated for ${pins.length} parcel${pins.length>1?'s':''}`, 's');
 
   } catch(e) {
     container.innerHTML = `<div style="color:var(--rust);padding:1rem;font-size:.83rem">
@@ -1964,18 +1982,19 @@ async function generateSitePlan() {
   }
 }
 
-function buildSitePlanSVG(rings, opts) {
+function buildSitePlanSVG(parcelsData, opts) {
   /*
-   * LAYOUT: Alley-Loaded Double-Loaded Collector
+   * LAYOUT: Alley-Loaded Double-Loaded Collector (multi-parcel aware)
    * ─────────────────────────────────────────────
    * Based on real NC townhome development patterns:
    *  • One central N-S collector road (26 ft) runs from entry to cul-de-sac
    *  • 6-unit buildings flank both sides of the collector
    *  • 20 ft private alleys run behind each building row (garage access)
-   *  • Compact cluster centered in parcel → conservation flanks on E/W
+   *  • Compact cluster centered in combined parcel bbox → conservation flanks on E/W
    *  • Wet detention pond at south end (topographic low → feeds riparian buffer)
    *  • Visitor parking bays at entry
    *  • Building numbers and unit dividers shown
+   *  • Multiple parcels drawn with distinct boundary colors
    *
    * Cost-effectiveness drivers:
    *  • Shared alley = ~30% less road paving vs. loop layout
@@ -1983,10 +2002,19 @@ function buildSitePlanSVG(rings, opts) {
    *  • Large conservation flanks may qualify for density bonus / stormwater credit
    *  • Single pond at low point = simplest stormwater compliance path
    */
-  const ring = rings[0];
 
+  // Support legacy single-ring call: buildSitePlanSVG(rings, opts)
+  if (Array.isArray(parcelsData) && parcelsData.length > 0 && Array.isArray(parcelsData[0])) {
+    parcelsData = [{ pin: opts.pin || 'PIN', rings: parcelsData }];
+  }
+
+  // ── Combined bounding box across ALL parcel rings ──
   let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
-  ring.forEach(([x,y]) => { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); });
+  parcelsData.forEach(({rings}) => {
+    rings.forEach(ring => {
+      ring.forEach(([x,y]) => { minX=Math.min(minX,x); maxX=Math.max(maxX,x); minY=Math.min(minY,y); maxY=Math.max(maxY,y); });
+    });
+  });
   const Wft = maxX-minX, Hft = maxY-minY;
 
   // ── Viewport: wide enough for legend sidebar, tall for portrait parcels ──
@@ -1998,10 +2026,19 @@ function buildSitePlanSVG(rings, opts) {
   const tx=x=>PL+(x-minX)*scale;
   const ty=y=>HEAD+PT+(maxY-y)*scale;
 
-  const pts=ring.map(([x,y])=>`${tx(x).toFixed(2)},${ty(y).toFixed(2)}`).join(' ');
+  // Pre-compute point strings for every ring of every parcel
+  const parcelPolygons = parcelsData.map(({pin, rings}) => ({
+    pin,
+    rings: rings.map(ring => ring.map(([x,y]) => `${tx(x).toFixed(2)},${ty(y).toFixed(2)}`).join(' '))
+  }));
+
+  // Combined bounding box in SVG coords (used for layout)
   const bL=tx(minX), bR=tx(maxX), bT=ty(maxY), bB=ty(minY);
   const bW=bR-bL, bH=bB-bT;
   const midX=bL+bW/2;
+
+  // Outer-ring points of first parcel (for single-parcel backward compat labels)
+  const pts = parcelPolygons[0].rings[0];
 
   // ── Setback / buffer dims in px ──
   const rowPx=fp(opts.rowDed), bufPx=fp(opts.buffer);
@@ -2057,16 +2094,21 @@ function buildSitePlanSVG(rings, opts) {
   // ── Start building SVG ──
   let b = '';
 
-  // Clip path = actual parcel boundary
+  // Clip path = union of ALL parcel rings (multiple polygons = union in SVG nonzero fill rule)
+  const clipPolygons = parcelPolygons.map(({rings}) =>
+    rings.map(r => `<polygon points="${r}"/>`).join('')
+  ).join('');
   b+=`<defs>
-    <clipPath id="pc"><polygon points="${pts}"/></clipPath>
+    <clipPath id="pc">${clipPolygons}</clipPath>
     <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="8" stroke="#5a9e4a" stroke-width="1.2" opacity="0.35"/>
     </pattern>
   </defs>`;
 
-  // ── Base site fill ──
-  b+=`<polygon points="${pts}" fill="#d8f0e2"/>`;
+  // ── Base site fill (one fill rect per parcel) ──
+  parcelPolygons.forEach(({rings}) => {
+    rings.forEach(r => { b+=`<polygon points="${r}" fill="#d8f0e2"/>`; });
+  });
 
   // ── Riparian buffer ──
   b+=`<rect x="${bL.toFixed(1)}" y="${bzB.toFixed(1)}" width="${bW.toFixed(1)}" height="${(bB-bzB+rPx).toFixed(1)}"
@@ -2260,8 +2302,27 @@ function buildSitePlanSVG(rings, opts) {
   b+=`<text x="${midX.toFixed(1)}" y="${(bT+rowPx*0.7).toFixed(1)}"
       font-family="sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Entry</text>`;
 
-  // ── Parcel boundary (on top) ──
-  b+=`<polygon points="${pts}" fill="none" stroke="#1b3d28" stroke-width="2.5"/>`;
+  // ── Parcel boundaries (on top) — each parcel gets its own colour ──
+  const parcelColors = ['#1b3d28','#2c5f8a','#8b3a2a','#5a4a7a','#b8882a'];
+  parcelPolygons.forEach(({pin, rings}, pi) => {
+    const stroke = parcelColors[pi % parcelColors.length];
+    rings.forEach((r,ri) => {
+      b+=`<polygon points="${r}" fill="none" stroke="${stroke}" stroke-width="${pi===0?2.5:2}"
+          stroke-dasharray="${pi===0?'none':'8,4'}"/>`;
+    });
+    // Pin label near top of each parcel (except first which already has header)
+    if(pi > 0 && rings[0]){
+      // estimate centroid of first ring for label placement
+      const rpts = parcelsData[pi].rings[0];
+      const xs = rpts.map(([x])=>tx(x)), ys = rpts.map(([,y])=>ty(y));
+      const cx = (Math.min(...xs)+Math.max(...xs))/2;
+      const cy = Math.min(...ys)+18;
+      b+=`<rect x="${cx-28}" y="${cy-10}" width="56" height="14" rx="3"
+          fill="${stroke}" opacity="0.85"/>`;
+      b+=`<text x="${cx}" y="${cy+1}" font-family="monospace" font-size="7.5" fill="white"
+          text-anchor="middle" font-weight="bold">PIN ${pin}</text>`;
+    }
+  });
 
   // ── Unit count badge ──
   b+=`<rect x="${(bzL+4).toFixed(1)}" y="${(bzT+4).toFixed(1)}"
@@ -2352,13 +2413,15 @@ function buildSitePlanSVG(rings, opts) {
       text-anchor="middle">Conceptual only — not for engineering or permitting — export SVG and refine in AutoCAD</text>`;
 
   const niceScale=Math.round(96/scale);
+  const parcelCountLabel = parcelsData.length > 1 ? `${parcelsData.length} parcels` : `PIN ${parcelsData[0].pin}`;
+  const titleLine = opts.address || parcelCountLabel;
   return `<svg viewBox="0 0 ${SVG_W} ${SVG_H}" xmlns="http://www.w3.org/2000/svg"
     style="width:100%;max-width:${SVG_W}px" data-units="${unitCount}">
   <rect width="${SVG_W}" height="${HEAD}" fill="#1b3d28"/>
   <text x="12" y="14" font-family="serif" font-size="12" fill="white" font-weight="bold">
-    CONCEPTUAL SITE PLAN — ${opts.address||'PIN '+opts.pin}</text>
+    CONCEPTUAL SITE PLAN — ${titleLine}</text>
   <text x="12" y="26" font-family="sans-serif" font-size="9" fill="#9dd4b0">
-    ${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D alley-loaded collector · 1″≈${niceScale}ft · NC State Plane</text>
+    ${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D alley-loaded collector · 1″≈${niceScale}ft · NC State Plane${parcelsData.length>1?' · '+parcelsData.map(p=>p.pin).join(', '):''}</text>
   ${b}
 </svg>`;
 }
