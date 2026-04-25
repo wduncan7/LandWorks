@@ -2070,6 +2070,39 @@ function buildSitePlanSVG(parcelsData, opts) {
   // Outer-ring points of first parcel (for single-parcel backward compat labels)
   const pts = parcelPolygons[0].rings[0];
 
+  // ── Parcel polygon arrays in SVG coords — used for building containment checks ──
+  const svgRings = parcelsData.flatMap(({rings}) =>
+    rings.map(ring => ring.map(([x,y]) => [tx(x), ty(y)]))
+  );
+  // Point-in-polygon (ray casting)
+  const pip = (px, py, poly) => {
+    let inside = false;
+    for (let i=0, j=poly.length-1; i<poly.length; j=i++) {
+      const [xi,yi]=poly[i], [xj,yj]=poly[j];
+      if (((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  };
+  const inParcel = (px, py) => svgRings.some(r => pip(px, py, r));
+  // Returns true if at least 4 of 5 sample points inside the combined parcel
+  const rectFits = (x, y, w, h) =>
+    [[x+1,y+1],[x+w-1,y+1],[x+1,y+h-1],[x+w-1,y+h-1],[x+w/2,y+h/2]]
+    .filter(([px,py]) => inParcel(px,py)).length >= 4;
+
+  // ── Dominant axis: angle of the longest parcel edge (GIS coords) ──
+  // Used to detect if parcel is significantly off N-S and warn user
+  let _maxEdge=0, _parcelAngleDeg=0;
+  parcelsData.forEach(({rings}) => {
+    const r = rings[0];
+    for (let i=0; i<r.length-1; i++) {
+      const dx=r[i+1][0]-r[i][0], dy=r[i+1][1]-r[i][1];
+      const len=Math.sqrt(dx*dx+dy*dy);
+      if (len>_maxEdge) { _maxEdge=len; _parcelAngleDeg=Math.atan2(dy,dx)*180/Math.PI; }
+    }
+  });
+  // Angle from N-S (0 = N-S aligned, 90 = E-W aligned)
+  const _offAxis = Math.abs((((_parcelAngleDeg % 180) + 180) % 180) - 90);
+
   // ── Setback / buffer dims in px ──
   const rowPx=fp(opts.rowDed), bufPx=fp(opts.buffer);
   const fPx=fp(opts.fSetbk), sPx=fp(opts.sSetbk), rPx=fp(opts.rSetbk);
@@ -2265,6 +2298,9 @@ function buildSitePlanSVG(parcelsData, opts) {
     const aROR = rBR + allyW;              // right alley outer edge
     const cMX  = (cCL+cCR)/2;             // spine centre X
 
+    // Skip this spine entirely if its collector doesn't intersect the parcel
+    if (!inParcel(cMX, devTop + devZoneH*0.25) && !inParcel(cMX, devTop + devZoneH*0.75)) continue;
+
     // Alleys
     bldgSVG+=`<rect x="${spL.toFixed(1)}" y="${devTop.toFixed(1)}"
         width="${allyW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#d0cbc0" opacity="0.9"/>`;
@@ -2288,35 +2324,39 @@ function buildSitePlanSVG(parcelsData, opts) {
       const by  = devTop + r*bldgPitch;
       const fill = r%2===0 ? cA : cB;
 
-      // Left building
+      // Left building — skip if it doesn't fit within parcel boundary
       if(unitCount < target){
         const lU=Math.min(UPB, target-unitCount), lh=lU*uH;
-        bldgSVG+=`<rect x="${lBL.toFixed(1)}" y="${by.toFixed(1)}"
-            width="${uD.toFixed(1)}" height="${lh.toFixed(1)}"
-            fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
-        for(let u=1;u<lU;u++)
-          bldgSVG+=`<line x1="${lBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
-              x2="${lBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
-              stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
-        bldgSVG+=`<text x="${(lBL+uD/2).toFixed(1)}" y="${(by+lh/2+4).toFixed(1)}"
-            font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
-            opacity="0.9">${bnum++}</text>`;
-        unitCount+=lU;
+        if(rectFits(lBL, by, uD, lh)){
+          bldgSVG+=`<rect x="${lBL.toFixed(1)}" y="${by.toFixed(1)}"
+              width="${uD.toFixed(1)}" height="${lh.toFixed(1)}"
+              fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
+          for(let u=1;u<lU;u++)
+            bldgSVG+=`<line x1="${lBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
+                x2="${lBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
+                stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+          bldgSVG+=`<text x="${(lBL+uD/2).toFixed(1)}" y="${(by+lh/2+4).toFixed(1)}"
+              font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
+              opacity="0.9">${bnum++}</text>`;
+          unitCount+=lU;
+        }
       }
-      // Right building
+      // Right building — skip if it doesn't fit within parcel boundary
       if(unitCount < target){
         const rU=Math.min(UPB, target-unitCount), rh=rU*uH;
-        bldgSVG+=`<rect x="${rBL.toFixed(1)}" y="${by.toFixed(1)}"
-            width="${uD.toFixed(1)}" height="${rh.toFixed(1)}"
-            fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
-        for(let u=1;u<rU;u++)
-          bldgSVG+=`<line x1="${rBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
-              x2="${rBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
-              stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
-        bldgSVG+=`<text x="${(rBL+uD/2).toFixed(1)}" y="${(by+rh/2+4).toFixed(1)}"
-            font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
-            opacity="0.9">${bnum++}</text>`;
-        unitCount+=rU;
+        if(rectFits(rBL, by, uD, rh)){
+          bldgSVG+=`<rect x="${rBL.toFixed(1)}" y="${by.toFixed(1)}"
+              width="${uD.toFixed(1)}" height="${rh.toFixed(1)}"
+              fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
+          for(let u=1;u<rU;u++)
+            bldgSVG+=`<line x1="${rBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
+                x2="${rBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
+                stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+          bldgSVG+=`<text x="${(rBL+uD/2).toFixed(1)}" y="${(by+rh/2+4).toFixed(1)}"
+              font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
+              opacity="0.9">${bnum++}</text>`;
+          unitCount+=rU;
+        }
       }
       // Cross-connector / landscape strip between rows
       if(r < numRows-1){
@@ -2467,9 +2507,12 @@ function buildSitePlanSVG(parcelsData, opts) {
   ];
   costs.forEach((c,i)=>{ b+=`<text x="${lX}" y="${nY+143+i*12}" font-family="sans-serif" font-size="7.5" fill="#666">${c}</text>`; });
 
-  // Footer
+  // Footer — warn if parcel is significantly off N-S axis (needs Civil 3D rotation)
+  const axisNote = _offAxis < 20
+    ? 'Parcel is well-aligned with N-S grid'
+    : `⚠ Parcel axis ~${Math.round(90-_offAxis)}° off N-S — road layout should be rotated in Civil 3D to follow parcel shape`;
   b+=`<text x="${(SVG_W-PR/2)/2}" y="${SVG_H-3}" font-family="sans-serif" font-size="7" fill="#bbb"
-      text-anchor="middle">Conceptual only — not for engineering or permitting — export SVG and refine in AutoCAD</text>`;
+      text-anchor="middle">Conceptual only — export SVG → refine in AutoCAD Civil 3D · ${axisNote}</text>`;
 
   const niceScale=Math.round(96/scale);
   const parcelCountLabel = parcelsData.length > 1 ? `${parcelsData.length} parcels` : `PIN ${parcelsData[0].pin}`;
