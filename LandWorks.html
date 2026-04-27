@@ -3034,68 +3034,61 @@ function buildSitePlanSVG(parcelsData, opts) {
   const bzT=bT+rowPx+fPx, bzB=bB-rPx-bufPx;
   const bzW=bzR-bzL, bzH=bzB-bzT;
 
-  // ── Unit & road dims (MULTI-SPINE layout) ──
-  // One "spine module" = [alley 20ft][bldg 45ft][collector 26ft][bldg 45ft][alley 20ft] = 156ft wide
-  // Multiple spines placed side-by-side fill wide parcels; connected by an E-W entry boulevard at north
-  const UPB       = 6;
-  const uH        = fp(opts.unitW);          // N-S per unit (22 ft)
-  const uD        = fp(opts.unitD);          // E-W building depth (45 ft)
-  const bldgH     = UPB * uH;               // full building height N-S (132 ft)
-  const allyW     = fp(20);                 // private rear alley
-  const collW     = fp(26);                 // spine collector road width
-  const bldgGap   = fp(14);                 // landscape gap between rows
-  const bldgPitch = bldgH + bldgGap;
-  const spineGap  = fp(30);                 // landscape strip between adjacent spines
-  const entryW    = fp(26);                 // E-W entry boulevard width
-  const cdRad     = collW * 2.0;            // cul-de-sac radius (52 ft → 104 ft dia, fire OK)
-  const modW      = allyW*2 + uD*2 + collW; // one full spine module width (156 ft)
+  // ═══ LOOP ROAD LAYOUT ═══
+  // Road traces a shrunken version of the parcel polygon → natural fit to site shape
+  // Buildings placed along road segments on the outside (between road and parcel boundary)
+  // Loop connectivity: no dead ends. Street stubs at side/rear edges for future connections.
 
-  // ── Number of spines: scales with unit count × parcel width ──
-  const target          = Math.max(1, opts.units || 96);
-  const numBldgs        = Math.ceil(target / UPB);
-  const idealCols       = Math.max(1, Math.ceil(Math.sqrt(numBldgs / 2)));
-  const maxColsByWidth  = Math.max(1, Math.floor(bzW / (modW + spineGap)));
-  const numCols         = Math.min(idealCols, maxColsByWidth);
+  const target  = Math.max(1, opts.units || 96);
+  const UPB     = 6;
+  const bUnitW  = fp(opts.unitW);   // per-unit width (22ft)
+  const bDepth  = fp(opts.unitD);   // building depth (45ft)
+  const bldgW   = UPB * bUnitW;     // full building width (6 units × 22ft = 132ft)
+  const bldgGap = fp(18);           // gap between buildings along road
+  const rRW     = fp(26);           // loop road width (26ft)
+  const rRHW    = rRW / 2;          // road half-width (13ft)
+  const alleyW2 = fp(20);           // private alley (rear access, between road and building)
 
-  // ── Buildings per spine (rows) ──
-  const bldgsPerColTotal = Math.ceil(numBldgs / numCols);
-  const numRows          = Math.ceil(bldgsPerColTotal / 2);
+  // Total inset from parcel edge to road centerline:
+  // parcel → setback → building → alley → road center
+  const insetRoad = fp(opts.sSetbk) + bDepth + alleyW2 + rRHW;
 
-  // ── Development zone: spans numCols × modW + gaps, centred on parcel ──
-  const devZoneW = numCols * modW + (numCols - 1) * spineGap;
-  const devZoneH = numRows * bldgPitch - bldgGap;
-  const devL     = midX - devZoneW / 2;
-  const devR     = devL + devZoneW;
-  const boulY    = bzT + fp(55);             // entry boulevard top Y (55ft approach from setback line)
-  const devTop   = boulY + entryW + fp(22);  // buildings start 22ft below boulevard (stoop + landscape)
-  const devBot   = devTop + devZoneH;
-  const cdCY_ref = devBot + cdRad + fp(12);  // cul-de-sac centre Y (shared reference)
-  const rearTop  = cdCY_ref + cdRad + fp(18);
-  const rearH    = Math.max(0, bzB - rearTop - fp(8));
+  // ── Build shrunken road centerline polygon ──
+  // Outer parcel ring in SVG coords (deduplicate closed endpoint)
+  const oPts0 = svgRings[0];
+  const oPts  = (oPts0[0][0]===oPts0[oPts0.length-1][0] && oPts0[0][1]===oPts0[oPts0.length-1][1])
+                ? oPts0.slice(0,-1) : [...oPts0];
+  const nPts  = oPts.length;
 
-  // ── Rotation: align building grid with parcel's dominant axis ──
-  // Formula: rotate spine (currently N-S = SVG 90°) to match parcel long edge (SVG angle = -_parcelAngleDeg)
-  let rotAngleDeg = -_parcelAngleDeg - 90;
-  if (rotAngleDeg < -90) rotAngleDeg += 180;
-  if (rotAngleDeg >  90) rotAngleDeg -= 180;
-  if (Math.abs(rotAngleDeg) < 3) rotAngleDeg = 0; // ignore near-zero rotations
-  const rotCX = midX;
-  const rotCY = devTop + devZoneH / 2;
-  const _rotRad = rotAngleDeg * Math.PI / 180;
-  const _cosFwd = Math.cos(_rotRad), _sinFwd = Math.sin(_rotRad);
-  // Forward rotate: transform a pre-rotation position to where it will appear after SVG rotate()
-  const rotPtFwd = (px, py) => {
-    const dx = px - rotCX, dy = py - rotCY;
-    return [rotCX + dx*_cosFwd - dy*_sinFwd, rotCY + dx*_sinFwd + dy*_cosFwd];
-  };
-  // Use forward-rotated points for containment checks (test where element will actually appear)
-  const rectFitsR = (x, y, w, h) =>
-    [[x+1,y+1],[x+w-1,y+1],[x+1,y+h-1],[x+w-1,y+h-1],[x+w/2,y+h/2]]
-    .filter(([px,py]) => { const [rx,ry] = rotPtFwd(px,py); return inParcel(rx,ry); }).length >= 4;
+  // Parcel centroid
+  const pCX0 = oPts.reduce((s,[x])=>s+x, 0) / nPts;
+  const pCY0 = oPts.reduce((s,[,y])=>s+y, 0) / nPts;
 
-  // ── Open-space flanks E/W of dev zone ──
-  const flankLW = devL - bzL;
-  const flankRW = bzR - devR;
+  // Shrink each vertex toward centroid by insetRoad pixels
+  const shrinkPoly = (pts, dist) => pts.map(([x,y]) => {
+    const dx = pCX0-x, dy = pCY0-y, len = Math.sqrt(dx*dx+dy*dy);
+    return len < dist+1 ? [pCX0, pCY0] : [x+dx/len*dist, y+dy/len*dist];
+  });
+
+  const roadCL  = shrinkPoly(oPts, insetRoad);   // road centerline vertices
+  const innerCL = shrinkPoly(oPts, insetRoad + fp(160)); // inner loop (if parcel big enough)
+  const innerSpread = innerCL.reduce((s,[x,y])=>s+Math.sqrt((x-pCX0)**2+(y-pCY0)**2),0)/nPts;
+  const hasInner = innerSpread > fp(40);
+
+  // Check road is not degenerate (all collapsed to centroid)
+  const roadSpread = roadCL.reduce((s,[x,y])=>s+Math.sqrt((x-pCX0)**2+(y-pCY0)**2),0)/nPts;
+  const hasLoop = roadSpread > fp(25);
+
+  // ── Entry edge: northernmost edge of parcel (smallest Y in SVG) ──
+  let entryEdgeIdx = 0, minMidY = Infinity;
+  for (let i=0; i<nPts; i++) {
+    const my = (oPts[i][1]+oPts[(i+1)%nPts][1])/2;
+    if (my < minMidY) { minMidY=my; entryEdgeIdx=i; }
+  }
+  const ePt1 = oPts[entryEdgeIdx], ePt2 = oPts[(entryEdgeIdx+1)%nPts];
+  const entryParcelMid = [(ePt1[0]+ePt2[0])/2, (ePt1[1]+ePt2[1])/2];
+  const entryRoadMid   = [(roadCL[entryEdgeIdx][0]+roadCL[(entryEdgeIdx+1)%nPts][0])/2,
+                          (roadCL[entryEdgeIdx][1]+roadCL[(entryEdgeIdx+1)%nPts][1])/2];
 
   // ── Start SVG ──
   let b = '';
@@ -3131,226 +3124,219 @@ function buildSitePlanSVG(parcelsData, opts) {
   b+=`<text x="${(bL+7).toFixed(1)}" y="${(bT+rowPx*0.68).toFixed(1)}"
       font-family="sans-serif" font-size="8" fill="#5a5440">${opts.rowDed}′ ROW Dedication</text>`;
 
-  // ── Setback dashed rectangle ──
-  b+=`<rect x="${bzL.toFixed(1)}" y="${bzT.toFixed(1)}" width="${bzW.toFixed(1)}" height="${bzH.toFixed(1)}"
-      fill="none" stroke="#e07820" stroke-width="1" stroke-dasharray="5,3" opacity="0.75"/>`;
-  b+=`<text x="${(bzL+3).toFixed(1)}" y="${(bzT-4).toFixed(1)}"
-      font-family="sans-serif" font-size="7.5" fill="#e07820">
-      F${opts.fSetbk}′  S${opts.sSetbk}′  R${opts.rSetbk}′ setbacks</text>`;
+  // ── Setback dashed line (follows parcel shape) ──
+  const sbPoly = shrinkPoly(oPts, fp(opts.fSetbk));
+  b+=`<polygon points="${sbPoly.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}"
+      fill="none" stroke="#e07820" stroke-width="1" stroke-dasharray="5,3" opacity="0.75" clip-path="url(#pc)"/>`;
+  b+=`<text x="${(bL+bzL)/2 < bL+10 ? bL+7 : (bL+3).toFixed(1)}" y="${(bzT-4).toFixed(1)}"
+      font-family="sans-serif" font-size="7.5" fill="#e07820">F${opts.fSetbk}′ S${opts.sSetbk}′ R${opts.rSetbk}′ setbacks</text>`;
 
-  // ── Conservation / open-space flanks ──
-  if(flankLW > fp(15)){
-    b+=`<rect x="${bzL.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankLW.toFixed(1)}" height="${bzH.toFixed(1)}"
-        fill="url(#hatch)" clip-path="url(#pc)"/>`;
-    b+=`<rect x="${bzL.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankLW.toFixed(1)}" height="${bzH.toFixed(1)}"
-        fill="#72c46c" opacity="0.28" clip-path="url(#pc)"/>`;
-    if(flankLW > fp(60)){
-      const flkMX=(bzL+flankLW/2).toFixed(1), flkMY=(bzT+bzH/2).toFixed(1);
-      b+=`<text x="${flkMX}" y="${flkMY}" font-family="sans-serif" font-size="9" fill="#1f5c1a"
-          text-anchor="middle" font-weight="bold" transform="rotate(-90,${flkMX},${flkMY})">Conservation / Open Space</text>`;
-    }
-  }
-  if(flankRW > fp(15)){
-    b+=`<rect x="${devR.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankRW.toFixed(1)}" height="${bzH.toFixed(1)}"
-        fill="url(#hatch)" clip-path="url(#pc)"/>`;
-    b+=`<rect x="${devR.toFixed(1)}" y="${bzT.toFixed(1)}" width="${flankRW.toFixed(1)}" height="${bzH.toFixed(1)}"
-        fill="#72c46c" opacity="0.28" clip-path="url(#pc)"/>`;
-    if(flankRW > fp(60)){
-      const flkMX=(devR+flankRW/2).toFixed(1), flkMY=(bzT+bzH/2).toFixed(1);
-      b+=`<text x="${flkMX}" y="${flkMY}" font-family="sans-serif" font-size="9" fill="#1f5c1a"
-          text-anchor="middle" font-weight="bold" transform="rotate(90,${flkMX},${flkMY})">Conservation / Open Space</text>`;
-    }
-  }
-
-  // ── Rotatable development zone (entry + roads + buildings + pond) ──
-  // All elements below go into dSVG, which gets wrapped in a rotation transform
+  // ── Development elements (loop road, buildings, stubs, pond) ──
   let dSVG = '';
 
-  // ── Stormwater pond + HOA amenity (rear zone below cul-de-sacs) ──
-  if(rearH > fp(30)){
-    const pW = Math.min(devZoneW * 0.65, fp(380));
-    const pH = Math.min(rearH * 0.72, fp(160));
-    const pCX = midX, pCY = rearTop + fp(8) + pH/2;
-    dSVG+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}" rx="${(pW/2).toFixed(1)}" ry="${(pH/2).toFixed(1)}"
-        fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
-    for(let ri=1;ri<=3;ri++){
-      dSVG+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}"
-          rx="${(pW/2*0.25*ri).toFixed(1)}" ry="${(pH/2*0.25*ri).toFixed(1)}"
-          fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
+  // ── Inner open space fill (area inside road loop) ──
+  if (hasLoop) {
+    const innerFill = roadCL.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    dSVG += `<polygon points="${innerFill}" fill="#a8d4b0" opacity="0.35"/>`;
+  }
+  // Second inner loop fill if parcel has room
+  if (hasInner) {
+    const innerFill2 = innerCL.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    dSVG += `<polygon points="${innerFill2}" fill="#7dc49a" opacity="0.28"/>`;
+  }
+
+  // ── Outer loop road ──
+  if (hasLoop) {
+    const roadPts = [...roadCL, roadCL[0]].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    dSVG += `<polyline points="${roadPts}" fill="none" stroke="#bebab0" stroke-width="${rRW.toFixed(1)}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    dSVG += `<polyline points="${roadPts}" fill="none" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="12,9" stroke-linejoin="round"/>`;
+
+    // Road label on longest segment
+    let lsLen=0, lsI=0;
+    for(let i=0;i<roadCL.length;i++){
+      const [x1,y1]=roadCL[i],[x2,y2]=roadCL[(i+1)%roadCL.length];
+      const l=Math.sqrt((x2-x1)**2+(y2-y1)**2); if(l>lsLen){lsLen=l;lsI=i;}
     }
-    dSVG+=`<text x="${pCX.toFixed(1)}" y="${(pCY-7).toFixed(1)}"
-        font-family="sans-serif" font-size="9.5" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
-    dSVG+=`<text x="${pCX.toFixed(1)}" y="${(pCY+7).toFixed(1)}"
-        font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
-    const amX=pCX+pW/2+fp(12), amW=devR-amX-fp(5);
-    if(amW > fp(35)){
-      dSVG+=`<rect x="${amX.toFixed(1)}" y="${(rearTop+fp(4)).toFixed(1)}"
-          width="${amW.toFixed(1)}" height="${(rearH-fp(8)).toFixed(1)}"
-          fill="#5cb85c" opacity="0.4" rx="5"/>`;
-      dSVG+=`<text x="${(amX+amW/2).toFixed(1)}" y="${(rearTop+rearH/2+4).toFixed(1)}"
-          font-family="sans-serif" font-size="8" fill="#1f5c1a" text-anchor="middle" font-weight="bold">HOA Amenity</text>`;
+    const [lx1,ly1]=roadCL[lsI],[lx2,ly2]=roadCL[(lsI+1)%roadCL.length];
+    const lmx=(lx1+lx2)/2,lmy=(ly1+ly2)/2,lang=Math.atan2(ly2-ly1,lx2-lx1)*180/Math.PI;
+    dSVG += `<text x="${lmx.toFixed(1)}" y="${lmy.toFixed(1)}" font-family="sans-serif" font-size="6.5" fill="#777" text-anchor="middle" transform="rotate(${lang.toFixed(1)},${lmx.toFixed(1)},${lmy.toFixed(1)})">LOOP ROAD — 26′ R/W</text>`;
+  }
+
+  // ── Inner loop road (if parcel big enough for double loop) ──
+  if (hasInner) {
+    const innerPts = [...innerCL, innerCL[0]].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    dSVG += `<polyline points="${innerPts}" fill="none" stroke="#bebab0" stroke-width="${rRW.toFixed(1)}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    dSVG += `<polyline points="${innerPts}" fill="none" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="12,9" stroke-linejoin="round"/>`;
+
+    // Cross-connects (radial roads linking inner to outer loop, at each vertex)
+    for (let i=0; i<roadCL.length; i+=Math.max(1,Math.floor(roadCL.length/4))) {
+      const [ox,oy]=roadCL[i],[ix,iy]=innerCL[i];
+      dSVG += `<line x1="${ox.toFixed(1)}" y1="${oy.toFixed(1)}" x2="${ix.toFixed(1)}" y2="${iy.toFixed(1)}" stroke="#bebab0" stroke-width="${rRW.toFixed(1)}" stroke-linecap="round"/>`;
+      dSVG += `<line x1="${ox.toFixed(1)}" y1="${oy.toFixed(1)}" x2="${ix.toFixed(1)}" y2="${iy.toFixed(1)}" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="8,6"/>`;
     }
   }
 
-  // ── Entry boulevard (E-W, connects all spines) ──
-  dSVG+=`<rect x="${devL.toFixed(1)}" y="${boulY.toFixed(1)}" width="${devZoneW.toFixed(1)}" height="${entryW.toFixed(1)}"
-      fill="#bebab0"/>`;
-  dSVG+=`<line x1="${devL.toFixed(1)}" y1="${(boulY+entryW/2).toFixed(1)}" x2="${devR.toFixed(1)}" y2="${(boulY+entryW/2).toFixed(1)}"
-      stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="10,7"/>`;
-  dSVG+=`<text x="${midX.toFixed(1)}" y="${(boulY+entryW*0.7).toFixed(1)}"
-      font-family="sans-serif" font-size="6.5" fill="#666" text-anchor="middle">ENTRY BOULEVARD — 26′</text>`;
+  // ── Entry drive (from parcel edge to loop) ──
+  const entDW = fp(28);
+  const entDX1=entryParcelMid[0], entDY1=entryParcelMid[1];
+  const entDX2=entryRoadMid[0],   entDY2=entryRoadMid[1];
+  dSVG += `<line x1="${entDX1.toFixed(1)}" y1="${entDY1.toFixed(1)}" x2="${entDX2.toFixed(1)}" y2="${entDY2.toFixed(1)}" stroke="#bebab0" stroke-width="${entDW.toFixed(1)}" stroke-linecap="round"/>`;
+  dSVG += `<line x1="${entDX1.toFixed(1)}" y1="${entDY1.toFixed(1)}" x2="${entDX2.toFixed(1)}" y2="${entDY2.toFixed(1)}" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="8,6"/>`;
 
-  // ── Main entry drive (from ROW to boulevard) ──
-  const entRW = fp(28);
-  dSVG+=`<rect x="${(midX-entRW/2).toFixed(1)}" y="${bT.toFixed(1)}"
-      width="${entRW.toFixed(1)}" height="${(boulY-bT+entryW).toFixed(1)}"
-      fill="#bebab0"/>`;
-  dSVG+=`<line x1="${midX.toFixed(1)}" y1="${bT.toFixed(1)}" x2="${midX.toFixed(1)}" y2="${boulY.toFixed(1)}"
-      stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="8,6"/>`;
-
-  // Entry gate monuments
+  // Entry monuments
+  const entDDX=entDX2-entDX1, entDDY=entDY2-entDY1, entDLen=Math.sqrt(entDDX*entDDX+entDDY*entDDY)||1;
+  const entPerpX=-(entDDY/entDLen), entPerpY=(entDDX/entDLen);
   [-1,1].forEach(side=>{
-    const gx = midX + side*(entRW/2+fp(2));
-    dSVG+=`<rect x="${(gx-(side<0?fp(8):0)).toFixed(1)}" y="${(boulY-fp(14)).toFixed(1)}"
-        width="${fp(8).toFixed(1)}" height="${fp(12).toFixed(1)}"
-        fill="#d4a843" stroke="#5a3e08" stroke-width="0.8" rx="1"/>`;
+    const gx=entDX1+entPerpX*side*(entDW/2+fp(3)), gy=entDY1+entPerpY*side*(entDW/2+fp(3));
+    dSVG += `<rect x="${(gx-fp(4)).toFixed(1)}" y="${(gy-fp(6)).toFixed(1)}" width="${fp(8).toFixed(1)}" height="${fp(12).toFixed(1)}" fill="#d4a843" stroke="#5a3e08" stroke-width="0.8" rx="1"/>`;
   });
-  dSVG+=`<text x="${midX.toFixed(1)}" y="${(boulY-fp(2)).toFixed(1)}"
-      font-family="sans-serif" font-size="6" fill="#5a3e08" text-anchor="middle">Entry Gate</text>`;
+  dSVG += `<text x="${((entDX1+entDX2)/2).toFixed(1)}" y="${((entDY1+entDY2)/2-fp(3)).toFixed(1)}" font-family="sans-serif" font-size="6" fill="#5a3e08" text-anchor="middle">Entry Gate</text>`;
 
-  // Clubhouse (left of entry, in approach zone)
-  const clbX=devL+fp(5), clbW=fp(48), clbH=fp(28), clbY=boulY-fp(36);
-  if(clbY > bzT){
-    dSVG+=`<rect x="${clbX.toFixed(1)}" y="${clbY.toFixed(1)}"
-        width="${clbW.toFixed(1)}" height="${clbH.toFixed(1)}"
-        fill="#5a4a7a" opacity="0.75" rx="3"/>`;
-    dSVG+=`<text x="${(clbX+clbW/2).toFixed(1)}" y="${(clbY+clbH/2+4).toFixed(1)}"
-        font-family="sans-serif" font-size="7" fill="white" text-anchor="middle" font-weight="bold">Clubhouse</text>`;
+  // Clubhouse near entry inside loop
+  const clbW=fp(48), clbH=fp(28);
+  const clbX=entryRoadMid[0]-clbW/2, clbY=entryRoadMid[1]+rRHW+fp(6);
+  if(inParcel(clbX+clbW/2, clbY+clbH/2)){
+    dSVG+=`<rect x="${clbX.toFixed(1)}" y="${clbY.toFixed(1)}" width="${clbW.toFixed(1)}" height="${clbH.toFixed(1)}" fill="#5a4a7a" opacity="0.75" rx="3"/>`;
+    dSVG+=`<text x="${(clbX+clbW/2).toFixed(1)}" y="${(clbY+clbH/2+4).toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle" font-weight="bold">Clubhouse</text>`;
   }
 
-  // ── Per-spine buildings, roads, cul-de-sacs ──
+  // ── Street stubs at side/rear parcel edges ──
+  for (let i=0; i<nPts; i++) {
+    if (i===entryEdgeIdx) continue;
+    const [ex1,ey1]=oPts[i], [ex2,ey2]=oPts[(i+1)%nPts];
+    const eLen = Math.sqrt((ex2-ex1)**2+(ey2-ey1)**2);
+    if (eLen < fp(80)) continue; // skip short edges
+    // Midpoint on parcel edge and road centerline edge
+    const emx=(ex1+ex2)/2, emy=(ey1+ey2)/2;
+    const [rx1,ry1]=roadCL[i],[rx2,ry2]=roadCL[(i+1)%nPts];
+    const rmx=(rx1+rx2)/2, rmy=(ry1+ry2)/2;
+    const sdx=emx-rmx, sdy=emy-rmy, slen=Math.sqrt(sdx*sdx+sdy*sdy);
+    if (slen < fp(15)) continue;
+    // Stub road from loop to parcel boundary
+    dSVG += `<line x1="${rmx.toFixed(1)}" y1="${rmy.toFixed(1)}" x2="${emx.toFixed(1)}" y2="${emy.toFixed(1)}" stroke="#bebab0" stroke-width="${fp(26).toFixed(1)}" stroke-linecap="butt" opacity="0.9"/>`;
+    dSVG += `<line x1="${rmx.toFixed(1)}" y1="${rmy.toFixed(1)}" x2="${emx.toFixed(1)}" y2="${emy.toFixed(1)}" stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="7,5"/>`;
+    // Termination bar (orange — signals future connection)
+    const px=-(sdy/slen)*fp(16), py=(sdx/slen)*fp(16);
+    dSVG += `<line x1="${(emx+px).toFixed(1)}" y1="${(emy+py).toFixed(1)}" x2="${(emx-px).toFixed(1)}" y2="${(emy-py).toFixed(1)}" stroke="#e07820" stroke-width="3" stroke-linecap="butt"/>`;
+    // Label
+    const lx=(emx+rmx)/2, ly=(emy+rmy)/2;
+    const lang2=Math.atan2(sdy,sdx)*180/Math.PI;
+    dSVG += `<text x="${lx.toFixed(1)}" y="${(ly-4).toFixed(1)}" font-family="sans-serif" font-size="5.8" fill="#e07820" text-anchor="middle" font-weight="bold" transform="rotate(${lang2.toFixed(1)},${lx.toFixed(1)},${ly.toFixed(1)})">STUB — Future Connection</text>`;
+  }
+
+  // ── Buildings placed along outer road segments ──
+  // Buildings face road, with private alley behind (between road edge and building)
+  let unitCount=0, bnum=101;
   const cA='#c49a3a', cB='#a87c22';
-  let bldgSVG='', unitCount=0, bnum=101;
 
-  for(let c=0; c<numCols; c++){
-    const spL  = devL + c*(modW+spineGap);  // left outer edge of this module
-    const aLIR = spL + allyW;               // left alley inner edge
-    const lBL  = aLIR;                      // left bldg left
-    const lBR  = lBL + uD;                  // left bldg right = collector left
-    const cCL  = lBR;                       // collector left
-    const cCR  = cCL + collW;              // collector right
-    const rBL  = cCR;                       // right bldg left
-    const rBR  = rBL + uD;                 // right bldg right
-    const aROR = rBR + allyW;              // right alley outer edge
-    const cMX  = (cCL+cCR)/2;             // spine centre X
+  for (let i=0; i<roadCL.length && unitCount<target; i++) {
+    const [x1,y1]=roadCL[i], [x2,y2]=roadCL[(i+1)%roadCL.length];
+    const dx=x2-x1, dy=y2-y1, segLen=Math.sqrt(dx*dx+dy*dy);
+    if (segLen < bldgW*0.6) continue;
+    const ux=dx/segLen, uy=dy/segLen; // unit vector along segment
 
-    // Skip this spine entirely if its collector doesn't intersect the parcel
-    if (!inParcel(cMX, devTop + devZoneH*0.25) && !inParcel(cMX, devTop + devZoneH*0.75)) continue;
+    // Outward normal: left normal is (-uy, ux), right is (uy, -ux)
+    // Test which points AWAY from centroid (outward = toward parcel boundary)
+    const testL = [x1+(-uy)*fp(30)+ux*segLen/2, y1+ux*fp(30)+uy*segLen/2];
+    const testR = [x1+uy*fp(30)+ux*segLen/2,    y1+(-ux)*fp(30)+uy*segLen/2];
+    const dL = Math.sqrt((testL[0]-pCX0)**2+(testL[1]-pCY0)**2);
+    const dR = Math.sqrt((testR[0]-pCX0)**2+(testR[1]-pCY0)**2);
+    const onx = dL > dR ? -uy : uy;  // outward normal X
+    const ony = dL > dR ?  ux : -ux; // outward normal Y
 
-    // Alleys
-    bldgSVG+=`<rect x="${spL.toFixed(1)}" y="${devTop.toFixed(1)}"
-        width="${allyW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#d0cbc0" opacity="0.9"/>`;
-    bldgSVG+=`<rect x="${rBR.toFixed(1)}" y="${devTop.toFixed(1)}"
-        width="${allyW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#d0cbc0" opacity="0.9"/>`;
+    // Distance from road CL to building front face: rRHW + alleyW2
+    const bFrontOff = rRHW + alleyW2;
 
-    // Collector road
-    bldgSVG+=`<rect x="${cCL.toFixed(1)}" y="${devTop.toFixed(1)}"
-        width="${collW.toFixed(1)}" height="${devZoneH.toFixed(1)}" fill="#bebab0"/>`;
-    bldgSVG+=`<line x1="${cMX.toFixed(1)}" y1="${devTop.toFixed(1)}" x2="${cMX.toFixed(1)}" y2="${devBot.toFixed(1)}"
-        stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="10,8"/>`;
-    // Road label (only if tall enough)
-    if(devZoneH > fp(100)){
-      const rLY=(devTop+devZoneH/2).toFixed(1);
-      bldgSVG+=`<text x="${cMX.toFixed(1)}" y="${rLY}" font-family="sans-serif" font-size="6.5" fill="#888"
-          text-anchor="middle" transform="rotate(90,${cMX.toFixed(1)},${rLY})">SPINE ${c+1} — 26′ R/W</text>`;
-    }
+    // How many buildings fit along this segment?
+    const margin = fp(20);
+    const slotPitch = bldgW + bldgGap;
+    const nBldgs = Math.max(0, Math.floor((segLen - margin*2 + bldgGap) / slotPitch));
+    const startOff = (segLen - (nBldgs*slotPitch - bldgGap)) / 2; // centre buildings on segment
 
-    // Building rows
-    for(let r=0; r<numRows; r++){
-      const by  = devTop + r*bldgPitch;
-      const fill = r%2===0 ? cA : cB;
+    for (let bi=0; bi<nBldgs && unitCount<target; bi++) {
+      const t = startOff + bi*slotPitch;
+      // Building front-left corner (road side, walking along segment)
+      const bx = x1 + ux*t + onx*bFrontOff;
+      const by = y1 + uy*t + ony*bFrontOff;
 
-      // Left building — skip if it doesn't fit within parcel boundary
-      if(unitCount < target){
-        const lU=Math.min(UPB, target-unitCount), lh=lU*uH;
-        if(rectFitsR(lBL, by, uD, lh)){
-          bldgSVG+=`<rect x="${lBL.toFixed(1)}" y="${by.toFixed(1)}"
-              width="${uD.toFixed(1)}" height="${lh.toFixed(1)}"
-              fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
-          for(let u=1;u<lU;u++)
-            bldgSVG+=`<line x1="${lBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
-                x2="${lBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
-                stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
-          bldgSVG+=`<text x="${(lBL+uD/2).toFixed(1)}" y="${(by+lh/2+4).toFixed(1)}"
-              font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
-              opacity="0.9">${bnum++}</text>`;
-          unitCount+=lU;
-        }
+      // Building is a parallelogram: along segment (bldgW), perpendicular outward (bDepth)
+      const unitsInBldg = Math.min(UPB, target-unitCount);
+      const thisBldgW = unitsInBldg * bUnitW;
+      const bMidX = bx + ux*thisBldgW/2 + onx*bDepth/2;
+      const bMidY = by + uy*thisBldgW/2 + ony*bDepth/2;
+
+      // Containment: test 5 points of the building footprint
+      const corners5 = [
+        [bx + ux*2          + onx*2,        by + uy*2          + ony*2],
+        [bx + ux*(thisBldgW-2) + onx*2,     by + uy*(thisBldgW-2) + ony*2],
+        [bx + ux*2          + onx*(bDepth-2),by + uy*2          + ony*(bDepth-2)],
+        [bx + ux*(thisBldgW-2) + onx*(bDepth-2), by + uy*(thisBldgW-2) + ony*(bDepth-2)],
+        [bMidX, bMidY]
+      ];
+      if (corners5.filter(([px,py])=>inParcel(px,py)).length < 4) continue;
+
+      // Draw private alley (between road edge and building front)
+      const aFx=bx-onx*alleyW2, aFy=by-ony*alleyW2;
+      const allyPts=[
+        [aFx,aFy],[aFx+ux*thisBldgW,aFy+uy*thisBldgW],
+        [aFx+ux*thisBldgW+onx*alleyW2,aFy+uy*thisBldgW+ony*alleyW2],
+        [aFx+onx*alleyW2,aFy+ony*alleyW2]
+      ].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+      dSVG += `<polygon points="${allyPts}" fill="#d0cbc0" opacity="0.9"/>`;
+      // Alley label
+      const allyLabel=[(aFx+(aFx+ux*thisBldgW))/2+onx*alleyW2/2, (aFy+(aFy+uy*thisBldgW))/2+ony*alleyW2/2];
+      const allyAng=Math.atan2(uy,ux)*180/Math.PI;
+      dSVG += `<text x="${allyLabel[0].toFixed(1)}" y="${allyLabel[1].toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" transform="rotate(${allyAng.toFixed(1)},${allyLabel[0].toFixed(1)},${allyLabel[1].toFixed(1)})">PRIV. ALLEY 20′</text>`;
+
+      // Draw building
+      const fill = bi%2===0 ? cA : cB;
+      const bldgPts=[
+        [bx,by],[bx+ux*thisBldgW,by+uy*thisBldgW],
+        [bx+ux*thisBldgW+onx*bDepth,by+uy*thisBldgW+ony*bDepth],
+        [bx+onx*bDepth,by+ony*bDepth]
+      ].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+      dSVG += `<polygon points="${bldgPts}" fill="${fill}" stroke="#5a3e08" stroke-width="0.9"/>`;
+
+      // Unit dividers
+      for (let u=1; u<unitsInBldg; u++) {
+        const dx2=ux*u*bUnitW, dy2=uy*u*bUnitW;
+        dSVG += `<line x1="${(bx+dx2).toFixed(1)}" y1="${(by+dy2).toFixed(1)}" x2="${(bx+dx2+onx*bDepth).toFixed(1)}" y2="${(by+dy2+ony*bDepth).toFixed(1)}" stroke="#5a3e08" stroke-width="0.35" opacity="0.55"/>`;
       }
-      // Right building — skip if it doesn't fit within parcel boundary
-      if(unitCount < target){
-        const rU=Math.min(UPB, target-unitCount), rh=rU*uH;
-        if(rectFitsR(rBL, by, uD, rh)){
-          bldgSVG+=`<rect x="${rBL.toFixed(1)}" y="${by.toFixed(1)}"
-              width="${uD.toFixed(1)}" height="${rh.toFixed(1)}"
-              fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
-          for(let u=1;u<rU;u++)
-            bldgSVG+=`<line x1="${rBL.toFixed(1)}" y1="${(by+u*uH).toFixed(1)}"
-                x2="${rBR.toFixed(1)}" y2="${(by+u*uH).toFixed(1)}"
-                stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
-          bldgSVG+=`<text x="${(rBL+uD/2).toFixed(1)}" y="${(by+rh/2+4).toFixed(1)}"
-              font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold"
-              opacity="0.9">${bnum++}</text>`;
-          unitCount+=rU;
-        }
-      }
-      // Cross-connector / landscape strip between rows
-      if(r < numRows-1){
-        const gY=by+bldgH;
-        bldgSVG+=`<rect x="${spL.toFixed(1)}" y="${gY.toFixed(1)}"
-            width="${modW.toFixed(1)}" height="${bldgGap.toFixed(1)}" fill="#c8c2b5" opacity="0.65"/>`;
-      }
+
+      // Building number
+      dSVG += `<text x="${bMidX.toFixed(1)}" y="${(bMidY+3).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
+
+      unitCount += unitsInBldg;
     }
-
-    // Alley labels
-    const allyMY=(devTop+devZoneH/2).toFixed(1);
-    bldgSVG+=`<text x="${(spL+allyW/2).toFixed(1)}" y="${allyMY}" font-family="sans-serif" font-size="5.5" fill="#999"
-        text-anchor="middle" transform="rotate(-90,${(spL+allyW/2).toFixed(1)},${allyMY})">PRIV. ALLEY 20′</text>`;
-    bldgSVG+=`<text x="${(rBR+allyW/2).toFixed(1)}" y="${allyMY}" font-family="sans-serif" font-size="5.5" fill="#999"
-        text-anchor="middle" transform="rotate(90,${(rBR+allyW/2).toFixed(1)},${allyMY})">PRIV. ALLEY 20′</text>`;
-
-    // Visitor parking pockets (between boulevard and first building row)
-    const pkH=fp(16), pkW=fp(20), pkY=boulY+entryW+fp(4);
-    if(pkY+pkH < devTop){
-      dSVG+=`<rect x="${(cCL-pkW-fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
-          width="${pkW.toFixed(1)}" height="${pkH.toFixed(1)}"
-          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2"/>`;
-      dSVG+=`<text x="${(cCL-pkW/2-fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
-          font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
-      dSVG+=`<rect x="${(cCR+fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
-          width="${pkW.toFixed(1)}" height="${pkH.toFixed(1)}"
-          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2"/>`;
-      dSVG+=`<text x="${(cCR+pkW/2+fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
-          font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
-    }
-
-    // Cul-de-sac at south end of each spine
-    dSVG+=`<rect x="${cCL.toFixed(1)}" y="${devBot.toFixed(1)}"
-        width="${collW.toFixed(1)}" height="${(cdCY_ref-devBot+cdRad*0.5).toFixed(1)}"
-        fill="#bebab0"/>`;
-    dSVG+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${cdRad.toFixed(1)}"
-        fill="#bebab0"/>`;
-    dSVG+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${(cdRad*0.38).toFixed(1)}"
-        fill="#5cb85c" opacity="0.55"/>`;
-    dSVG+=`<text x="${cMX.toFixed(1)}" y="${(cdCY_ref+3).toFixed(1)}"
-        font-family="sans-serif" font-size="5.5" fill="#1f5c1a" text-anchor="middle">island</text>`;
   }
-  // Merge buildings into dSVG and output rotated group clipped to parcel
-  dSVG += bldgSVG;
-  const rotTransform = rotAngleDeg !== 0
-    ? `transform="rotate(${rotAngleDeg.toFixed(2)}, ${rotCX.toFixed(1)}, ${rotCY.toFixed(1)})"`
-    : '';
-  b += `<g ${rotTransform} clip-path="url(#pc)">${dSVG}</g>`;
+
+  // ── Stormwater pond (at parcel centroid / interior open space) ──
+  const pondRx = Math.min(fp(90), roadSpread*0.45);
+  const pondRy = Math.min(fp(55), roadSpread*0.28);
+  dSVG += `<ellipse cx="${pCX0.toFixed(1)}" cy="${pCY0.toFixed(1)}" rx="${pondRx.toFixed(1)}" ry="${pondRy.toFixed(1)}" fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
+  for(let ri=1;ri<=3;ri++){
+    dSVG += `<ellipse cx="${pCX0.toFixed(1)}" cy="${pCY0.toFixed(1)}" rx="${(pondRx*0.25*ri).toFixed(1)}" ry="${(pondRy*0.25*ri).toFixed(1)}" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
+  }
+  dSVG += `<text x="${pCX0.toFixed(1)}" y="${(pCY0-8).toFixed(1)}" font-family="sans-serif" font-size="9.5" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
+  dSVG += `<text x="${pCX0.toFixed(1)}" y="${(pCY0+7).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
+
+  // Open space / HOA amenity ring
+  dSVG += `<ellipse cx="${pCX0.toFixed(1)}" cy="${pCY0.toFixed(1)}" rx="${(pondRx+fp(28)).toFixed(1)}" ry="${(pondRy+fp(18)).toFixed(1)}" fill="#5cb85c" opacity="0.22" stroke="#3a8c4a" stroke-width="0.6" stroke-dasharray="4,3"/>`;
+  dSVG += `<text x="${pCX0.toFixed(1)}" y="${(pCY0+pondRy+fp(26)).toFixed(1)}" font-family="sans-serif" font-size="7" fill="#1f5c1a" text-anchor="middle">HOA Open Space / Amenity</text>`;
+
+  // ── Visitor parking pockets near entry ──
+  const pkH=fp(16), pkW=fp(20);
+  const pkNx=-entPerpY, pkNy=entPerpX; // normal along entry direction
+  [-1,1].forEach((side,si)=>{
+    const pkx=entDX2+entPerpX*side*(entDW/2+fp(6));
+    const pky=entDY2+entPerpY*side*(entDW/2+fp(6));
+    if(!inParcel(pkx,pky)) return;
+    const pkPts=[[pkx,pky],[pkx+pkNx*pkH,pky+pkNy*pkH],[pkx+pkNx*pkH+entPerpX*pkW*side,pky+pkNy*pkH+entPerpY*pkW*side],[pkx+entPerpX*pkW*side,pky+entPerpY*pkW*side]].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    dSVG += `<polygon points="${pkPts}" fill="url(#pkg)" stroke="#bbb" stroke-width="0.6"/>`;
+    dSVG += `<text x="${(pkx+pkNx*pkH/2).toFixed(1)}" y="${(pky+pkNy*pkH/2+3).toFixed(1)}" font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
+  });
+
+  b += `<g clip-path="url(#pc)">${dSVG}</g>`;
 
   // ── Parcel boundaries (on top) — each parcel gets its own colour ──
   const parcelColors = ['#1b3d28','#2c5f8a','#8b3a2a','#5a4a7a','#b8882a'];
@@ -3378,7 +3364,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   b+=`<rect x="${(bL+4).toFixed(1)}" y="${(bT+4).toFixed(1)}"
       width="138" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.3" opacity="0.94"/>`;
   b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+18).toFixed(1)}"
-      font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units · ${numCols} spine${numCols>1?'s':''}</text>`;
+      font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units · Loop Road Layout</text>`;
   b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+28).toFixed(1)}"
       font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary</text>`;
 
@@ -3408,7 +3394,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   const lX=SVG_W-PR+8, lY=HEAD+56;
   const LI=[
     [cA,        'Townhome building'],
-    ['#bebab0',  'Collector road (26′)'],
+    ['#bebab0',  'Loop road (26′ R/W)'],
     ['#d0cbc0',  'Private alley (20′)'],
     ['#4fa8cc',  'Wet detention pond'],
     ['#5cb85c',  'Open space / amenity'],
@@ -3428,6 +3414,8 @@ function buildSitePlanSVG(parcelsData, opts) {
   const sbLY=lY+LI.length*17;
   b+=`<rect x="${lX}" y="${sbLY}" width="12" height="11" fill="none" stroke="#e07820" stroke-width="1" stroke-dasharray="3,2"/>`;
   b+=`<text x="${lX+16}" y="${sbLY+9}" font-family="sans-serif" font-size="8" fill="#333">Setback / buffer line</text>`;
+  b+=`<line x1="${lX}" y1="${sbLY+22}" x2="${lX+12}" y2="${sbLY+22}" stroke="#e07820" stroke-width="3"/>`;
+  b+=`<text x="${lX+16}" y="${sbLY+26}" font-family="sans-serif" font-size="8" fill="#333">Street stub (future conn.)</text>`;
 
   // Design notes panel
   const nY=lY+legH+14;
@@ -3435,33 +3423,35 @@ function buildSitePlanSVG(parcelsData, opts) {
       rx="4" fill="#f8f6f0" stroke="#ddd" stroke-width="1"/>`;
   b+=`<text x="${(lX+85).toFixed(1)}" y="${nY+14}" font-family="sans-serif" font-size="9" fill="#333"
       text-anchor="middle" font-weight="bold">LAYOUT TYPE</text>`;
-  b+=`<text x="${lX}" y="${nY+27}" font-family="sans-serif" font-size="8" fill="#555" font-weight="bold">Alley-Loaded Double-Loaded Collector</text>`;
+  b+=`<text x="${lX}" y="${nY+27}" font-family="sans-serif" font-size="8" fill="#555" font-weight="bold">Loop Road — Perimeter Alley-Loaded</text>`;
   const notes=[
-    '• Units face collector road (front doors)',
-    '• Garages access via private rear alley',
-    '• 6-unit buildings = optimal fire access',
-    '• Compact cluster → large conservation flanks',
-    '• Single pond at topographic low (south)',
-    '• Feeds naturally into riparian buffer',
+    '• Loop road follows parcel boundary',
+    '• Circular connectivity — no dead ends',
+    '• Street stubs at each parcel edge for',
+    '  future connections to adj. streets',
+    '• Buildings face loop road (front doors)',
+    '• Private alley = rear garage access',
   ];
   notes.forEach((n,i)=>{ b+=`<text x="${lX}" y="${nY+42+i*13}" font-family="sans-serif" font-size="7.5" fill="#666">${n}</text>`; });
 
   b+=`<text x="${lX}" y="${nY+128}" font-family="sans-serif" font-size="9" fill="#333" font-weight="bold">COST DRIVERS</text>`;
   const costs=[
-    '• ~30% less paving vs. loop layout',
+    '• Loop = ~25% less ROW than grid',
     '• Shared alley = saves ~$2,500/lot',
-    '• Short utility runs (compact cluster)',
-    '• Conservation flanks: potential density',
-    '  bonus or stormwater credit in NC',
-    '• Balanced cut/fill near road → saves',
-    '  $80K-$200K in earthwork vs. full site',
+    '• Interior pond → riparian buffer',
+    '• Perimeter bldgs maximize density',
+    '• Fewer driveways → lower curb cost',
+    '• Stub streets = future revenue from',
+    '  adjacent parcel connections',
   ];
   costs.forEach((c,i)=>{ b+=`<text x="${lX}" y="${nY+143+i*12}" font-family="sans-serif" font-size="7.5" fill="#666">${c}</text>`; });
 
-  // Footer — note if rotation was applied to match parcel axis
-  const axisNote = rotAngleDeg === 0
-    ? 'Layout aligned with N-S grid'
-    : `Layout rotated ${rotAngleDeg.toFixed(1)}° to follow parcel axis`;
+  // Footer note
+  const axisNote = hasInner
+    ? 'Double loop road — circular connectivity — street stubs for future connections'
+    : hasLoop
+    ? 'Loop road follows parcel shape — circular connectivity — street stubs for future connections'
+    : 'Parcel too narrow for full loop — manual layout required';
   b+=`<text x="${(SVG_W-PR/2)/2}" y="${SVG_H-3}" font-family="sans-serif" font-size="7" fill="#bbb"
       text-anchor="middle">Conceptual only — export SVG → refine in AutoCAD Civil 3D · ${axisNote}</text>`;
 
@@ -3474,7 +3464,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   <text x="12" y="14" font-family="serif" font-size="12" fill="white" font-weight="bold">
     CONCEPTUAL SITE PLAN — ${titleLine}</text>
   <text x="12" y="26" font-family="sans-serif" font-size="9" fill="#9dd4b0">
-    ${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D alley-loaded collector · 1″≈${niceScale}ft · NC State Plane${parcelsData.length>1?' · '+parcelsData.map(p=>p.pin).join(', '):''}</text>
+    ${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D loop road layout · 1″≈${niceScale}ft · NC State Plane${parcelsData.length>1?' · '+parcelsData.map(p=>p.pin).join(', '):''}</text>
   ${b}
 </svg>`;
 }
