@@ -186,6 +186,32 @@ textarea{resize:vertical;min-height:68px;}
 .pbtn-ai:hover{background:var(--pine);}
 .pbtn-folder{background:var(--amber);color:var(--forest);}
 .pbtn-folder:hover{background:var(--sun);}
+.pbtn-prefill{background:#e8f4ec;color:var(--pine);border:1px solid #b5d8c0;}
+.pbtn-prefill:hover{background:#cde9d7;}
+/* Step headers inside permit grid */
+.permit-step-header{grid-column:1/-1;display:flex;align-items:center;gap:.65rem;padding:.45rem .1rem;margin-top:.5rem;border-bottom:2px solid var(--fern);}
+.permit-step-header:first-child{margin-top:0;}
+.permit-step-num{background:var(--forest);color:var(--white);border-radius:12px;padding:.15rem .6rem;font-size:.7rem;font-weight:800;letter-spacing:.04em;white-space:nowrap;}
+.permit-step-label{font-weight:700;font-size:.85rem;color:var(--forest);flex:1;}
+.permit-step-count{font-size:.7rem;color:var(--muted);font-weight:600;}
+
+/* ── MARKET RESEARCH & CONSTRUCTION ── */
+.mkt-tbl,.con-tbl{width:100%;border-collapse:collapse;font-size:.8rem;}
+.mkt-tbl th,.con-tbl th{background:var(--forest);color:var(--white);padding:.5rem .75rem;text-align:left;font-size:.72rem;white-space:nowrap;}
+.mkt-tbl td,.con-tbl td{padding:.45rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.mkt-tbl tr:nth-child(even),.con-tbl tr:nth-child(even){background:var(--parch);}
+.mkt-tbl input,.con-tbl input,.mkt-tbl select,.con-tbl select{width:100%;border:none;background:transparent;font-size:.78rem;padding:2px 4px;font-family:inherit;}
+.mkt-tbl input:focus,.con-tbl input:focus{outline:1px solid var(--fern);border-radius:3px;background:#fff;}
+.mkt-tbl select,.con-tbl select{cursor:pointer;}
+.tbl-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:.9rem;padding:2px 6px;}
+.tbl-del:hover{color:var(--rust);}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;}
+.status-active{background:#d4edda;color:#155724;}
+.status-pending{background:#fff3cd;color:#856404;}
+.status-ordered{background:#cce5ff;color:#004085;}
+.status-delivered{background:#d4edda;color:#155724;}
+.status-issue{background:#f8d7da;color:#721c24;}
+.status-bidding{background:#e2d9f3;color:#432874;}
 
 /* ── SUBMITTAL FOLDERS ── */
 .folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;}
@@ -578,6 +604,8 @@ textarea{resize:vertical;min-height:68px;}
   <button class="tab" onclick="sw('imaps',this)">🗺 iMAPS</button>
   <button class="tab" onclick="sw('meetings',this)">📝 Meeting Notes</button>
   <button class="tab" onclick="sw('schedule',this)">📅 Schedule</button>
+  <button class="tab" onclick="sw('market',this)">📈 Market Research</button>
+  <button class="tab" onclick="sw('construction',this)">🏗 Construction</button>
   <button class="tab" onclick="sw('hub',this)">🏠 Project Hub</button>
 </div>
 
@@ -1007,6 +1035,188 @@ textarea{resize:vertical;min-height:68px;}
   </div>
 </div>
 
+<!-- ── MARKET RESEARCH ── -->
+<div class="panel" id="panel-market">
+  <!-- Submarket Overview -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📍 Submarket Overview</h3>
+      <button class="btn btn-g" onclick="aiAsk('Based on my project at '+getField('pAddr')+' in '+getField('pJuris')+', give me a detailed submarket analysis: absorption rates, average price per unit, average days on market, and rent trends for '+getField('pType')+' product in Wake County. What are the key demand drivers right now?')">🤖 AI Submarket Analysis</button>
+    </div>
+    <div class="card-body">
+      <div class="f-row" style="gap:1rem;flex-wrap:wrap">
+        <div class="f w2"><label>Submarket Name</label><input type="text" id="mktSubmarket" placeholder="e.g. Southwest Raleigh / Cary" oninput="saveMarket()"></div>
+        <div class="f"><label>Avg Absorption Rate (units/mo)</label><input type="number" id="mktAbsorption" placeholder="e.g. 8" oninput="saveMarket()"></div>
+        <div class="f"><label>Avg Days on Market</label><input type="number" id="mktDOM" placeholder="e.g. 22" oninput="saveMarket()"></div>
+        <div class="f"><label>Avg Sale Price / Unit ($)</label><input type="number" id="mktAvgPrice" placeholder="e.g. 385000" oninput="saveMarket()"></div>
+        <div class="f"><label>Avg Price / Sq Ft ($)</label><input type="number" id="mktPSF" placeholder="e.g. 210" oninput="saveMarket()"></div>
+        <div class="f"><label>Avg Rent / Unit / Mo ($)</label><input type="number" id="mktAvgRent" placeholder="e.g. 1850" oninput="saveMarket()"></div>
+        <div class="f w2"><label>Market Notes</label><textarea id="mktNotes" rows="2" placeholder="Key demand drivers, employment centers, pipeline supply..." oninput="saveMarket()"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparable Sales -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🏘 Comparable Sales</h3>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-g" onclick="addComp()">+ Add Comp</button>
+        <button class="btn btn-g" onclick="aiAsk('Based on my project type ('+getField('pType')+') and location in Wake County, suggest 5 specific comparable sales I should research. For each comp give the community name, general location, product type, approximate price range, and what made it a good or bad comp.')">🤖 Suggest Comps</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="mkt-tbl" id="compTable">
+        <thead><tr>
+          <th>Community / Address</th><th>Product Type</th><th>Units</th>
+          <th>Sale Price</th><th>$/Unit</th><th>$/SF</th>
+          <th>Sale Date</th><th>DOM</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="compBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Subject vs Comps Analysis -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📊 Subject Property Analysis</h3>
+      <button class="btn btn-g" onclick="aiAsk('Compare my subject property to my comparable sales. My project: '+getField('pType')+', '+document.getElementById(\'exAcres\')?.value+' acres, target price '+document.getElementById(\'mktTargetPrice\')?.value+' per unit. Submarket avg: $'+document.getElementById(\'mktAvgPrice\')?.value+'/unit, '+document.getElementById(\'mktAbsorption\')?.value+' units/mo absorption. How does my project compare and what adjustments should I consider?')">🤖 AI Comp Analysis</button>
+    </div>
+    <div class="card-body">
+      <div class="f-row" style="gap:1rem;flex-wrap:wrap">
+        <div class="f"><label>Target Sale Price / Unit ($)</label><input type="number" id="mktTargetPrice" placeholder="e.g. 375000" oninput="saveMarket();calcMktMetrics()"></div>
+        <div class="f"><label>Target Rent / Unit / Mo ($)</label><input type="number" id="mktTargetRent" placeholder="e.g. 1800" oninput="saveMarket()"></div>
+        <div class="f"><label>Target Price / SF ($)</label><input type="number" id="mktTargetPSF" placeholder="e.g. 200" oninput="saveMarket()"></div>
+        <div class="f"><label>Projected Absorption (units/mo)</label><input type="number" id="mktProjAbsorption" placeholder="e.g. 6" oninput="saveMarket();calcMktMetrics()"></div>
+        <div class="f"><label>Total Units in Project</label><input type="number" id="mktTotalUnits" placeholder="Auto from site plan" oninput="saveMarket();calcMktMetrics()"></div>
+        <div class="f"><label>Projected Sellout Period (mo)</label><input type="text" id="mktSellout" readonly style="background:var(--parch)"></div>
+        <div class="f"><label>Total Revenue Projection ($)</label><input type="text" id="mktTotalRevenue" readonly style="background:var(--parch)"></div>
+        <div class="f w2"><label>Competitive Positioning / Strategy</label><textarea id="mktStrategy" rows="3" placeholder="How does this project differentiate from the comps? Price point strategy, target buyer profile, amenities..." oninput="saveMarket()"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demand Drivers -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🎯 Demand Drivers & Risk Factors</h3>
+      <button class="btn btn-g" onclick="aiAsk('For a '+getField('pType')+' development in '+getField('pJuris')+' Wake County NC, what are the top 5 demand drivers and top 5 market risk factors I should be tracking right now? Be specific to the current 2025-2026 market conditions.')">🤖 AI Risk & Demand Report</button>
+    </div>
+    <div class="card-body">
+      <div class="f-row" style="gap:1rem">
+        <div class="f" style="flex:1"><label>Key Demand Drivers</label><textarea id="mktDrivers" rows="5" placeholder="• Major employer expansions&#10;• Infrastructure improvements&#10;• Population growth trends&#10;• Zoning changes driving demand" oninput="saveMarket()"></textarea></div>
+        <div class="f" style="flex:1"><label>Risk Factors</label><textarea id="mktRisks" rows="5" placeholder="• Competing pipeline projects&#10;• Interest rate sensitivity&#10;• Regulatory risks&#10;• Construction cost escalation" oninput="saveMarket()"></textarea></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save</button>
+  </div>
+</div>
+
+<!-- ── CONSTRUCTION ── -->
+<div class="panel" id="panel-construction">
+  <!-- Suppliers & Vendors -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🏢 Suppliers & Vendors</h3>
+      <button class="btn btn-g" onclick="addSupplier()">+ Add Supplier</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl" id="supplierTable">
+        <thead><tr>
+          <th>Company</th><th>Category</th><th>Contact Name</th><th>Phone</th><th>Email</th>
+          <th>Pricing Notes</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="supplierBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Material Take-offs -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📐 Material Take-offs</h3>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-g" onclick="addTakeoff()">+ Add Item</button>
+        <button class="btn btn-g" onclick="aiAsk('For a '+getField('pType')+' development of '+document.getElementById(\'mktTotalUnits\')?.value+' units in Wake County NC, give me a comprehensive material take-off checklist organized by category: site work, foundations, framing, roofing, mechanical/electrical/plumbing, finishes. Include typical units of measure and what to watch out for when getting bids.')">🤖 AI Take-off Guide</button>
+        <button class="btn btn-g" onclick="calcTakeoffTotal()" style="background:var(--forest);color:#fff">Σ Recalculate Total</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl" id="takeoffTable">
+        <thead><tr>
+          <th>Category</th><th>Item / Description</th><th>Qty</th><th>Unit</th>
+          <th>Unit Price ($)</th><th>Total ($)</th><th>Supplier</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="takeoffBody"></tbody>
+        <tfoot><tr style="background:var(--parch);font-weight:700">
+          <td colspan="5" style="padding:.5rem 1rem;text-align:right">TOTAL ESTIMATED COST</td>
+          <td id="takeoffTotal" style="padding:.5rem 1rem;color:var(--forest)">$0</td>
+          <td colspan="3"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Order Tracking -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📦 Order Tracking</h3>
+      <button class="btn btn-g" onclick="addOrder()">+ Add Order</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl" id="orderTable">
+        <thead><tr>
+          <th>Item / Description</th><th>Supplier</th><th>PO / Ref #</th>
+          <th>Order Date</th><th>Amount ($)</th><th>Status</th>
+          <th>Expected Delivery</th><th>Received Date</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="orderBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Budget vs Actual -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>💰 Budget vs Actual</h3>
+      <button class="btn btn-g" onclick="aiAsk('Review my construction budget and spending. What categories typically have the highest variance between budget and actual in '+getField('pType')+' development in the Carolinas? What contingency percentage do you recommend and where should I focus cost controls?')">🤖 AI Budget Review</button>
+    </div>
+    <div class="card-body">
+      <div class="f-row" style="gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+        <div class="f"><label>Total Construction Budget ($)</label><input type="number" id="conBudget" placeholder="From Proforma" oninput="saveConstruction();calcBudgetVariance()"></div>
+        <div class="f"><label>Total Committed / Ordered ($)</label><input type="text" id="conCommitted" readonly style="background:var(--parch)" placeholder="Auto from orders"></div>
+        <div class="f"><label>Total Spent to Date ($)</label><input type="number" id="conSpent" placeholder="0" oninput="saveConstruction();calcBudgetVariance()"></div>
+        <div class="f"><label>Remaining Budget ($)</label><input type="text" id="conRemaining" readonly style="background:var(--parch)"></div>
+        <div class="f"><label>% Complete</label><input type="text" id="conPctComplete" readonly style="background:var(--parch)"></div>
+        <div class="f"><label>Contingency Reserve ($)</label><input type="number" id="conContingency" placeholder="e.g. 50000" oninput="saveConstruction();calcBudgetVariance()"></div>
+      </div>
+      <div id="budgetVarianceBar" style="background:var(--parch);border-radius:8px;padding:1rem;display:none">
+        <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:.5rem">SPEND PROGRESS</div>
+        <div style="background:#ddd;border-radius:4px;height:14px;overflow:hidden">
+          <div id="budgetBar" style="background:var(--fern);height:100%;width:0%;transition:width .4s"></div>
+        </div>
+        <div id="budgetBarLabel" style="font-size:.75rem;color:var(--muted);margin-top:.4rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Construction Notes -->
+  <div class="card">
+    <div class="card-hd"><h3>📝 Construction Notes & Issues Log</h3></div>
+    <div class="card-body">
+      <textarea id="conNotes" rows="5" style="width:100%;box-sizing:border-box" placeholder="Log issues, RFIs, change orders, site conditions, inspector notes..." oninput="saveConstruction()"></textarea>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-p" onclick="save()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('Review my construction tracking data. I have '+document.getElementById(\'orderBody\')?.children.length+' orders tracked and my budget utilization is '+document.getElementById(\'conPctComplete\')?.value+'. What should I be focused on to keep construction on schedule and on budget?')">🤖 AI Construction Review</button>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- ── AI SIDEBAR ── -->
@@ -1159,51 +1369,68 @@ const FOLDERS = [
   }
 ];
 
+const PERMIT_STEPS = {
+  1: "Pre-Development",
+  2: "Entitlements & Approvals",
+  3: "Preliminary Plans",
+  4: "Permits & Submissions",
+  5: "During Construction",
+  6: "Close-out & CO"
+};
+
 const PERMITS = [
-  {id:"wc1",cat:"Wake County",name:"Rezoning Petition",agency:"Wake County Planning",desc:"Application for rezoning in unincorporated Wake County.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Rezoning Petition Supplemental Form.pdf",types:["all"],pe:false},
-  {id:"wc2",cat:"Wake County",name:"Site Plan Requirements & Example",agency:"Wake County Permits",desc:"Required site plan format for all permit submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/Wake County Site Plan Requirements & Example.pdf",types:["all"],pe:true},
-  {id:"wc3",cat:"Wake County",name:"Impervious Surface Calculations",agency:"Wake County Permits",desc:"Required calculation form for impervious surface.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/Impervious Surface Calculations Form.pdf",types:["all"],pe:true},
-  {id:"wc4",cat:"Wake County",name:"Owner Affidavit",agency:"Wake County Permits",desc:"Owner affidavit required for permit applications.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2020-09/owneraffidavit inspector level 3.pdf",types:["all"],pe:false},
-  {id:"wc5",cat:"Wake County",name:"Preliminary Subdivision Checklist",agency:"Wake County Planning",desc:"Required checklist for preliminary subdivision submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Preliminary Subdivision Plan Checklist.pdf",types:["Single Family Detached","Townhomes","Duplexes"],pe:false},
-  {id:"wc6",cat:"Wake County",name:"Regular Final Plat Checklist",agency:"Wake County Planning",desc:"Checklist for final plat subdivision submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Regular Final Plat Subdivison checklist.pdf",types:["Single Family Detached","Townhomes","Duplexes"],pe:false},
-  {id:"wc7",cat:"Wake County",name:"Land Use Simple Checklist",agency:"Wake County Planning",desc:"Checklist for simple land use applications.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Land Use Simple Checklist.pdf",types:["all"],pe:false},
-  {id:"wc8",cat:"Wake County",name:"Zoning Verification Request",agency:"Wake County Planning",desc:"Request to verify zoning for a parcel.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Zoning Verification Request Form.pdf",types:["all"],pe:false},
-  {id:"wc9",cat:"Wake County",name:"Energy Efficiency Certificate",agency:"Wake County Permits",desc:"Required energy certification for new construction.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2020-10/Energy Efficiency Certificate.pdf",types:["Single Family Detached","Townhomes","Duplexes","Apartments","Condos"],pe:false},
-  {id:"wc10",cat:"Wake County",name:"Minor Subdivision Checklist",agency:"Wake County Planning",desc:"Checklist for minor and minor-limited subdivision.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Minor and Minor-Limited Subdivision Checklist_0.pdf",types:["Single Family Detached","Duplexes"],pe:false},
-  {id:"wc11",cat:"Wake County",name:"Pre-Submittal Meeting (Commercial)",agency:"Wake County Planning",desc:"Form to request pre-submittal meeting for commercial projects.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Pre-submittal meeting Commercial supplemental form.pdf",types:["Commercial","Mixed Use"],pe:false},
-  {id:"ws1",cat:"Watershed",name:"Joint Application (Land Disturbance / SW / Floodplain)",agency:"Wake County Watershed",desc:"Primary application for land disturbance, stormwater management, and floodplain — subdivisions and non-residential.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/swfmsecApplication_joint_construction_2026.pdf",types:["all"],pe:false},
-  {id:"ws2",cat:"Watershed",name:"Single Lot Erosion Control Application",agency:"Wake County Watershed",desc:"Erosion control application for single lot projects.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/swfmsecApplication_joint_construction_2026_0.pdf",types:["Single Family Detached","Duplexes"],pe:false},
-  {id:"ws3",cat:"Watershed",name:"Financial Responsibility / Ownership Form",agency:"Wake County Watershed",desc:"Required form establishing financial responsibility.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Financial Responsibility Form 2026.pdf",types:["all"],pe:false},
-  {id:"ws4",cat:"Watershed",name:"Stormwater Agreement",agency:"Wake County Watershed",desc:"Stormwater control measure maintenance agreement.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/STORMWATER_AGREEMENT_2026.pdf",types:["all"],pe:false},
-  {id:"ws5",cat:"Watershed",name:"Floodplain Encroachment Application",agency:"Wake County Watershed",desc:"Required if project encroaches on FEMA floodplain.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2025-11/Wake County Flood Development Permit.pdf",types:["all"],pe:true},
-  {id:"ws6",cat:"Watershed",name:"Buffer Authorization Form (Jordan/Cape Fear)",agency:"Wake County Watershed",desc:"Required for any work within Jordan Lake buffer zones.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Cape Fear_Jordan Buffer Authorization Form.pdf",types:["all"],pe:false},
-  {id:"ws7",cat:"Watershed",name:"Preliminary Plan Checklist (Neuse Basin)",agency:"Wake County Watershed",desc:"Watershed preliminary plan checklist — Neuse River basin.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Neuse_PreliminaryPlanChecklist-V.3_Applicant_2026.pdf",types:["all"],pe:false},
-  {id:"ws8",cat:"Watershed",name:"Preliminary Plan Checklist (Falls Lake)",agency:"Wake County Watershed",desc:"Watershed preliminary plan checklist — Falls Lake area.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Falls_Preliminary_PlanChecklist-V.3_Applicant_2026.pdf",types:["all"],pe:false},
-  {id:"ws9",cat:"Watershed",name:"Construction Plan Submittal Checklist (Neuse)",agency:"Wake County Watershed",desc:"Construction plan submittal checklist for Neuse basin.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/NeuseConstructionPlanSubmittalChecklist-V.3_Applicant-2026.pdf",types:["all"],pe:false},
-  {id:"ws10",cat:"Watershed",name:"Erosion Control Submittal Checklist",agency:"Wake County Watershed",desc:"Erosion control submittal checklist for subdivisions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/ErosionControlSubmittalChecklistV.3_Applicant2026.pdf",types:["all"],pe:false},
-  {id:"ws11",cat:"Watershed",name:"Stormwater Deviation Application",agency:"Wake County Watershed",desc:"Application to request deviation from stormwater requirements.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/DEVIATION_APPLICATION_2026.pdf",types:["all"],pe:true},
-  {id:"ws12",cat:"Watershed",name:"Municipal Checklist (Rolesville/Wendell/Zebulon)",agency:"Wake County Watershed",desc:"Construction drawing checklist for municipal partner jurisdictions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/MUNICIPAL ConstructionPlanSubmittalChecklist_V.3_Applicant_2026.pdf",types:["all"],pe:false},
-  {id:"ws13",cat:"Watershed",name:"Landowner Consent Form",agency:"Wake County Watershed",desc:"Consent form for work affecting adjacent landowner property.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2023-03/Landowner Consent Form Template -Fillable Form.pdf",types:["all"],pe:false},
-  {id:"dot1",cat:"NCDOT",name:"NCDOT Driveway Permit",agency:"NC Dept of Transportation",desc:"Required for any new driveway or access to state-maintained road.",url:"https://connect.ncdot.gov/municipalities/Utilities/Pages/Encroachment-Agreements.aspx",types:["all"],pe:false},
-  {id:"dot2",cat:"NCDOT",name:"NCDOT Encroachment Agreement",agency:"NC Dept of Transportation",desc:"Required for any work within NCDOT right-of-way.",url:"https://connect.ncdot.gov/municipalities/Utilities/Pages/Encroachment-Agreements.aspx",types:["all"],pe:true},
-  {id:"dot3",cat:"NCDOT",name:"Traffic Impact Analysis (TIA)",agency:"NC Dept of Transportation",desc:"Required for larger developments — must be prepared and sealed by PE.",url:"https://connect.ncdot.gov/projects/planning/Pages/TIA.aspx",types:["Apartments","Commercial","Mixed Use"],pe:true},
-  {id:"deq1",cat:"NC DEQ",name:"NPDES Construction Stormwater Permit",agency:"NC DEQ / DEMLR",desc:"Required for land disturbance of 1+ acres. Apply through eDEQ portal.",url:"https://deq.nc.gov/about/divisions/energy-mineral-land-resources/stormwater/stormwater-program/construction-sw",types:["all"],pe:false},
-  {id:"deq2",cat:"NC DEQ",name:"Sedimentation Pollution Control Act Permit",agency:"NC DEQ / DEMLR",desc:"Required for land-disturbing activities over 1 acre.",url:"https://deq.nc.gov/about/divisions/energy-mineral-land-resources/erosion-and-sediment-control",types:["all"],pe:true},
-  {id:"deq3",cat:"NC DEQ",name:"401 Water Quality Certification",agency:"NC DEQ Division of Water Resources",desc:"Required when 404 permit is needed. Certifies state water quality standards compliance.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-permits/wastewater-branch/401-wetlands-buffer-permitting",types:["all"],pe:false},
-  {id:"deq4",cat:"NC DEQ",name:"Jordan Lake Buffer Rules Compliance",agency:"NC DEQ",desc:"Required compliance documentation for Cape Fear basin projects.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-rules/jordan-lake-rules",types:["all"],pe:false},
-  {id:"deq5",cat:"NC DEQ",name:"Neuse River Buffer Rules Compliance",agency:"NC DEQ",desc:"Required compliance for Neuse River basin projects.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-rules/neuse-river-basin-rules",types:["all"],pe:false},
-  {id:"ace1",cat:"404 / 401",name:"Nationwide Permit (NWP) Application",agency:"US Army Corps — Wilmington District",desc:"Most residential projects use NWP 29 or NWP 39. PCN required for most.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Nationwide-Permits/",types:["all"],pe:false},
-  {id:"ace2",cat:"404 / 401",name:"Individual Section 404 Permit",agency:"US Army Corps of Engineers",desc:"Required for significant wetland impacts not covered by Nationwide Permits.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Individual-Permits/",types:["all"],pe:false},
-  {id:"ace3",cat:"404 / 401",name:"Wetland Delineation Report",agency:"US Army Corps of Engineers",desc:"Documents wetland boundaries. Must be prepared by qualified professional.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/",types:["all"],pe:false},
-  {id:"ace4",cat:"404 / 401",name:"Pre-Construction Notification (PCN)",agency:"US Army Corps of Engineers",desc:"PCN required for most Nationwide Permits before starting work.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Nationwide-Permits/",types:["all"],pe:false},
-  {id:"ral1",cat:"City of Raleigh",name:"City of Raleigh Development Portal",agency:"City of Raleigh Planning",desc:"Online portal for all Raleigh development applications and permits.",url:"https://raleighnc.gov/permits",types:["all"],pe:false},
-  {id:"ral2",cat:"City of Raleigh",name:"Raleigh UDO — Unified Development Ordinance",agency:"City of Raleigh",desc:"Complete zoning, subdivision, and development standards for Raleigh.",url:"https://library.municode.com/nc/raleigh/codes/unified_development_ordinance",types:["all"],pe:false},
-  {id:"cary1",cat:"Town of Cary",name:"Cary Development Applications",agency:"Town of Cary Planning",desc:"Development permits and applications for projects within Cary.",url:"https://www.townofcary.org/permits",types:["all"],pe:false},
-  {id:"mun1",cat:"Other Municipalities",name:"Apex Development Review",agency:"Town of Apex",desc:"Development permits and applications for Apex projects.",url:"https://www.apexnc.org/298/Development-Review",types:["all"],pe:false},
-  {id:"mun2",cat:"Other Municipalities",name:"Holly Springs Development",agency:"Town of Holly Springs",desc:"Development applications for Holly Springs projects.",url:"https://www.hollyspringsnc.us/157/Development-Review",types:["all"],pe:false},
-  {id:"mun3",cat:"Other Municipalities",name:"Morrisville Development",agency:"Town of Morrisville",desc:"Building permits and development applications for Morrisville.",url:"https://www.townofmorrisville.org/businesses/building-permits-inspections",types:["all"],pe:false},
-  {id:"mun4",cat:"Other Municipalities",name:"Fuquay-Varina Development",agency:"Town of Fuquay-Varina",desc:"Development services for Fuquay-Varina projects.",url:"https://www.fuquay-varina.org/283/Development-Services",types:["all"],pe:false},
-  {id:"mun5",cat:"Other Municipalities",name:"Knightdale Development",agency:"Town of Knightdale",desc:"Development applications for Knightdale projects.",url:"https://www.knightdalenc.gov/development",types:["all"],pe:false}
+  // ── Wake County ──────────────────────────────────────────────────────────────
+  {id:"wc1", step:2, cat:"Wake County",name:"Rezoning Petition",agency:"Wake County Planning",desc:"Application for rezoning in unincorporated Wake County.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Rezoning Petition Supplemental Form.pdf",types:["all"],pe:false},
+  {id:"wc7", step:1, cat:"Wake County",name:"Land Use Simple Checklist",agency:"Wake County Planning",desc:"Checklist for simple land use applications — good first step before applying.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Land Use Simple Checklist.pdf",types:["all"],pe:false},
+  {id:"wc8", step:1, cat:"Wake County",name:"Zoning Verification Request",agency:"Wake County Planning",desc:"Request to verify zoning for a parcel before committing to a project.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Zoning Verification Request Form.pdf",types:["all"],pe:false},
+  {id:"wc11",step:1, cat:"Wake County",name:"Pre-Submittal Meeting (Commercial)",agency:"Wake County Planning",desc:"Form to request pre-submittal meeting for commercial projects.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Pre-submittal meeting Commercial supplemental form.pdf",types:["Commercial","Mixed Use"],pe:false},
+  {id:"wc5", step:3, cat:"Wake County",name:"Preliminary Subdivision Checklist",agency:"Wake County Planning",desc:"Required checklist for preliminary subdivision submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Preliminary Subdivision Plan Checklist.pdf",types:["Single Family Detached","Townhomes","Duplexes"],pe:false},
+  {id:"wc10",step:3, cat:"Wake County",name:"Minor Subdivision Checklist",agency:"Wake County Planning",desc:"Checklist for minor and minor-limited subdivision.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Minor and Minor-Limited Subdivision Checklist_0.pdf",types:["Single Family Detached","Duplexes"],pe:false},
+  {id:"wc2", step:3, cat:"Wake County",name:"Site Plan Requirements & Example",agency:"Wake County Permits",desc:"Required site plan format for all permit submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/Wake County Site Plan Requirements & Example.pdf",types:["all"],pe:true},
+  {id:"wc3", step:4, cat:"Wake County",name:"Impervious Surface Calculations",agency:"Wake County Permits",desc:"Required calculation form for impervious surface — submit with building permit.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/Impervious Surface Calculations Form.pdf",types:["all"],pe:true},
+  {id:"wc4", step:4, cat:"Wake County",name:"Owner Affidavit",agency:"Wake County Permits",desc:"Owner affidavit required for permit applications.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2020-09/owneraffidavit inspector level 3.pdf",types:["all"],pe:false},
+  {id:"wc9", step:5, cat:"Wake County",name:"Energy Efficiency Certificate",agency:"Wake County Permits",desc:"Required energy certification — submitted prior to CO.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2020-10/Energy Efficiency Certificate.pdf",types:["Single Family Detached","Townhomes","Duplexes","Apartments","Condos"],pe:false},
+  {id:"wc6", step:6, cat:"Wake County",name:"Regular Final Plat Checklist",agency:"Wake County Planning",desc:"Checklist for final plat subdivision submissions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-02/Regular Final Plat Subdivison checklist.pdf",types:["Single Family Detached","Townhomes","Duplexes"],pe:false},
+  // ── Watershed ────────────────────────────────────────────────────────────────
+  {id:"ws6", step:2, cat:"Watershed",name:"Buffer Authorization Form (Jordan/Cape Fear)",agency:"Wake County Watershed",desc:"Required for any work within Jordan Lake buffer zones — obtain before design.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Cape Fear_Jordan Buffer Authorization Form.pdf",types:["all"],pe:false},
+  {id:"ws7", step:3, cat:"Watershed",name:"Preliminary Plan Checklist (Neuse Basin)",agency:"Wake County Watershed",desc:"Watershed preliminary plan checklist — Neuse River basin.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Neuse_PreliminaryPlanChecklist-V.3_Applicant_2026.pdf",types:["all"],pe:false},
+  {id:"ws8", step:3, cat:"Watershed",name:"Preliminary Plan Checklist (Falls Lake)",agency:"Wake County Watershed",desc:"Watershed preliminary plan checklist — Falls Lake area.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Falls_Preliminary_PlanChecklist-V.3_Applicant_2026.pdf",types:["all"],pe:false},
+  {id:"ws13",step:3, cat:"Watershed",name:"Landowner Consent Form",agency:"Wake County Watershed",desc:"Consent form for work affecting adjacent landowner property.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2023-03/Landowner Consent Form Template -Fillable Form.pdf",types:["all"],pe:false},
+  {id:"ws1", step:4, cat:"Watershed",name:"Joint Application (Land Disturbance / SW / Floodplain)",agency:"Wake County Watershed",desc:"Primary application for land disturbance, stormwater management, and floodplain.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/swfmsecApplication_joint_construction_2026.pdf",types:["all"],pe:false},
+  {id:"ws2", step:4, cat:"Watershed",name:"Single Lot Erosion Control Application",agency:"Wake County Watershed",desc:"Erosion control application for single lot projects.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/swfmsecApplication_joint_construction_2026_0.pdf",types:["Single Family Detached","Duplexes"],pe:false},
+  {id:"ws3", step:4, cat:"Watershed",name:"Financial Responsibility / Ownership Form",agency:"Wake County Watershed",desc:"Required form establishing financial responsibility.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/Financial Responsibility Form 2026.pdf",types:["all"],pe:false},
+  {id:"ws4", step:4, cat:"Watershed",name:"Stormwater Agreement",agency:"Wake County Watershed",desc:"Stormwater control measure maintenance agreement.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-01/STORMWATER_AGREEMENT_2026.pdf",types:["all"],pe:false},
+  {id:"ws5", step:4, cat:"Watershed",name:"Floodplain Encroachment Application",agency:"Wake County Watershed",desc:"Required if project encroaches on FEMA floodplain.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2025-11/Wake County Flood Development Permit.pdf",types:["all"],pe:true},
+  {id:"ws9", step:4, cat:"Watershed",name:"Construction Plan Submittal Checklist (Neuse)",agency:"Wake County Watershed",desc:"Construction plan submittal checklist for Neuse basin.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/NeuseConstructionPlanSubmittalChecklist-V.3_Applicant-2026.pdf",types:["all"],pe:false},
+  {id:"ws10",step:4, cat:"Watershed",name:"Erosion Control Submittal Checklist",agency:"Wake County Watershed",desc:"Erosion control submittal checklist for subdivisions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/ErosionControlSubmittalChecklistV.3_Applicant2026.pdf",types:["all"],pe:false},
+  {id:"ws11",step:4, cat:"Watershed",name:"Stormwater Deviation Application",agency:"Wake County Watershed",desc:"Application to request deviation from stormwater requirements.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/DEVIATION_APPLICATION_2026.pdf",types:["all"],pe:true},
+  {id:"ws12",step:4, cat:"Watershed",name:"Municipal Checklist (Rolesville/Wendell/Zebulon)",agency:"Wake County Watershed",desc:"Construction drawing checklist for municipal partner jurisdictions.",url:"https://s3.us-west-1.amazonaws.com/wakegov.com.if-us-west-1/s3fs-public/documents/2026-03/MUNICIPAL ConstructionPlanSubmittalChecklist_V.3_Applicant_2026.pdf",types:["all"],pe:false},
+  // ── NCDOT ─────────────────────────────────────────────────────────────────────
+  {id:"dot3",step:2, cat:"NCDOT",name:"Traffic Impact Analysis (TIA)",agency:"NC Dept of Transportation",desc:"Required for larger developments — must be prepared and sealed by PE. Obtain TIA scoping approval before preliminary design.",url:"https://connect.ncdot.gov/projects/planning/Pages/TIA.aspx",types:["Apartments","Commercial","Mixed Use"],pe:true},
+  {id:"dot1",step:4, cat:"NCDOT",name:"NCDOT Driveway Permit",agency:"NC Dept of Transportation",desc:"Required for any new driveway or access to state-maintained road.",url:"https://connect.ncdot.gov/municipalities/Utilities/Pages/Encroachment-Agreements.aspx",types:["all"],pe:false},
+  {id:"dot2",step:4, cat:"NCDOT",name:"NCDOT Encroachment Agreement",agency:"NC Dept of Transportation",desc:"Required for any work within NCDOT right-of-way.",url:"https://connect.ncdot.gov/municipalities/Utilities/Pages/Encroachment-Agreements.aspx",types:["all"],pe:true},
+  // ── NC DEQ ────────────────────────────────────────────────────────────────────
+  {id:"deq3",step:2, cat:"NC DEQ",name:"401 Water Quality Certification",agency:"NC DEQ Division of Water Resources",desc:"Required when 404 permit is needed. Apply concurrently with Army Corps.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-permits/wastewater-branch/401-wetlands-buffer-permitting",types:["all"],pe:false},
+  {id:"deq4",step:2, cat:"NC DEQ",name:"Jordan Lake Buffer Rules Compliance",agency:"NC DEQ",desc:"Required compliance documentation for Cape Fear basin projects.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-rules/jordan-lake-rules",types:["all"],pe:false},
+  {id:"deq5",step:2, cat:"NC DEQ",name:"Neuse River Buffer Rules Compliance",agency:"NC DEQ",desc:"Required compliance for Neuse River basin projects.",url:"https://deq.nc.gov/about/divisions/water-resources/water-resources-rules/neuse-river-basin-rules",types:["all"],pe:false},
+  {id:"deq1",step:4, cat:"NC DEQ",name:"NPDES Construction Stormwater Permit",agency:"NC DEQ / DEMLR",desc:"Required for land disturbance of 1+ acres. Apply through eDEQ portal.",url:"https://deq.nc.gov/about/divisions/energy-mineral-land-resources/stormwater/stormwater-program/construction-sw",types:["all"],pe:false},
+  {id:"deq2",step:4, cat:"NC DEQ",name:"Sedimentation Pollution Control Act Permit",agency:"NC DEQ / DEMLR",desc:"Required for land-disturbing activities over 1 acre.",url:"https://deq.nc.gov/about/divisions/energy-mineral-land-resources/erosion-and-sediment-control",types:["all"],pe:true},
+  // ── 404 / 401 ─────────────────────────────────────────────────────────────────
+  {id:"ace3",step:1, cat:"404 / 401",name:"Wetland Delineation Report",agency:"US Army Corps of Engineers",desc:"Documents wetland boundaries. Must be prepared by qualified professional — do this before any design work.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/",types:["all"],pe:false},
+  {id:"ace1",step:2, cat:"404 / 401",name:"Nationwide Permit (NWP) Application",agency:"US Army Corps — Wilmington District",desc:"Most residential projects use NWP 29 or NWP 39. PCN required for most.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Nationwide-Permits/",types:["all"],pe:false},
+  {id:"ace2",step:2, cat:"404 / 401",name:"Individual Section 404 Permit",agency:"US Army Corps of Engineers",desc:"Required for significant wetland impacts not covered by Nationwide Permits.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Individual-Permits/",types:["all"],pe:false},
+  {id:"ace4",step:2, cat:"404 / 401",name:"Pre-Construction Notification (PCN)",agency:"US Army Corps of Engineers",desc:"PCN required for most Nationwide Permits before starting work.",url:"https://www.saw.usace.army.mil/Missions/Regulatory-Permit-Program/Permits/Nationwide-Permits/",types:["all"],pe:false},
+  // ── City of Raleigh ────────────────────────────────────────────────────────────
+  {id:"ral1",step:1, cat:"City of Raleigh",name:"City of Raleigh Development Portal",agency:"City of Raleigh Planning",desc:"Online portal for all Raleigh development applications and permits.",url:"https://raleighnc.gov/permits",types:["all"],pe:false},
+  {id:"ral2",step:1, cat:"City of Raleigh",name:"Raleigh UDO — Unified Development Ordinance",agency:"City of Raleigh",desc:"Complete zoning, subdivision, and development standards for Raleigh.",url:"https://library.municode.com/nc/raleigh/codes/unified_development_ordinance",types:["all"],pe:false},
+  // ── Town of Cary ───────────────────────────────────────────────────────────────
+  {id:"cary1",step:1, cat:"Town of Cary",name:"Cary Development Applications",agency:"Town of Cary Planning",desc:"Development permits and applications for projects within Cary.",url:"https://www.townofcary.org/permits",types:["all"],pe:false},
+  // ── Other Municipalities ────────────────────────────────────────────────────────
+  {id:"mun1",step:1, cat:"Other Municipalities",name:"Apex Development Review",agency:"Town of Apex",desc:"Development permits and applications for Apex projects.",url:"https://www.apexnc.org/298/Development-Review",types:["all"],pe:false},
+  {id:"mun2",step:1, cat:"Other Municipalities",name:"Holly Springs Development",agency:"Town of Holly Springs",desc:"Development applications for Holly Springs projects.",url:"https://www.hollyspringsnc.us/157/Development-Review",types:["all"],pe:false},
+  {id:"mun3",step:1, cat:"Other Municipalities",name:"Morrisville Development",agency:"Town of Morrisville",desc:"Building permits and development applications for Morrisville.",url:"https://www.townofmorrisville.org/businesses/building-permits-inspections",types:["all"],pe:false},
+  {id:"mun4",step:1, cat:"Other Municipalities",name:"Fuquay-Varina Development",agency:"Town of Fuquay-Varina",desc:"Development services for Fuquay-Varina projects.",url:"https://www.fuquay-varina.org/283/Development-Services",types:["all"],pe:false},
+  {id:"mun5",step:1, cat:"Other Municipalities",name:"Knightdale Development",agency:"Town of Knightdale",desc:"Development applications for Knightdale projects.",url:"https://www.knightdalenc.gov/development",types:["all"],pe:false}
 ];
 
 const CHECKLIST_DATA = [
@@ -1233,11 +1460,23 @@ const IMAPS_GUIDE = [
   ["Adjacent Zoning","Click neighboring parcels to see their zoning"]
 ];
 
-const IMAPS_FIELDS = [
-  "PIN","Owner Name","Parcel Address","Lot Size (acres)","Zoning District",
-  "Current Land Use","Assessed Value ($)","Flood Zone (Y/N)","Watershed / Basin",
-  "Water Service Available (Y/N)","Sewer Service Available (Y/N)","Road Frontage (ft)",
-  "Deed Book/Page","Adjacent Zoning North","Adjacent Zoning South"
+// Each entry: {label, key, auto:true = filled from PIN lookup, placeholder}
+const IMAPS_FIELD_MAP = [
+  {label:"PIN",                        key:"PIN",             auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Owner Name",                 key:"OwnerName",       auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Parcel Address",             key:"ParcelAddress",   auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Lot Size (acres)",           key:"LotSizeAcres",    auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Current Land Use",           key:"CurrentLandUse",  auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Assessed Value ($)",         key:"AssessedValue",   auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Watershed / Basin",          key:"WatershedBasin",  auto:true,  placeholder:"Auto-filled from PIN lookup"},
+  {label:"Zoning District",            key:"ZoningDistrict",  auto:false, placeholder:"Open iMAPS → Layers → Zoning → click parcel"},
+  {label:"Flood Zone",                 key:"FloodZone",       auto:false, placeholder:"Open iMAPS → Layers → Flood Zones → click parcel"},
+  {label:"Water Service Available",    key:"WaterService",    auto:false, placeholder:"Open iMAPS → Layers → Utilities → Water"},
+  {label:"Sewer Service Available",    key:"SewerService",    auto:false, placeholder:"Open iMAPS → Layers → Utilities → Sewer"},
+  {label:"Road Frontage (ft)",         key:"RoadFrontage",    auto:false, placeholder:"iMAPS Measure tool along street edge"},
+  {label:"Deed Book / Page",           key:"DeedBook",        auto:false, placeholder:"From deed or Wake County Register of Deeds"},
+  {label:"Adjacent Zoning North",      key:"AdjZoningNorth",  auto:false, placeholder:"Click neighboring parcel in iMAPS"},
+  {label:"Adjacent Zoning South",      key:"AdjZoningSouth",  auto:false, placeholder:"Click neighboring parcel in iMAPS"},
 ];
 
 const PF_DATA = [
@@ -1312,6 +1551,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const ob = localStorage.getItem('lsOnboarded');
   if (ob) { document.getElementById('onboardModal').classList.add('hidden'); applyProfile(); }
   buildStages(); buildPF(); buildChecklist(); buildGuide(); buildIMAPSIn();
+  loadMarket(); loadConstruction();
   buildStatCards(); buildFolders(); buildPEItems(); buildPermits(); loadForm();
   buildMeetings(); buildSchedule(); buildHub();
 });
@@ -1571,28 +1811,24 @@ async function doLookup() {
       ${flags ? `<div style="grid-column:1/-1"><div class="pd-l">Red Flags</div>${flags}</div>` : ''}
     `;
 
-    // Auto-fill form fields
+    // Auto-fill form fields — keys must match IMAPS_FIELD_MAP keys
     if (!D.imaps) D.imaps = {};
-    if (p.pin)           { D.imaps['PIN'] = p.pin; document.getElementById('pPIN').value = p.pin; }
-    if (p.address)       { D.imaps['StreetAddress'] = p.address + (p.city ? ', '+p.city : ''); setField('pAddr', D.imaps['StreetAddress']); }
-    // Note: Wake County ArcGIS does not include zoning — user should verify in iMAPS
-    // p.zoning / p.propdesc contains the legal property description, not the zoning district
-    if (p.acres)         { D.imaps['DeedAcres'] = p.acres; }
-    if (p.township)      { D.imaps['Township'] = p.township; }
-    if (p.planning_juris){ D.imaps['PlanningJurisdiction'] = p.planning_juris; autoSetJuris(p.planning_juris); }
-    if (p.land_class)    { D.imaps['LandClass'] = p.land_class; }
-    if (p.total_value)   { D.imaps['TotalAssessedValue'] = p.total_value; }
-    if (p.last_sale_price){ D.imaps['LastSalePrice'] = p.last_sale_price; }
-    if (p.last_sale_date){ D.imaps['LastSaleDate'] = p.last_sale_date; }
-    if (p.owner)         { D.imaps['OwnerName'] = p.owner; }
+    if (p.pin)            { D.imaps['PIN']           = p.pin; document.getElementById('pPIN').value = p.pin; }
+    if (p.address)        { D.imaps['ParcelAddress'] = p.address + (p.city ? ', '+p.city : ''); setField('pAddr', D.imaps['ParcelAddress']); }
+    if (p.acres)          { D.imaps['LotSizeAcres']  = parseFloat(p.acres).toFixed(2) + ' ac'; }
+    if (p.land_class)     { D.imaps['CurrentLandUse']= p.land_class; }
+    if (p.total_value)    { D.imaps['AssessedValue'] = fmt$(p.total_value); }
+    if (p.owner)          { D.imaps['OwnerName']     = p.owner; }
+    if (p.planning_juris) { autoSetJuris(p.planning_juris); }
+    // Note: Wake County ArcGIS does not return zoning district — user must look up in iMAPS
 
-    // Watershed detection from township
+    // Watershed detection from township — store under WatershedBasin
     const twp = (p.township||'').toUpperCase();
-    if (twp.includes('SWIFT CREEK'))      { setField('pBasin', 'Cape Fear Basin (Jordan Lake)'); D.imaps['Watershed'] = 'Swift Creek / Cape Fear'; }
-    else if (twp.includes('JORDAN'))      { setField('pBasin', 'Cape Fear Basin (Jordan Lake)'); D.imaps['Watershed'] = 'Cape Fear / Jordan Lake'; }
-    else if (twp.includes('FALLS'))       { setField('pBasin', 'Falls Lake Watershed'); D.imaps['Watershed'] = 'Falls Lake'; }
+    if (twp.includes('SWIFT CREEK'))      { setField('pBasin', 'Cape Fear Basin (Jordan Lake)'); D.imaps['WatershedBasin'] = 'Swift Creek / Cape Fear'; }
+    else if (twp.includes('JORDAN'))      { setField('pBasin', 'Cape Fear Basin (Jordan Lake)'); D.imaps['WatershedBasin'] = 'Cape Fear / Jordan Lake'; }
+    else if (twp.includes('FALLS'))       { setField('pBasin', 'Falls Lake Watershed');           D.imaps['WatershedBasin'] = 'Falls Lake'; }
     else if (twp.includes('NEUSE') || ['RA','RAL','WC','WF','WKF','WE','WEN','ZE','ZEB','KN','KNI','RO','ROL'].includes((p.planning_juris||'').toUpperCase()))
-                                          { setField('pBasin', 'Neuse River Basin'); D.imaps['Watershed'] = 'Neuse River'; }
+                                          { setField('pBasin', 'Neuse River Basin');              D.imaps['WatershedBasin'] = 'Neuse River'; }
 
     // Auto-populate Existing Conditions in Statistics tab
     const setRO = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
@@ -1750,14 +1986,63 @@ function setPF(si,ii,k,v){if(!D.pf)D.pf={};if(!D.pf[si])D.pf[si]={};if(!D.pf[si]
 
 // ═══════════════════════ PERMITS ═══════════════════════
 
+function prefillPermit(p) {
+  const pins = parcelList.length > 0
+    ? parcelList.map(x=>x.pin).join(', ')
+    : (document.getElementById('activePin')?.textContent || getField('pPIN') || '');
+  const acres = document.getElementById('exAcres')?.value || '';
+  const owner = document.getElementById('exOwner')?.value || '';
+  const addr  = document.getElementById('exAddr')?.value  || document.querySelector('#exAddr')?.value || '';
+  const dev   = getField('pDev')  || '';
+  const ptype = getField('pType') || '';
+  const proj  = getField('pName') || '';
+  const juris = getField('pJuris')|| '';
+  const basin = getField('pBasin')|| '';
+  const sqft  = document.getElementById('exSqft')?.value || '';
+
+  const lines = [
+    `PROJECT DATA — ${new Date().toLocaleDateString()}`,
+    `─────────────────────────────────────────`,
+    proj  ? `Project Name:     ${proj}`  : null,
+    pins  ? `PIN(s):           ${pins}`  : null,
+    addr  ? `Address:          ${addr}`  : null,
+    owner ? `Owner of Record:  ${owner}` : null,
+    dev   ? `Developer:        ${dev}`   : null,
+    ptype ? `Project Type:     ${ptype}` : null,
+    acres ? `Site Area:        ${acres} acres (${sqft})` : null,
+    juris ? `Jurisdiction:     ${juris}` : null,
+    basin ? `Watershed Basin:  ${basin}` : null,
+    `─────────────────────────────────────────`,
+    `Form: ${p.name}`,
+    `Agency: ${p.agency}`,
+  ].filter(Boolean).join('\n');
+
+  navigator.clipboard.writeText(lines).then(() => {
+    showToast('Project data copied to clipboard — paste into the form after it opens', 's');
+    setTimeout(() => window.open(p.url, '_blank'), 400);
+  }).catch(() => {
+    window.open(p.url, '_blank');
+    showToast('Could not copy to clipboard — form opened', 'w');
+  });
+}
+
 function buildPermits(cat) {
   if (cat) activeCat = cat;
   const ptype = getField('pType');
   document.getElementById('pcatRow').innerHTML = PERMIT_CATS.map(c =>
     `<button class="pcat ${activeCat===c?'on':''}" onclick="buildPermits('${c}')">${c}</button>`).join('');
+
   const filtered = PERMITS.filter(p => activeCat==='All' || p.cat===activeCat);
   document.getElementById('permitCount').textContent = `${filtered.length} forms`;
-  document.getElementById('permitGrid').innerHTML = filtered.map(p => {
+
+  // Group by step
+  const byStep = {};
+  filtered.forEach(p => {
+    (byStep[p.step] = byStep[p.step]||[]).push(p);
+  });
+  const stepNums = Object.keys(byStep).map(Number).sort((a,b)=>a-b);
+
+  const cardHTML = (p) => {
     const needed = !ptype || p.types.includes('all') || p.types.includes(ptype);
     return `<div class="pc">
       <div class="pc-agency">${p.agency}${p.pe?' · <span style="color:var(--amber)">⚠ PE Seal Required</span>':''}</div>
@@ -1765,12 +2050,265 @@ function buildPermits(cat) {
       <div class="pc-desc">${p.desc}</div>
       <div class="pc-need ${needed?'req':'opt'}">${needed?'⚠ Likely required for your project':'○ May not apply'}</div>
       <div class="pc-actions">
+        <button class="pbtn pbtn-prefill" onclick="prefillPermit(PERMITS.find(x=>x.id==='${p.id}'))">📋 Pre-fill &amp; Open</button>
         <a class="pbtn pbtn-dl" href="${p.url}" target="_blank">📄 Open Form</a>
         <button class="pbtn pbtn-ai" onclick="aiAsk('Walk me through how to complete the ${p.name.replace(/'/g,"\\'")} for my ${ptype||'land development'} project in Wake County. What information is needed and what are common mistakes?')">🤖 How to Complete</button>
         ${p.pe?`<button class="pbtn pbtn-folder" onclick="sw('pe',null);showToast('This document requires PE seal — see PE Review tab','i')">🔏 Needs PE Seal</button>`:''}
       </div>
     </div>`;
-  }).join('');
+  };
+
+  if (activeCat === 'All') {
+    // All-view: group by step across all categories
+    document.getElementById('permitGrid').innerHTML = stepNums.map(s => `
+      <div class="permit-step-header">
+        <span class="permit-step-num">Step ${s}</span>
+        <span class="permit-step-label">${PERMIT_STEPS[s]}</span>
+        <span class="permit-step-count">${byStep[s].length} form${byStep[s].length!==1?'s':''}</span>
+      </div>
+      ${byStep[s].map(cardHTML).join('')}
+    `).join('');
+  } else {
+    // Single-category view: show step sub-headers within that category
+    document.getElementById('permitGrid').innerHTML = stepNums.map(s => `
+      <div class="permit-step-header">
+        <span class="permit-step-num">Step ${s}</span>
+        <span class="permit-step-label">${PERMIT_STEPS[s]}</span>
+        <span class="permit-step-count">${byStep[s].length} form${byStep[s].length!==1?'s':''}</span>
+      </div>
+      ${byStep[s].map(cardHTML).join('')}
+    `).join('');
+  }
+}
+
+// ═══════════════════════ MARKET RESEARCH ═══════════════════════
+
+function saveMarket() {
+  if (!D.market) D.market = {};
+  ['mktSubmarket','mktAbsorption','mktDOM','mktAvgPrice','mktPSF','mktAvgRent','mktNotes',
+   'mktTargetPrice','mktTargetRent','mktTargetPSF','mktProjAbsorption','mktTotalUnits',
+   'mktDrivers','mktRisks','mktStrategy'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) D.market[id] = el.value;
+  });
+  calcMktMetrics();
+  save();
+}
+
+function calcMktMetrics() {
+  const units  = parseFloat(document.getElementById('mktTotalUnits')?.value) || 0;
+  const price  = parseFloat(document.getElementById('mktTargetPrice')?.value) || 0;
+  const absorb = parseFloat(document.getElementById('mktProjAbsorption')?.value) || 0;
+  if (units && absorb) {
+    const months = Math.ceil(units / absorb);
+    document.getElementById('mktSellout').value = months + ' months (~' + (months/12).toFixed(1) + ' yrs)';
+  }
+  if (units && price) {
+    document.getElementById('mktTotalRevenue').value = '$' + (units * price).toLocaleString();
+  }
+}
+
+function loadMarket() {
+  if (!D.market) return;
+  ['mktSubmarket','mktAbsorption','mktDOM','mktAvgPrice','mktPSF','mktAvgRent','mktNotes',
+   'mktTargetPrice','mktTargetRent','mktTargetPSF','mktProjAbsorption','mktTotalUnits',
+   'mktDrivers','mktRisks','mktStrategy'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && D.market[id] !== undefined) el.value = D.market[id];
+  });
+  buildComps();
+  calcMktMetrics();
+}
+
+// ── Comparable Sales ──────────────────────────────────────────────
+function addComp(comp) {
+  if (!D.comps) D.comps = [];
+  if (!comp) {
+    comp = {id: Date.now(), community:'', type:'', units:'', price:'', ppunit:'', ppsf:'', date:'', dom:'', notes:''};
+    D.comps.push(comp);
+    save();
+  }
+  buildComps();
+}
+
+function buildComps() {
+  if (!D.comps) D.comps = [];
+  const tbody = document.getElementById('compBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.comps.map((c,i) => `
+    <tr>
+      <td><input value="${c.community||''}" placeholder="Community name / address" onchange="D.comps[${i}].community=this.value;save()"></td>
+      <td><select onchange="D.comps[${i}].type=this.value;save()">
+        ${['Townhomes','Single Family','Apartments','Condos','Duplexes','Mixed Use'].map(t=>`<option ${c.type===t?'selected':''}>${t}</option>`).join('')}
+      </select></td>
+      <td><input type="number" value="${c.units||''}" placeholder="#" style="width:55px" onchange="D.comps[${i}].units=this.value;save()"></td>
+      <td><input value="${c.price||''}" placeholder="$385,000" onchange="D.comps[${i}].price=this.value;save()"></td>
+      <td><input value="${c.ppunit||''}" placeholder="$/unit" onchange="D.comps[${i}].ppunit=this.value;save()"></td>
+      <td><input value="${c.ppsf||''}" placeholder="$/sf" onchange="D.comps[${i}].ppsf=this.value;save()"></td>
+      <td><input type="date" value="${c.date||''}" onchange="D.comps[${i}].date=this.value;save()"></td>
+      <td><input type="number" value="${c.dom||''}" placeholder="days" style="width:55px" onchange="D.comps[${i}].dom=this.value;save()"></td>
+      <td><input value="${c.notes||''}" placeholder="Notes..." onchange="D.comps[${i}].notes=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.comps.splice(${i},1);save();buildComps()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">No comps added yet — click + Add Comp</td></tr>';
+}
+
+// ═══════════════════════ CONSTRUCTION ═══════════════════════
+
+function saveConstruction() {
+  if (!D.construction) D.construction = {};
+  ['conBudget','conSpent','conContingency','conNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) D.construction[id] = el.value;
+  });
+  calcBudgetVariance();
+  save();
+}
+
+function calcBudgetVariance() {
+  const budget = parseFloat(document.getElementById('conBudget')?.value) || 0;
+  const spent  = parseFloat(document.getElementById('conSpent')?.value)  || 0;
+  const cont   = parseFloat(document.getElementById('conContingency')?.value) || 0;
+  // Sum orders for committed total
+  const committed = (D.orders||[]).reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
+  const el = document.getElementById('conCommitted');
+  if (el) el.value = '$' + committed.toLocaleString();
+  if (budget) {
+    const remaining = budget - spent;
+    const pct = Math.min(100, Math.round(spent / budget * 100));
+    const remEl = document.getElementById('conRemaining');
+    if (remEl) remEl.value = '$' + remaining.toLocaleString();
+    const pctEl = document.getElementById('conPctComplete');
+    if (pctEl) pctEl.value = pct + '%';
+    const bar = document.getElementById('budgetVarianceBar');
+    if (bar) { bar.style.display = 'block'; }
+    const barEl = document.getElementById('budgetBar');
+    if (barEl) { barEl.style.width = pct+'%'; barEl.style.background = pct>90?'var(--rust)':pct>70?'var(--amber)':'var(--fern)'; }
+    const lblEl = document.getElementById('budgetBarLabel');
+    if (lblEl) lblEl.textContent = `$${spent.toLocaleString()} spent of $${budget.toLocaleString()} budget (${pct}%) — $${remaining.toLocaleString()} remaining`;
+  }
+}
+
+function loadConstruction() {
+  if (!D.construction) return;
+  ['conBudget','conSpent','conContingency','conNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && D.construction[id] !== undefined) el.value = D.construction[id];
+  });
+  buildSuppliers(); buildTakeoffs(); buildOrders(); calcBudgetVariance();
+}
+
+// ── Suppliers ─────────────────────────────────────────────────────
+function addSupplier() {
+  if (!D.suppliers) D.suppliers = [];
+  D.suppliers.push({id:Date.now(),company:'',category:'',contact:'',phone:'',email:'',pricing:'',status:'Active'});
+  save(); buildSuppliers();
+}
+
+function buildSuppliers() {
+  if (!D.suppliers) D.suppliers = [];
+  const cats = ['Concrete','Framing/Lumber','Roofing','Windows/Doors','MEP','Electrical','Plumbing','HVAC','Grading/Site','Paving','Landscaping','Finishes','Appliances','Other'];
+  const statuses = ['Active','Bidding','On Hold','Inactive'];
+  const tbody = document.getElementById('supplierBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.suppliers.map((s,i) => `
+    <tr>
+      <td><input value="${s.company||''}" placeholder="Company name" onchange="D.suppliers[${i}].company=this.value;save()"></td>
+      <td><select onchange="D.suppliers[${i}].category=this.value;save()">
+        ${cats.map(c=>`<option ${s.category===c?'selected':''}>${c}</option>`).join('')}
+      </select></td>
+      <td><input value="${s.contact||''}" placeholder="Contact name" onchange="D.suppliers[${i}].contact=this.value;save()"></td>
+      <td><input value="${s.phone||''}" placeholder="(919) 555-0100" onchange="D.suppliers[${i}].phone=this.value;save()"></td>
+      <td><input value="${s.email||''}" placeholder="email@company.com" onchange="D.suppliers[${i}].email=this.value;save()"></td>
+      <td><input value="${s.pricing||''}" placeholder="e.g. $4.50/sf, $28k/unit" onchange="D.suppliers[${i}].pricing=this.value;save()"></td>
+      <td><select onchange="D.suppliers[${i}].status=this.value;save();buildSuppliers()">
+        ${statuses.map(st=>`<option ${s.status===st?'selected':''}>${st}</option>`).join('')}
+      </select></td>
+      <td><button class="tbl-del" onclick="D.suppliers.splice(${i},1);save();buildSuppliers()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">No suppliers added yet — click + Add Supplier</td></tr>';
+}
+
+// ── Take-offs ─────────────────────────────────────────────────────
+function addTakeoff() {
+  if (!D.takeoffs) D.takeoffs = [];
+  D.takeoffs.push({id:Date.now(),category:'Site Work',item:'',qty:'',unit:'LS',unitprice:'',total:'',supplier:'',notes:''});
+  save(); buildTakeoffs();
+}
+
+function calcTakeoffTotal() {
+  if (!D.takeoffs) return;
+  D.takeoffs.forEach((t,i) => {
+    const qty = parseFloat(t.qty)||0, up = parseFloat(t.unitprice)||0;
+    D.takeoffs[i].total = qty && up ? (qty*up).toFixed(2) : t.total;
+  });
+  save(); buildTakeoffs();
+}
+
+function buildTakeoffs() {
+  if (!D.takeoffs) D.takeoffs = [];
+  const cats = ['Site Work','Grading','Utilities','Foundations','Framing','Roofing','Windows/Doors','Electrical','Plumbing','HVAC','Insulation','Drywall','Flooring','Painting','Cabinets/Millwork','Appliances','Landscaping','Paving','Other'];
+  const units = ['LS','EA','SF','LF','CY','TN','HR','MO'];
+  const supplierNames = (D.suppliers||[]).map(s=>s.company).filter(Boolean);
+  const tbody = document.getElementById('takeoffBody');
+  if (!tbody) return;
+  let grandTotal = 0;
+  tbody.innerHTML = D.takeoffs.map((t,i) => {
+    const tot = parseFloat(t.total)||0; grandTotal += tot;
+    return `<tr>
+      <td><select onchange="D.takeoffs[${i}].category=this.value;save()">
+        ${cats.map(c=>`<option ${t.category===c?'selected':''}>${c}</option>`).join('')}
+      </select></td>
+      <td><input value="${t.item||''}" placeholder="Description" onchange="D.takeoffs[${i}].item=this.value;save()"></td>
+      <td><input type="number" value="${t.qty||''}" placeholder="0" style="width:65px" onchange="D.takeoffs[${i}].qty=this.value;D.takeoffs[${i}].total=(parseFloat(this.value)||0)*(parseFloat(D.takeoffs[${i}].unitprice)||0);save();buildTakeoffs()"></td>
+      <td><select style="width:55px" onchange="D.takeoffs[${i}].unit=this.value;save()">
+        ${units.map(u=>`<option ${t.unit===u?'selected':''}>${u}</option>`).join('')}
+      </select></td>
+      <td><input type="number" value="${t.unitprice||''}" placeholder="0.00" style="width:80px" onchange="D.takeoffs[${i}].unitprice=this.value;D.takeoffs[${i}].total=(parseFloat(D.takeoffs[${i}].qty)||0)*(parseFloat(this.value)||0);save();buildTakeoffs()"></td>
+      <td style="font-weight:600;color:var(--forest)">${tot?'$'+tot.toLocaleString():''}</td>
+      <td><select onchange="D.takeoffs[${i}].supplier=this.value;save()">
+        <option value="">— Select —</option>
+        ${supplierNames.map(s=>`<option ${t.supplier===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input value="${t.notes||''}" placeholder="Notes" onchange="D.takeoffs[${i}].notes=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.takeoffs.splice(${i},1);save();buildTakeoffs()">✕</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1rem">No items yet — click + Add Item</td></tr>';
+  const tot = document.getElementById('takeoffTotal');
+  if (tot) tot.textContent = '$' + grandTotal.toLocaleString();
+}
+
+// ── Orders ────────────────────────────────────────────────────────
+function addOrder() {
+  if (!D.orders) D.orders = [];
+  D.orders.push({id:Date.now(),item:'',supplier:'',po:'',orderDate:'',amount:'',status:'Pending',deliveryDate:'',receivedDate:'',notes:''});
+  save(); buildOrders();
+}
+
+function buildOrders() {
+  if (!D.orders) D.orders = [];
+  const statuses = ['Pending','Ordered','In Transit','Delivered','Issue'];
+  const statusColors = {Pending:'pending',Ordered:'ordered','In Transit':'ordered',Delivered:'delivered',Issue:'issue'};
+  const supplierNames = (D.suppliers||[]).map(s=>s.company).filter(Boolean);
+  const tbody = document.getElementById('orderBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.orders.map((o,i) => `
+    <tr>
+      <td><input value="${o.item||''}" placeholder="Item description" onchange="D.orders[${i}].item=this.value;save()"></td>
+      <td><select onchange="D.orders[${i}].supplier=this.value;save()">
+        <option value="">— Select —</option>
+        ${supplierNames.map(s=>`<option ${o.supplier===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input value="${o.po||''}" placeholder="PO-001" style="width:80px" onchange="D.orders[${i}].po=this.value;save()"></td>
+      <td><input type="date" value="${o.orderDate||''}" onchange="D.orders[${i}].orderDate=this.value;save()"></td>
+      <td><input type="number" value="${o.amount||''}" placeholder="0" onchange="D.orders[${i}].amount=this.value;save();calcBudgetVariance()"></td>
+      <td><select onchange="D.orders[${i}].status=this.value;save();buildOrders()">
+        ${statuses.map(st=>`<option ${o.status===st?'selected':''}>${st}</option>`).join('')}
+      </select></td>
+      <td><input type="date" value="${o.deliveryDate||''}" onchange="D.orders[${i}].deliveryDate=this.value;save()"></td>
+      <td><input type="date" value="${o.receivedDate||''}" onchange="D.orders[${i}].receivedDate=this.value;save()"></td>
+      <td><input value="${o.notes||''}" placeholder="Notes" onchange="D.orders[${i}].notes=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.orders.splice(${i},1);save();calcBudgetVariance();buildOrders()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">No orders tracked yet — click + Add Order</td></tr>';
+  calcBudgetVariance();
 }
 
 // ═══════════════════════ FOLDERS ═══════════════════════
@@ -1923,11 +2461,20 @@ function buildGuide() {
 }
 
 function buildIMAPSIn() {
-  const c=document.getElementById('imapsIn'); c.innerHTML='';
-  IMAPS_FIELDS.forEach(f=>{
-    const k=f.replace(/[^a-zA-Z]/g,''), v=(D.imaps||{})[k]||'';
-    const div=document.createElement('div'); div.className='f';
-    div.innerHTML=`<label>${f}</label><input type="text" value="${v}" placeholder="From iMAPS" oninput="setIM('${k}',this.value)">`;
+  const c = document.getElementById('imapsIn');
+  c.innerHTML = '';
+  IMAPS_FIELD_MAP.forEach(f => {
+    const v = (D.imaps||{})[f.key] || '';
+    const div = document.createElement('div');
+    div.className = 'f';
+    const badge = f.auto
+      ? `<span style="font-size:.62rem;font-weight:700;color:var(--pine);background:#d4edda;border-radius:10px;padding:1px 6px;margin-left:5px;vertical-align:middle">AUTO</span>`
+      : `<span style="font-size:.62rem;font-weight:700;color:var(--muted);background:var(--bone);border-radius:10px;padding:1px 6px;margin-left:5px;vertical-align:middle">MANUAL</span>`;
+    div.innerHTML = `<label>${f.label}${badge}</label>
+      <input type="text" value="${v.toString().replace(/"/g,'&quot;')}"
+        placeholder="${f.placeholder}"
+        style="${f.auto && v ? 'background:#f0fff4;border-color:#7dc99a' : ''}"
+        oninput="setIM('${f.key}',this.value)">`;
     c.appendChild(div);
   });
 }
@@ -2848,6 +3395,7 @@ function onFileLoad(event) {
       localStorage.setItem('landworksV1', JSON.stringify(D));
       loadForm();
       buildStages(); buildPF(); buildChecklist(); buildIMAPSIn(); buildFolders(); buildPEItems(); buildPermits();
+      loadMarket(); loadConstruction();
       buildMeetings(); buildSchedule(); buildHub();
       if (D.pPIN) {
         document.getElementById('pinIn').value = D.pPIN;
