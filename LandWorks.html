@@ -1110,6 +1110,59 @@ textarea{resize:vertical;min-height:68px;}
       </div>
     </div>
   </div>
+  <!-- Demographics -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>👥 Demographics &amp; Employment</h3>
+      <button class="btn btn-g" onclick="mktAI('demo')">🤖 AI Demographics Summary</button>
+    </div>
+    <div class="card-body">
+      <div class="f-row" style="gap:1rem;flex-wrap:wrap">
+        <div class="f"><label>Population (1-mi radius)</label><input type="text" id="mktPop1" placeholder="e.g. 12,400" oninput="saveMarket()"></div>
+        <div class="f"><label>Population (3-mi radius)</label><input type="text" id="mktPop3" placeholder="e.g. 68,000" oninput="saveMarket()"></div>
+        <div class="f"><label>Median Household Income</label><input type="text" id="mktIncome" placeholder="e.g. $82,000" oninput="saveMarket()"></div>
+        <div class="f"><label>Median Age</label><input type="text" id="mktAge" placeholder="e.g. 34" oninput="saveMarket()"></div>
+        <div class="f"><label>Unemployment Rate</label><input type="text" id="mktUnemploy" placeholder="e.g. 3.2%" oninput="saveMarket()"></div>
+        <div class="f"><label>Owner-Occupied %</label><input type="text" id="mktOwnerOcc" placeholder="e.g. 58%" oninput="saveMarket()"></div>
+        <div class="f"><label>Population Growth Rate (5yr)</label><input type="text" id="mktPopGrowth" placeholder="e.g. +14.2%" oninput="saveMarket()"></div>
+        <div class="f"><label>Avg Household Size</label><input type="text" id="mktHHSize" placeholder="e.g. 2.7" oninput="saveMarket()"></div>
+        <div class="f w2"><label>Major Employers Within 10 miles</label><input type="text" id="mktEmployers" placeholder="e.g. Apple HQ, WakeMed, NC State, SAS Institute" oninput="saveMarket()"></div>
+        <div class="f w2"><label>School District / Ratings</label><input type="text" id="mktSchools" placeholder="e.g. Wake County Public Schools — Holly Ridge Elem (8/10), Apex MS (9/10)" oninput="saveMarket()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Competing Supply Pipeline -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🏗 Competing Supply Pipeline</h3>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-g" onclick="addPipeline()">+ Add Project</button>
+        <button class="btn btn-g" onclick="mktAI('pipeline')">🤖 AI Pipeline Research</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="mkt-tbl">
+        <thead><tr><th>Project Name</th><th>Developer</th><th>Type</th><th>Units</th><th>Distance</th><th>Status</th><th>Est. Delivery</th><th>Price / Unit</th><th>Impact</th><th></th></tr></thead>
+        <tbody id="pipelineBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Rent Comps -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🏠 Rent Comparables</h3>
+      <button class="btn btn-g" onclick="addRentComp()">+ Add Rent Comp</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="mkt-tbl">
+        <thead><tr><th>Property Name</th><th>Type</th><th>Units</th><th>Bed/Bath</th><th>Rent/Mo</th><th>Rent/SF</th><th>Occupancy %</th><th>Year Built</th><th>Amenities</th><th></th></tr></thead>
+        <tbody id="rentCompBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="actions">
     <button class="btn btn-p" onclick="save()">💾 Save</button>
   </div>
@@ -1203,11 +1256,87 @@ textarea{resize:vertical;min-height:68px;}
     </div>
   </div>
 
+  <!-- RFI Log -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>❓ RFI Log <span style="font-size:.72rem;font-weight:400;color:var(--muted)">(Requests for Information)</span></h3>
+      <button class="btn btn-g" onclick="addRFI()">+ Add RFI</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl">
+        <thead><tr><th>RFI #</th><th>Subject</th><th>From</th><th>To</th><th>Date Sent</th><th>Date Due</th><th>Date Closed</th><th>Status</th><th>Cost Impact ($)</th><th></th></tr></thead>
+        <tbody id="rfiBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Submittal Log -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📋 Submittal Log</h3>
+      <button class="btn btn-g" onclick="addSubmittal()">+ Add Submittal</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl">
+        <thead><tr><th>Sub #</th><th>Description</th><th>Spec Section</th><th>Submitted By</th><th>Date Sent</th><th>Date Due</th><th>Status</th><th>Revision</th><th></th></tr></thead>
+        <tbody id="submittalBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Change Orders -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🔄 Change Orders</h3>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="font-size:.8rem;color:var(--muted)">Total impact: <b id="coTotal" style="color:var(--forest)">$0</b></span>
+        <button class="btn btn-g" onclick="addCO()">+ Add CO</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl">
+        <thead><tr><th>CO #</th><th>Description</th><th>Initiated By</th><th>Date</th><th>Amount ($)</th><th>Status</th><th>Linked RFI</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="coBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily Log -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📅 Daily Log</h3>
+      <button class="btn btn-g" onclick="addDailyLog()">+ Add Entry</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl">
+        <thead><tr><th>Date</th><th>Weather</th><th>Temp</th><th>Crew Count</th><th>Work Completed</th><th>Delays / Issues</th><th>Visitors</th><th></th></tr></thead>
+        <tbody id="dailyLogBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Punch List -->
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>✅ Punch List</h3>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span style="font-size:.8rem;color:var(--muted)" id="punchProgress"></span>
+        <button class="btn btn-g" onclick="addPunchItem()">+ Add Item</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="con-tbl">
+        <thead><tr><th>Unit / Location</th><th>Item</th><th>Responsible</th><th>Priority</th><th>Due Date</th><th>Status</th><th>Completed Date</th><th></th></tr></thead>
+        <tbody id="punchBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Construction Notes -->
   <div class="card">
-    <div class="card-hd"><h3>📝 Construction Notes & Issues Log</h3></div>
+    <div class="card-hd"><h3>📝 Site Notes &amp; Issues</h3></div>
     <div class="card-body">
-      <textarea id="conNotes" rows="5" style="width:100%;box-sizing:border-box" placeholder="Log issues, RFIs, change orders, site conditions, inspector notes..." oninput="saveConstruction()"></textarea>
+      <textarea id="conNotes" rows="4" style="width:100%;box-sizing:border-box" placeholder="General site notes, inspector comments, outstanding issues..." oninput="saveConstruction()"></textarea>
     </div>
   </div>
 
@@ -2087,7 +2216,9 @@ function saveMarket() {
   if (!D.market) D.market = {};
   ['mktSubmarket','mktAbsorption','mktDOM','mktAvgPrice','mktPSF','mktAvgRent','mktNotes',
    'mktTargetPrice','mktTargetRent','mktTargetPSF','mktProjAbsorption','mktTotalUnits',
-   'mktDrivers','mktRisks','mktStrategy'].forEach(id => {
+   'mktDrivers','mktRisks','mktStrategy',
+   'mktPop1','mktPop3','mktIncome','mktAge','mktUnemploy','mktOwnerOcc',
+   'mktPopGrowth','mktHHSize','mktEmployers','mktSchools'].forEach(id => {
     const el = document.getElementById(id);
     if (el) D.market[id] = el.value;
   });
@@ -2112,11 +2243,13 @@ function loadMarket() {
   if (!D.market) return;
   ['mktSubmarket','mktAbsorption','mktDOM','mktAvgPrice','mktPSF','mktAvgRent','mktNotes',
    'mktTargetPrice','mktTargetRent','mktTargetPSF','mktProjAbsorption','mktTotalUnits',
-   'mktDrivers','mktRisks','mktStrategy'].forEach(id => {
+   'mktDrivers','mktRisks','mktStrategy',
+   'mktPop1','mktPop3','mktIncome','mktAge','mktUnemploy','mktOwnerOcc',
+   'mktPopGrowth','mktHHSize','mktEmployers','mktSchools'].forEach(id => {
     const el = document.getElementById(id);
     if (el && D.market[id] !== undefined) el.value = D.market[id];
   });
-  buildComps();
+  buildComps(); buildPipeline(); buildRentComps();
   calcMktMetrics();
 }
 
@@ -2164,12 +2297,15 @@ function saveConstruction() {
   save();
 }
 
+
 function calcBudgetVariance() {
   const budget = parseFloat(document.getElementById('conBudget')?.value) || 0;
   const spent  = parseFloat(document.getElementById('conSpent')?.value)  || 0;
   const cont   = parseFloat(document.getElementById('conContingency')?.value) || 0;
-  // Sum orders for committed total
-  const committed = (D.orders||[]).reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
+  // Sum orders + approved change orders for committed total
+  const orderTotal = (D.orders||[]).reduce((s,o) => s + (parseFloat(o.amount)||0), 0);
+  const coTotal    = (D.changeOrders||[]).filter(c=>c.status==='Approved').reduce((s,c) => s + (parseFloat(c.amount)||0), 0);
+  const committed  = orderTotal + coTotal;
   const el = document.getElementById('conCommitted');
   if (el) el.value = '$' + committed.toLocaleString();
   if (budget) {
@@ -2189,12 +2325,15 @@ function calcBudgetVariance() {
 }
 
 function loadConstruction() {
-  if (!D.construction) return;
-  ['conBudget','conSpent','conContingency','conNotes'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && D.construction[id] !== undefined) el.value = D.construction[id];
-  });
-  buildSuppliers(); buildTakeoffs(); buildOrders(); calcBudgetVariance();
+  if (D.construction) {
+    ['conBudget','conSpent','conContingency','conNotes'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && D.construction[id] !== undefined) el.value = D.construction[id];
+    });
+  }
+  buildSuppliers(); buildTakeoffs(); buildOrders();
+  buildRFI(); buildSubmittal(); buildCO(); buildDailyLog(); buildPunch();
+  calcBudgetVariance();
 }
 
 // ── Suppliers ─────────────────────────────────────────────────────
@@ -2309,6 +2448,242 @@ function buildOrders() {
       <td><button class="tbl-del" onclick="D.orders.splice(${i},1);save();calcBudgetVariance();buildOrders()">✕</button></td>
     </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">No orders tracked yet — click + Add Order</td></tr>';
   calcBudgetVariance();
+}
+
+// ── RFI Log ───────────────────────────────────────────────────────
+function addRFI() {
+  if (!D.rfis) D.rfis = [];
+  const num = (D.rfis.length + 1).toString().padStart(3,'0');
+  D.rfis.push({id:Date.now(),num:'RFI-'+num,subject:'',from:'',to:'',dateSent:'',dateDue:'',dateClosed:'',status:'Open',costImpact:''});
+  save(); buildRFI();
+}
+
+function buildRFI() {
+  if (!D.rfis) D.rfis = [];
+  const statuses = ['Open','Pending Response','Answered','Closed','On Hold'];
+  const tbody = document.getElementById('rfiBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.rfis.map((r,i) => `
+    <tr>
+      <td><input value="${r.num||''}" style="width:75px" onchange="D.rfis[${i}].num=this.value;save()"></td>
+      <td><input value="${r.subject||''}" placeholder="RFI subject / question" onchange="D.rfis[${i}].subject=this.value;save()"></td>
+      <td><input value="${r.from||''}" placeholder="Contractor" onchange="D.rfis[${i}].from=this.value;save()"></td>
+      <td><input value="${r.to||''}" placeholder="Engineer / Architect" onchange="D.rfis[${i}].to=this.value;save()"></td>
+      <td><input type="date" value="${r.dateSent||''}" onchange="D.rfis[${i}].dateSent=this.value;save()"></td>
+      <td><input type="date" value="${r.dateDue||''}" onchange="D.rfis[${i}].dateDue=this.value;save()"></td>
+      <td><input type="date" value="${r.dateClosed||''}" onchange="D.rfis[${i}].dateClosed=this.value;save()"></td>
+      <td><select onchange="D.rfis[${i}].status=this.value;save();buildRFI()">
+        ${statuses.map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input type="number" value="${r.costImpact||''}" placeholder="0" style="width:80px" onchange="D.rfis[${i}].costImpact=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.rfis.splice(${i},1);save();buildRFI()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">No RFIs logged yet — click + Add RFI</td></tr>';
+}
+
+// ── Submittal Log ─────────────────────────────────────────────────
+function addSubmittal() {
+  if (!D.submittals) D.submittals = [];
+  const num = (D.submittals.length + 1).toString().padStart(3,'0');
+  D.submittals.push({id:Date.now(),num:'SUB-'+num,description:'',specSection:'',submittedBy:'',dateSent:'',dateDue:'',status:'Pending',revision:'Rev 0'});
+  save(); buildSubmittal();
+}
+
+function buildSubmittal() {
+  if (!D.submittals) D.submittals = [];
+  const statuses = ['Pending','Under Review','Approved','Approved as Noted','Revise & Resubmit','Rejected'];
+  const tbody = document.getElementById('submittalBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.submittals.map((s,i) => `
+    <tr>
+      <td><input value="${s.num||''}" style="width:75px" onchange="D.submittals[${i}].num=this.value;save()"></td>
+      <td><input value="${s.description||''}" placeholder="Shop drawings, product data, etc." onchange="D.submittals[${i}].description=this.value;save()"></td>
+      <td><input value="${s.specSection||''}" placeholder="03 3000" style="width:80px" onchange="D.submittals[${i}].specSection=this.value;save()"></td>
+      <td><input value="${s.submittedBy||''}" placeholder="Subcontractor" onchange="D.submittals[${i}].submittedBy=this.value;save()"></td>
+      <td><input type="date" value="${s.dateSent||''}" onchange="D.submittals[${i}].dateSent=this.value;save()"></td>
+      <td><input type="date" value="${s.dateDue||''}" onchange="D.submittals[${i}].dateDue=this.value;save()"></td>
+      <td><select onchange="D.submittals[${i}].status=this.value;save();buildSubmittal()">
+        ${statuses.map(st=>`<option ${s.status===st?'selected':''}>${st}</option>`).join('')}
+      </select></td>
+      <td><input value="${s.revision||''}" placeholder="Rev 0" style="width:60px" onchange="D.submittals[${i}].revision=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.submittals.splice(${i},1);save();buildSubmittal()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1rem">No submittals logged yet — click + Add Submittal</td></tr>';
+}
+
+// ── Change Orders ─────────────────────────────────────────────────
+function addCO() {
+  if (!D.changeOrders) D.changeOrders = [];
+  const num = (D.changeOrders.length + 1).toString().padStart(3,'0');
+  D.changeOrders.push({id:Date.now(),num:'CO-'+num,description:'',initiatedBy:'Owner',date:'',amount:'',status:'Pending',linkedRFI:'',notes:''});
+  save(); buildCO();
+}
+
+function buildCO() {
+  if (!D.changeOrders) D.changeOrders = [];
+  const statuses = ['Pending','Under Review','Approved','Rejected','Voided'];
+  const initiators = ['Owner','Contractor','Engineer','Architect','Inspector'];
+  const tbody = document.getElementById('coBody');
+  if (!tbody) return;
+  let total = 0;
+  tbody.innerHTML = D.changeOrders.map((c,i) => {
+    const amt = parseFloat(c.amount)||0; total += amt;
+    return `<tr>
+      <td><input value="${c.num||''}" style="width:70px" onchange="D.changeOrders[${i}].num=this.value;save()"></td>
+      <td><input value="${c.description||''}" placeholder="Scope change description" onchange="D.changeOrders[${i}].description=this.value;save()"></td>
+      <td><select onchange="D.changeOrders[${i}].initiatedBy=this.value;save()">
+        ${initiators.map(v=>`<option ${c.initiatedBy===v?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td><input type="date" value="${c.date||''}" onchange="D.changeOrders[${i}].date=this.value;save()"></td>
+      <td><input type="number" value="${c.amount||''}" placeholder="0" style="width:90px" onchange="D.changeOrders[${i}].amount=this.value;save();buildCO()"></td>
+      <td><select onchange="D.changeOrders[${i}].status=this.value;save();buildCO()">
+        ${statuses.map(s=>`<option ${c.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input value="${c.linkedRFI||''}" placeholder="RFI-001" style="width:75px" onchange="D.changeOrders[${i}].linkedRFI=this.value;save()"></td>
+      <td><input value="${c.notes||''}" placeholder="Notes" onchange="D.changeOrders[${i}].notes=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.changeOrders.splice(${i},1);save();buildCO()">✕</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1rem">No change orders yet — click + Add CO</td></tr>';
+  const totEl = document.getElementById('coTotal');
+  if (totEl) totEl.textContent = (total >= 0 ? '' : '-') + '$' + Math.abs(total).toLocaleString();
+  calcBudgetVariance();
+}
+
+// ── Daily Log ─────────────────────────────────────────────────────
+function addDailyLog() {
+  if (!D.dailyLogs) D.dailyLogs = [];
+  const today = new Date().toISOString().slice(0,10);
+  D.dailyLogs.unshift({id:Date.now(),date:today,weather:'Clear',temp:'',crew:'',work:'',delays:'',visitors:''});
+  save(); buildDailyLog();
+}
+
+function buildDailyLog() {
+  if (!D.dailyLogs) D.dailyLogs = [];
+  const weathers = ['Clear','Partly Cloudy','Overcast','Rain','Heavy Rain','Thunderstorm','Snow','Fog','Wind','Extreme Heat'];
+  const tbody = document.getElementById('dailyLogBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.dailyLogs.map((l,i) => `
+    <tr>
+      <td><input type="date" value="${l.date||''}" onchange="D.dailyLogs[${i}].date=this.value;save()"></td>
+      <td><select onchange="D.dailyLogs[${i}].weather=this.value;save()">
+        ${weathers.map(w=>`<option ${l.weather===w?'selected':''}>${w}</option>`).join('')}
+      </select></td>
+      <td><input value="${l.temp||''}" placeholder="°F" style="width:55px" onchange="D.dailyLogs[${i}].temp=this.value;save()"></td>
+      <td><input type="number" value="${l.crew||''}" placeholder="0" style="width:55px" onchange="D.dailyLogs[${i}].crew=this.value;save()"></td>
+      <td><input value="${l.work||''}" placeholder="Work completed today..." onchange="D.dailyLogs[${i}].work=this.value;save()"></td>
+      <td><input value="${l.delays||''}" placeholder="Delays, issues, safety..." onchange="D.dailyLogs[${i}].delays=this.value;save()"></td>
+      <td><input value="${l.visitors||''}" placeholder="Inspector, Owner, etc." onchange="D.dailyLogs[${i}].visitors=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.dailyLogs.splice(${i},1);save();buildDailyLog()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">No daily logs yet — click + Add Entry</td></tr>';
+}
+
+// ── Punch List ────────────────────────────────────────────────────
+function addPunchItem() {
+  if (!D.punchList) D.punchList = [];
+  D.punchList.push({id:Date.now(),location:'',item:'',responsible:'',priority:'Medium',dueDate:'',status:'Open',completedDate:''});
+  save(); buildPunch();
+}
+
+function buildPunch() {
+  if (!D.punchList) D.punchList = [];
+  const priorities = ['Critical','High','Medium','Low'];
+  const statuses = ['Open','In Progress','Complete','Waived'];
+  const tbody = document.getElementById('punchBody');
+  if (!tbody) return;
+  const done = D.punchList.filter(p=>p.status==='Complete'||p.status==='Waived').length;
+  const total = D.punchList.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const prog = document.getElementById('punchProgress');
+  if (prog) prog.textContent = total ? `${done}/${total} complete (${pct}%)` : '';
+  tbody.innerHTML = D.punchList.map((p,i) => `
+    <tr>
+      <td><input value="${p.location||''}" placeholder="Unit 4B / Garage" onchange="D.punchList[${i}].location=this.value;save()"></td>
+      <td><input value="${p.item||''}" placeholder="Paint touch-up, trim gap, etc." onchange="D.punchList[${i}].item=this.value;save()"></td>
+      <td><input value="${p.responsible||''}" placeholder="Painter, GC, etc." onchange="D.punchList[${i}].responsible=this.value;save()"></td>
+      <td><select onchange="D.punchList[${i}].priority=this.value;save();buildPunch()">
+        ${priorities.map(pr=>`<option ${p.priority===pr?'selected':''}>${pr}</option>`).join('')}
+      </select></td>
+      <td><input type="date" value="${p.dueDate||''}" onchange="D.punchList[${i}].dueDate=this.value;save()"></td>
+      <td><select onchange="D.punchList[${i}].status=this.value;save();buildPunch()">
+        ${statuses.map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input type="date" value="${p.completedDate||''}" onchange="D.punchList[${i}].completedDate=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.punchList.splice(${i},1);save();buildPunch()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">No punch list items yet — click + Add Item</td></tr>';
+}
+
+// ── Competing Supply Pipeline ──────────────────────────────────────
+function addPipeline() {
+  if (!D.pipeline) D.pipeline = [];
+  D.pipeline.push({id:Date.now(),name:'',developer:'',type:'',units:'',distance:'',status:'Proposed',delivery:'',price:'',impact:'Moderate'});
+  save(); buildPipeline();
+}
+
+function buildPipeline() {
+  if (!D.pipeline) D.pipeline = [];
+  const statuses = ['Proposed','Entitled','Under Construction','Delivering','Complete'];
+  const impacts = ['Low','Moderate','High','Direct Competitor'];
+  const types = ['Townhomes','Single Family','Apartments','Condos','Mixed Use','Senior Housing','Build-to-Rent'];
+  const tbody = document.getElementById('pipelineBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.pipeline.map((p,i) => `
+    <tr>
+      <td><input value="${p.name||''}" placeholder="Community name" onchange="D.pipeline[${i}].name=this.value;save()"></td>
+      <td><input value="${p.developer||''}" placeholder="Developer" onchange="D.pipeline[${i}].developer=this.value;save()"></td>
+      <td><select onchange="D.pipeline[${i}].type=this.value;save()">
+        ${types.map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}
+      </select></td>
+      <td><input type="number" value="${p.units||''}" placeholder="#" style="width:60px" onchange="D.pipeline[${i}].units=this.value;save()"></td>
+      <td><input value="${p.distance||''}" placeholder="0.5 mi" style="width:70px" onchange="D.pipeline[${i}].distance=this.value;save()"></td>
+      <td><select onchange="D.pipeline[${i}].status=this.value;save()">
+        ${statuses.map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><input value="${p.delivery||''}" placeholder="Q3 2026" onchange="D.pipeline[${i}].delivery=this.value;save()"></td>
+      <td><input value="${p.price||''}" placeholder="$380,000" onchange="D.pipeline[${i}].price=this.value;save()"></td>
+      <td><select onchange="D.pipeline[${i}].impact=this.value;save()">
+        ${impacts.map(v=>`<option ${p.impact===v?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td><button class="tbl-del" onclick="D.pipeline.splice(${i},1);save();buildPipeline()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">No pipeline projects added yet — click + Add Project</td></tr>';
+}
+
+// ── Rent Comparables ──────────────────────────────────────────────
+function addRentComp() {
+  if (!D.rentComps) D.rentComps = [];
+  D.rentComps.push({id:Date.now(),name:'',type:'',units:'',bedBath:'',rentMo:'',rentSF:'',occupancy:'',yearBuilt:'',amenities:''});
+  save(); buildRentComps();
+}
+
+function buildRentComps() {
+  if (!D.rentComps) D.rentComps = [];
+  const types = ['Townhomes','Single Family','Apartments','Condos','Build-to-Rent','Mixed Use'];
+  const tbody = document.getElementById('rentCompBody');
+  if (!tbody) return;
+  tbody.innerHTML = D.rentComps.map((r,i) => `
+    <tr>
+      <td><input value="${r.name||''}" placeholder="Property name / address" onchange="D.rentComps[${i}].name=this.value;save()"></td>
+      <td><select onchange="D.rentComps[${i}].type=this.value;save()">
+        ${types.map(t=>`<option ${r.type===t?'selected':''}>${t}</option>`).join('')}
+      </select></td>
+      <td><input type="number" value="${r.units||''}" placeholder="#" style="width:60px" onchange="D.rentComps[${i}].units=this.value;save()"></td>
+      <td><input value="${r.bedBath||''}" placeholder="3BR/2.5BA" style="width:85px" onchange="D.rentComps[${i}].bedBath=this.value;save()"></td>
+      <td><input value="${r.rentMo||''}" placeholder="$2,200" onchange="D.rentComps[${i}].rentMo=this.value;save()"></td>
+      <td><input value="${r.rentSF||''}" placeholder="$1.45" onchange="D.rentComps[${i}].rentSF=this.value;save()"></td>
+      <td><input value="${r.occupancy||''}" placeholder="96%" style="width:60px" onchange="D.rentComps[${i}].occupancy=this.value;save()"></td>
+      <td><input type="number" value="${r.yearBuilt||''}" placeholder="2021" style="width:70px" onchange="D.rentComps[${i}].yearBuilt=this.value;save()"></td>
+      <td><input value="${r.amenities||''}" placeholder="Pool, gym, dog park..." onchange="D.rentComps[${i}].amenities=this.value;save()"></td>
+      <td><button class="tbl-del" onclick="D.rentComps.splice(${i},1);save();buildRentComps()">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">No rent comps added yet — click + Add Rent Comp</td></tr>';
+}
+
+// ── Market AI ─────────────────────────────────────────────────────
+function mktAI(type) {
+  const ptype = getField('pType') || 'residential';
+  const juris = getField('pJuris') || 'Wake County';
+  const addr  = getField('pAddr') || 'Wake County, NC';
+  if (type === 'demo') {
+    aiAsk('Give me a detailed demographic profile for a 1-mile and 3-mile radius around '+addr+' in Wake County, NC. Include: total population, median household income, median age, unemployment rate, owner vs renter split, population growth rate, average household size, top employers within 10 miles, and school district quality ratings. Format as specific data points I can enter into a market research spreadsheet.');
+  } else if (type === 'pipeline') {
+    aiAsk('Research the competing supply pipeline for '+ptype+' in the '+juris+' area of Wake County, NC. List specific projects that are proposed, entitled, or under construction within 3 miles. For each include: project name, developer, product type, estimated units, approximate distance from '+addr+', current status, expected delivery, and estimated price or rent range. Focus on projects that would directly compete with my development.');
+  }
 }
 
 // ═══════════════════════ FOLDERS ═══════════════════════
@@ -2698,6 +3073,26 @@ function buildSitePlanSVG(parcelsData, opts) {
   const rearTop  = cdCY_ref + cdRad + fp(18);
   const rearH    = Math.max(0, bzB - rearTop - fp(8));
 
+  // ── Rotation: align building grid with parcel's dominant axis ──
+  // Formula: rotate spine (currently N-S = SVG 90°) to match parcel long edge (SVG angle = -_parcelAngleDeg)
+  let rotAngleDeg = -_parcelAngleDeg - 90;
+  if (rotAngleDeg < -90) rotAngleDeg += 180;
+  if (rotAngleDeg >  90) rotAngleDeg -= 180;
+  if (Math.abs(rotAngleDeg) < 3) rotAngleDeg = 0; // ignore near-zero rotations
+  const rotCX = midX;
+  const rotCY = devTop + devZoneH / 2;
+  const _rotRad = rotAngleDeg * Math.PI / 180;
+  const _cosFwd = Math.cos(_rotRad), _sinFwd = Math.sin(_rotRad);
+  // Forward rotate: transform a pre-rotation position to where it will appear after SVG rotate()
+  const rotPtFwd = (px, py) => {
+    const dx = px - rotCX, dy = py - rotCY;
+    return [rotCX + dx*_cosFwd - dy*_sinFwd, rotCY + dx*_sinFwd + dy*_cosFwd];
+  };
+  // Use forward-rotated points for containment checks (test where element will actually appear)
+  const rectFitsR = (x, y, w, h) =>
+    [[x+1,y+1],[x+w-1,y+1],[x+1,y+h-1],[x+w-1,y+h-1],[x+w/2,y+h/2]]
+    .filter(([px,py]) => { const [rx,ry] = rotPtFwd(px,py); return inParcel(rx,ry); }).length >= 4;
+
   // ── Open-space flanks E/W of dev zone ──
   const flankLW = devL - bzL;
   const flankRW = bzR - devR;
@@ -2767,65 +3162,69 @@ function buildSitePlanSVG(parcelsData, opts) {
     }
   }
 
+  // ── Rotatable development zone (entry + roads + buildings + pond) ──
+  // All elements below go into dSVG, which gets wrapped in a rotation transform
+  let dSVG = '';
+
   // ── Stormwater pond + HOA amenity (rear zone below cul-de-sacs) ──
   if(rearH > fp(30)){
     const pW = Math.min(devZoneW * 0.65, fp(380));
     const pH = Math.min(rearH * 0.72, fp(160));
     const pCX = midX, pCY = rearTop + fp(8) + pH/2;
-    b+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}" rx="${(pW/2).toFixed(1)}" ry="${(pH/2).toFixed(1)}"
-        fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88" clip-path="url(#pc)"/>`;
+    dSVG+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}" rx="${(pW/2).toFixed(1)}" ry="${(pH/2).toFixed(1)}"
+        fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
     for(let ri=1;ri<=3;ri++){
-      b+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}"
+      dSVG+=`<ellipse cx="${pCX.toFixed(1)}" cy="${pCY.toFixed(1)}"
           rx="${(pW/2*0.25*ri).toFixed(1)}" ry="${(pH/2*0.25*ri).toFixed(1)}"
           fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
     }
-    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY-7).toFixed(1)}"
+    dSVG+=`<text x="${pCX.toFixed(1)}" y="${(pCY-7).toFixed(1)}"
         font-family="sans-serif" font-size="9.5" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
-    b+=`<text x="${pCX.toFixed(1)}" y="${(pCY+7).toFixed(1)}"
+    dSVG+=`<text x="${pCX.toFixed(1)}" y="${(pCY+7).toFixed(1)}"
         font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
     const amX=pCX+pW/2+fp(12), amW=devR-amX-fp(5);
     if(amW > fp(35)){
-      b+=`<rect x="${amX.toFixed(1)}" y="${(rearTop+fp(4)).toFixed(1)}"
+      dSVG+=`<rect x="${amX.toFixed(1)}" y="${(rearTop+fp(4)).toFixed(1)}"
           width="${amW.toFixed(1)}" height="${(rearH-fp(8)).toFixed(1)}"
-          fill="#5cb85c" opacity="0.4" rx="5" clip-path="url(#pc)"/>`;
-      b+=`<text x="${(amX+amW/2).toFixed(1)}" y="${(rearTop+rearH/2+4).toFixed(1)}"
+          fill="#5cb85c" opacity="0.4" rx="5"/>`;
+      dSVG+=`<text x="${(amX+amW/2).toFixed(1)}" y="${(rearTop+rearH/2+4).toFixed(1)}"
           font-family="sans-serif" font-size="8" fill="#1f5c1a" text-anchor="middle" font-weight="bold">HOA Amenity</text>`;
     }
   }
 
   // ── Entry boulevard (E-W, connects all spines) ──
-  b+=`<rect x="${devL.toFixed(1)}" y="${boulY.toFixed(1)}" width="${devZoneW.toFixed(1)}" height="${entryW.toFixed(1)}"
-      fill="#bebab0" clip-path="url(#pc)"/>`;
-  b+=`<line x1="${devL.toFixed(1)}" y1="${(boulY+entryW/2).toFixed(1)}" x2="${devR.toFixed(1)}" y2="${(boulY+entryW/2).toFixed(1)}"
+  dSVG+=`<rect x="${devL.toFixed(1)}" y="${boulY.toFixed(1)}" width="${devZoneW.toFixed(1)}" height="${entryW.toFixed(1)}"
+      fill="#bebab0"/>`;
+  dSVG+=`<line x1="${devL.toFixed(1)}" y1="${(boulY+entryW/2).toFixed(1)}" x2="${devR.toFixed(1)}" y2="${(boulY+entryW/2).toFixed(1)}"
       stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="10,7"/>`;
-  b+=`<text x="${midX.toFixed(1)}" y="${(boulY+entryW*0.7).toFixed(1)}"
+  dSVG+=`<text x="${midX.toFixed(1)}" y="${(boulY+entryW*0.7).toFixed(1)}"
       font-family="sans-serif" font-size="6.5" fill="#666" text-anchor="middle">ENTRY BOULEVARD — 26′</text>`;
 
   // ── Main entry drive (from ROW to boulevard) ──
   const entRW = fp(28);
-  b+=`<rect x="${(midX-entRW/2).toFixed(1)}" y="${bT.toFixed(1)}"
+  dSVG+=`<rect x="${(midX-entRW/2).toFixed(1)}" y="${bT.toFixed(1)}"
       width="${entRW.toFixed(1)}" height="${(boulY-bT+entryW).toFixed(1)}"
-      fill="#bebab0" clip-path="url(#pc)"/>`;
-  b+=`<line x1="${midX.toFixed(1)}" y1="${bT.toFixed(1)}" x2="${midX.toFixed(1)}" y2="${boulY.toFixed(1)}"
+      fill="#bebab0"/>`;
+  dSVG+=`<line x1="${midX.toFixed(1)}" y1="${bT.toFixed(1)}" x2="${midX.toFixed(1)}" y2="${boulY.toFixed(1)}"
       stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="8,6"/>`;
 
   // Entry gate monuments
   [-1,1].forEach(side=>{
     const gx = midX + side*(entRW/2+fp(2));
-    b+=`<rect x="${(gx-(side<0?fp(8):0)).toFixed(1)}" y="${(boulY-fp(14)).toFixed(1)}"
+    dSVG+=`<rect x="${(gx-(side<0?fp(8):0)).toFixed(1)}" y="${(boulY-fp(14)).toFixed(1)}"
         width="${fp(8).toFixed(1)}" height="${fp(12).toFixed(1)}"
         fill="#d4a843" stroke="#5a3e08" stroke-width="0.8" rx="1"/>`;
   });
-  b+=`<text x="${midX.toFixed(1)}" y="${(boulY-fp(2)).toFixed(1)}"
+  dSVG+=`<text x="${midX.toFixed(1)}" y="${(boulY-fp(2)).toFixed(1)}"
       font-family="sans-serif" font-size="6" fill="#5a3e08" text-anchor="middle">Entry Gate</text>`;
 
   // Clubhouse (left of entry, in approach zone)
   const clbX=devL+fp(5), clbW=fp(48), clbH=fp(28), clbY=boulY-fp(36);
   if(clbY > bzT){
-    b+=`<rect x="${clbX.toFixed(1)}" y="${clbY.toFixed(1)}"
+    dSVG+=`<rect x="${clbX.toFixed(1)}" y="${clbY.toFixed(1)}"
         width="${clbW.toFixed(1)}" height="${clbH.toFixed(1)}"
-        fill="#5a4a7a" opacity="0.75" rx="3" clip-path="url(#pc)"/>`;
-    b+=`<text x="${(clbX+clbW/2).toFixed(1)}" y="${(clbY+clbH/2+4).toFixed(1)}"
+        fill="#5a4a7a" opacity="0.75" rx="3"/>`;
+    dSVG+=`<text x="${(clbX+clbW/2).toFixed(1)}" y="${(clbY+clbH/2+4).toFixed(1)}"
         font-family="sans-serif" font-size="7" fill="white" text-anchor="middle" font-weight="bold">Clubhouse</text>`;
   }
 
@@ -2874,7 +3273,7 @@ function buildSitePlanSVG(parcelsData, opts) {
       // Left building — skip if it doesn't fit within parcel boundary
       if(unitCount < target){
         const lU=Math.min(UPB, target-unitCount), lh=lU*uH;
-        if(rectFits(lBL, by, uD, lh)){
+        if(rectFitsR(lBL, by, uD, lh)){
           bldgSVG+=`<rect x="${lBL.toFixed(1)}" y="${by.toFixed(1)}"
               width="${uD.toFixed(1)}" height="${lh.toFixed(1)}"
               fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
@@ -2891,7 +3290,7 @@ function buildSitePlanSVG(parcelsData, opts) {
       // Right building — skip if it doesn't fit within parcel boundary
       if(unitCount < target){
         const rU=Math.min(UPB, target-unitCount), rh=rU*uH;
-        if(rectFits(rBL, by, uD, rh)){
+        if(rectFitsR(rBL, by, uD, rh)){
           bldgSVG+=`<rect x="${rBL.toFixed(1)}" y="${by.toFixed(1)}"
               width="${uD.toFixed(1)}" height="${rh.toFixed(1)}"
               fill="${fill}" stroke="#5a3e08" stroke-width="0.9" rx="1"/>`;
@@ -2923,30 +3322,35 @@ function buildSitePlanSVG(parcelsData, opts) {
     // Visitor parking pockets (between boulevard and first building row)
     const pkH=fp(16), pkW=fp(20), pkY=boulY+entryW+fp(4);
     if(pkY+pkH < devTop){
-      b+=`<rect x="${(cCL-pkW-fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
+      dSVG+=`<rect x="${(cCL-pkW-fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
           width="${pkW.toFixed(1)}" height="${pkH.toFixed(1)}"
-          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2" clip-path="url(#pc)"/>`;
-      b+=`<text x="${(cCL-pkW/2-fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
+          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2"/>`;
+      dSVG+=`<text x="${(cCL-pkW/2-fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
           font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
-      b+=`<rect x="${(cCR+fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
+      dSVG+=`<rect x="${(cCR+fp(4)).toFixed(1)}" y="${pkY.toFixed(1)}"
           width="${pkW.toFixed(1)}" height="${pkH.toFixed(1)}"
-          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2" clip-path="url(#pc)"/>`;
-      b+=`<text x="${(cCR+pkW/2+fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
+          fill="url(#pkg)" stroke="#bbb" stroke-width="0.6" rx="2"/>`;
+      dSVG+=`<text x="${(cCR+pkW/2+fp(4)).toFixed(1)}" y="${(pkY+pkH/2+3).toFixed(1)}"
           font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
     }
 
     // Cul-de-sac at south end of each spine
-    b+=`<rect x="${cCL.toFixed(1)}" y="${devBot.toFixed(1)}"
+    dSVG+=`<rect x="${cCL.toFixed(1)}" y="${devBot.toFixed(1)}"
         width="${collW.toFixed(1)}" height="${(cdCY_ref-devBot+cdRad*0.5).toFixed(1)}"
-        fill="#bebab0" clip-path="url(#pc)"/>`;
-    b+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${cdRad.toFixed(1)}"
-        fill="#bebab0" clip-path="url(#pc)"/>`;
-    b+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${(cdRad*0.38).toFixed(1)}"
-        fill="#5cb85c" opacity="0.55" clip-path="url(#pc)"/>`;
-    b+=`<text x="${cMX.toFixed(1)}" y="${(cdCY_ref+3).toFixed(1)}"
+        fill="#bebab0"/>`;
+    dSVG+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${cdRad.toFixed(1)}"
+        fill="#bebab0"/>`;
+    dSVG+=`<circle cx="${cMX.toFixed(1)}" cy="${cdCY_ref.toFixed(1)}" r="${(cdRad*0.38).toFixed(1)}"
+        fill="#5cb85c" opacity="0.55"/>`;
+    dSVG+=`<text x="${cMX.toFixed(1)}" y="${(cdCY_ref+3).toFixed(1)}"
         font-family="sans-serif" font-size="5.5" fill="#1f5c1a" text-anchor="middle">island</text>`;
   }
-  b+=`<g clip-path="url(#pc)">${bldgSVG}</g>`;
+  // Merge buildings into dSVG and output rotated group clipped to parcel
+  dSVG += bldgSVG;
+  const rotTransform = rotAngleDeg !== 0
+    ? `transform="rotate(${rotAngleDeg.toFixed(2)}, ${rotCX.toFixed(1)}, ${rotCY.toFixed(1)})"`
+    : '';
+  b += `<g ${rotTransform} clip-path="url(#pc)">${dSVG}</g>`;
 
   // ── Parcel boundaries (on top) — each parcel gets its own colour ──
   const parcelColors = ['#1b3d28','#2c5f8a','#8b3a2a','#5a4a7a','#b8882a'];
@@ -3054,10 +3458,10 @@ function buildSitePlanSVG(parcelsData, opts) {
   ];
   costs.forEach((c,i)=>{ b+=`<text x="${lX}" y="${nY+143+i*12}" font-family="sans-serif" font-size="7.5" fill="#666">${c}</text>`; });
 
-  // Footer — warn if parcel is significantly off N-S axis (needs Civil 3D rotation)
-  const axisNote = _offAxis < 20
-    ? 'Parcel is well-aligned with N-S grid'
-    : `⚠ Parcel axis ~${Math.round(90-_offAxis)}° off N-S — road layout should be rotated in Civil 3D to follow parcel shape`;
+  // Footer — note if rotation was applied to match parcel axis
+  const axisNote = rotAngleDeg === 0
+    ? 'Layout aligned with N-S grid'
+    : `Layout rotated ${rotAngleDeg.toFixed(1)}° to follow parcel axis`;
   b+=`<text x="${(SVG_W-PR/2)/2}" y="${SVG_H-3}" font-family="sans-serif" font-size="7" fill="#bbb"
       text-anchor="middle">Conceptual only — export SVG → refine in AutoCAD Civil 3D · ${axisNote}</text>`;
 
