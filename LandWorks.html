@@ -1017,6 +1017,179 @@ textarea{resize:vertical;min-height:68px;}
       </div>
     </div>
   </div>
+
+  <!-- ── CASE INTELLIGENCE DATABASE ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#1a3a5c,#1e5c3a)">
+      <h3>📊 Case Intelligence Database <span id="caseDbCount" style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.75)">— 0 cases loaded</span></h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Real rezoning case outcomes from Wake County municipalities. The more cases you add, the more accurate your project evaluations become. Raleigh approves ~96% of cases that reach a vote — you need denied cases from Cary, Wake Forest, and others to build a useful classifier.</p>
+
+      <!-- City status bar -->
+      <div id="caseStatusBar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.4rem;margin-bottom:.85rem"></div>
+
+      <!-- Controls -->
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem;align-items:center">
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="openPasteExtract()">📋 Paste &amp; Extract Case</button>
+        <button class="btn btn-s" onclick="openCSVImport()">⬆ Import scored_cases.csv</button>
+        <select id="caseFilterCity" onchange="renderCaseTable()" style="font-size:.78rem;padding:.2rem .4rem;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+          <option value="">All Cities</option>
+          <option>Raleigh</option><option>Cary</option><option>Apex</option>
+          <option>Wake Forest</option><option>Holly Springs</option>
+          <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+        </select>
+        <button class="btn btn-s" style="background:#5a1a1a;color:white;margin-left:auto" onclick="clearCaseDb()">🗑 Clear All</button>
+      </div>
+
+      <!-- CSV import area (hidden by default) -->
+      <div id="csvImportWrap" style="display:none;background:var(--subtle);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
+        <p style="font-size:.78rem;color:var(--muted);margin:0 0 .4rem">Paste the contents of your <code>scored_cases.csv</code> file below (including the header row):</p>
+        <textarea id="csvPasteArea" rows="6" placeholder="case_number,city,meeting_date,title,change_requested,acreage,outcome,..." style="width:100%;font-size:.72rem;font-family:monospace;border-radius:5px;border:1px solid var(--border);padding:.4rem;background:var(--bg);color:var(--text);box-sizing:border-box"></textarea>
+        <div style="display:flex;gap:.5rem;margin-top:.4rem">
+          <button class="btn btn-s" style="background:#1e5c3a;color:white" onclick="importCSV()">Import Cases</button>
+          <button class="btn btn-s" onclick="document.getElementById('csvImportWrap').style.display='none'">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Case table -->
+      <div id="caseTableWrap" style="overflow-x:auto;font-size:.78rem"></div>
+    </div>
+  </div>
+
+  <!-- ── PROJECT EVALUATOR ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#2d4a1e,#4a2d6a)">
+      <h3>🎯 Project Evaluator — Approval Probability</h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .85rem">Fill in your project details. Claude compares against the case database and estimates approval probability with specific risk factors and improvement actions. Works best with 20+ cases loaded.</p>
+
+      <div class="f-row" style="gap:.65rem;flex-wrap:wrap">
+        <div class="f" style="flex:1;min-width:140px">
+          <label>Jurisdiction</label>
+          <select id="evCity">
+            <option>Raleigh</option><option>Cary</option><option>Apex</option>
+            <option>Wake Forest</option><option>Holly Springs</option>
+            <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+          </select>
+        </div>
+        <div class="f" style="flex:1;min-width:120px">
+          <label>Current Zone</label>
+          <input id="evCurZone" placeholder="e.g. R-4">
+        </div>
+        <div class="f" style="flex:1;min-width:120px">
+          <label>Proposed Zone</label>
+          <input id="evPropZone" placeholder="e.g. NX-3">
+        </div>
+        <div class="f" style="flex:0;min-width:90px">
+          <label>Acreage</label>
+          <input id="evAcreage" type="number" placeholder="3.2">
+        </div>
+        <div class="f" style="flex:0;min-width:80px">
+          <label>Stories</label>
+          <input id="evStories" type="number" placeholder="3">
+        </div>
+      </div>
+
+      <div class="f-row" style="gap:.65rem;flex-wrap:wrap">
+        <div class="f" style="flex:2;min-width:160px">
+          <label>Use Type / Project Description</label>
+          <input id="evUseType" placeholder="e.g. 48-unit townhome">
+        </div>
+        <div class="f" style="flex:1;min-width:140px">
+          <label>Staff Recommendation</label>
+          <select id="evStaff">
+            <option value="unknown">Unknown / Not yet</option>
+            <option value="approve">Approve</option>
+            <option value="deny">Deny</option>
+            <option value="approve with conditions">Approve w/ Conditions</option>
+          </select>
+        </div>
+        <div class="f" style="flex:1;min-width:140px">
+          <label>Community Opposition</label>
+          <select id="evOpp">
+            <option value="none">None / Minimal</option>
+            <option value="moderate">Moderate (1–5 speakers)</option>
+            <option value="strong">Strong (6+ speakers)</option>
+            <option value="organized">Organized opposition</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin:.5rem 0 .75rem">
+        <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer">
+          <input type="checkbox" id="evAdjSF" style="accent-color:var(--sage)"> Adjacent single-family
+        </label>
+        <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer">
+          <input type="checkbox" id="evBuffer" style="accent-color:var(--sage)"> Transition buffer proposed
+        </label>
+        <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer">
+          <input type="checkbox" id="evTraffic" style="accent-color:var(--sage)"> Traffic study included
+        </label>
+        <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer">
+          <input type="checkbox" id="evAH" style="accent-color:var(--sage)"> Affordable housing offered
+        </label>
+      </div>
+
+      <div class="f">
+        <label>Additional Notes / Context</label>
+        <textarea id="evNotes" rows="2" placeholder="Any developer concessions, unique site features, political context..." style="font-size:.82rem"></textarea>
+      </div>
+
+      <button class="btn" style="background:linear-gradient(135deg,#1a3a5c,#2d6a9f);color:white;width:100%;margin-top:.25rem" onclick="evaluateProject()">🤖 Evaluate My Project — Get Approval Probability</button>
+      <div id="evalResult" style="margin-top:.65rem"></div>
+    </div>
+  </div>
+
+  <!-- ── DATA EXPANSION GUIDE ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#5a3a1a,#3a1a5c)">
+      <h3>🗂 Data Expansion — Add Cases by City</h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Click <strong>+ Add Case</strong> to paste raw text from that city's portal — Claude extracts the structured fields in seconds. Red = 0 cases, yellow = needs more, green = healthy dataset. Focus on cities with denied cases to improve classifier accuracy.</p>
+      <div id="cityCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.65rem"></div>
+
+      <div style="margin-top:.85rem;background:var(--subtle);border-radius:6px;padding:.65rem;font-size:.78rem;color:var(--muted)">
+        <strong style="color:var(--text)">💡 Fastest ways to build your dataset:</strong>
+        <ol style="margin:.4rem 0 0 1.1rem;padding:0;line-height:1.7">
+          <li>Open a city's planning portal → find a rezoning case → select all text → paste into "Paste &amp; Extract"</li>
+          <li>Import your existing <code>scored_cases.csv</code> directly using "Import CSV" above</li>
+          <li>For Raleigh: use <a href="https://raleigh.granicus.com/ViewPublisher.php?view_id=5" target="_blank" style="color:var(--accent)">Granicus</a> + Claude in Chrome to summarize hearing videos, then paste the summary</li>
+          <li>Target Cary and Wake Forest first — they have contested cases with denials that improve the model</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── PASTE & EXTRACT MODAL ── -->
+<div id="pasteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--bg);border-radius:10px;padding:1.4rem;width:min(700px,96vw);max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+      <h4 style="margin:0;font-size:1rem">📋 Paste &amp; Extract — Add Case to Database</h4>
+      <button onclick="closePasteModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)">✕</button>
+    </div>
+    <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Open a city planning portal, find a rezoning case page, select all the text, and paste it below. Claude will extract all structured fields and save the case to your database.</p>
+    <div class="f-row" style="gap:.65rem;margin-bottom:.65rem">
+      <div class="f" style="flex:1">
+        <label>City</label>
+        <select id="peCitySelect" style="font-size:.85rem">
+          <option>Raleigh</option><option>Cary</option><option>Apex</option>
+          <option>Wake Forest</option><option>Holly Springs</option>
+          <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+        </select>
+      </div>
+    </div>
+    <textarea id="pasteArea" rows="13" placeholder="Paste case text from the city planning portal here... (case number, description, meeting date, vote, staff report, etc.)" style="width:100%;font-size:.78rem;font-family:monospace;border-radius:6px;border:1px solid var(--border);padding:.55rem;background:var(--subtle);color:var(--text);box-sizing:border-box;resize:vertical"></textarea>
+    <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap">
+      <button class="btn" style="background:linear-gradient(135deg,#1a3a5c,#1e5c3a);color:white;flex:1" onclick="runPasteExtract()">🤖 Extract with Claude &amp; Save</button>
+      <button class="btn btn-s" onclick="closePasteModal()" style="flex:0;white-space:nowrap">Cancel</button>
+    </div>
+    <div id="extractResult" style="margin-top:.75rem;font-size:.8rem"></div>
+  </div>
 </div>
 
 <!-- ── PROFORMA ── -->
@@ -5796,6 +5969,366 @@ function buildHBListingChecklist() {
         <label for="lk-${i}" style="font-size:.82rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;line-height:1.4">${item}</label>
       </div>`).join('') + `</div>`;
 }
+
+// ═══════════════════════ CASE INTELLIGENCE DATABASE ═══════════════════════
+
+let lwCasesDb = [];
+
+function saveCasesDb() {
+  try { localStorage.setItem('lwCasesDb', JSON.stringify(lwCasesDb)); } catch(e) {}
+}
+
+function loadCasesDb() {
+  try {
+    const raw = localStorage.getItem('lwCasesDb');
+    if (raw) lwCasesDb = JSON.parse(raw);
+  } catch(e) { lwCasesDb = []; }
+}
+
+function renderCaseTable() {
+  const city = document.getElementById('caseFilterCity')?.value || '';
+  const wrap = document.getElementById('caseTableWrap');
+  if (!wrap) return;
+  const cases = city ? lwCasesDb.filter(c => c.city === city) : lwCasesDb;
+  const countEl = document.getElementById('caseDbCount');
+  if (countEl) countEl.textContent = `— ${lwCasesDb.length} case${lwCasesDb.length !== 1 ? 's' : ''} loaded`;
+  renderCaseStatusBar();
+  if (cases.length === 0) {
+    wrap.innerHTML = `<p style="color:var(--muted);font-size:.82rem;padding:.5rem 0">No cases yet${city ? ' for ' + city : ''}. Use "📋 Paste &amp; Extract Case" to add cases from city planning portals, or import your <code>scored_cases.csv</code>.</p>`;
+    return;
+  }
+  wrap.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.74rem">
+    <thead><tr style="background:var(--subtle)">
+      <th style="padding:.4rem .55rem;text-align:left;white-space:nowrap">Case #</th>
+      <th style="padding:.4rem .55rem;text-align:left">City</th>
+      <th style="padding:.4rem .55rem;text-align:left;white-space:nowrap">Date</th>
+      <th style="padding:.4rem .55rem;text-align:left">Change Requested</th>
+      <th style="padding:.4rem .55rem;text-align:center">Acres</th>
+      <th style="padding:.4rem .55rem;text-align:center">Outcome</th>
+      <th style="padding:.4rem .55rem;text-align:center" title="Traffic Study">🚦</th>
+      <th style="padding:.4rem .55rem;text-align:center" title="Affordable Housing">🏘</th>
+      <th style="padding:.4rem .55rem;text-align:center">Vote</th>
+      <th style="padding:.4rem .55rem;text-align:center">Staff</th>
+      <th style="padding:.4rem .3rem"></th>
+    </tr></thead>
+    <tbody>
+      ${cases.map((c, i) => {
+        const oc = c.outcome === 'approved' ? '#1e5c3a' : c.outcome === 'denied' ? '#8a1a1a' : c.outcome === 'withdrawn' ? '#5a4a1a' : '#2d3a4a';
+        const globalIdx = lwCasesDb.indexOf(c);
+        return `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:.32rem .55rem;font-family:monospace;white-space:nowrap">${c.case_number||'—'}</td>
+          <td style="padding:.32rem .55rem;white-space:nowrap">${c.city||'—'}</td>
+          <td style="padding:.32rem .55rem;white-space:nowrap">${(c.meeting_date||'—').substring(0,10)}</td>
+          <td style="padding:.32rem .55rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.change_requested||'').replace(/"/g,'&quot;')}">${c.change_requested||c.title||'—'}</td>
+          <td style="padding:.32rem .55rem;text-align:center">${c.acreage||'—'}</td>
+          <td style="padding:.32rem .55rem;text-align:center"><span style="background:${oc};color:white;border-radius:4px;padding:.08rem .38rem;font-size:.68rem;text-transform:uppercase;font-weight:600">${c.outcome||'?'}</span></td>
+          <td style="padding:.32rem .55rem;text-align:center;font-size:.8rem">${c.traffic_study_mentioned=='true'||c.traffic_study_mentioned===true?'✓':'·'}</td>
+          <td style="padding:.32rem .55rem;text-align:center;font-size:.8rem">${c.affordable_housing_mentioned=='true'||c.affordable_housing_mentioned===true?'✓':'·'}</td>
+          <td style="padding:.32rem .55rem;text-align:center;white-space:nowrap">${c.vote_yes||'?'}–${c.vote_no||'?'}</td>
+          <td style="padding:.32rem .55rem;text-align:center;font-size:.7rem;color:var(--muted)">${c.staff_recommendation||'—'}</td>
+          <td style="padding:.32rem .3rem;text-align:center"><button onclick="deleteCase(${globalIdx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.8rem;padding:.1rem .3rem" title="Remove case">✕</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`;
+}
+
+function renderCaseStatusBar() {
+  const bar = document.getElementById('caseStatusBar');
+  if (!bar) return;
+  const cities = ['Raleigh','Cary','Apex','Wake Forest','Holly Springs','Morrisville','Fuquay-Varina','Garner'];
+  bar.innerHTML = cities.map(city => {
+    const cc = lwCasesDb.filter(c => c.city === city);
+    const approved = cc.filter(c => c.outcome === 'approved').length;
+    const denied = cc.filter(c => c.outcome === 'denied').length;
+    const bg = cc.length === 0 ? 'rgba(180,40,40,.15)' : cc.length < 5 ? 'rgba(160,110,0,.15)' : 'rgba(30,92,58,.15)';
+    const dot = cc.length === 0 ? '#c44' : cc.length < 5 ? '#b87a00' : '#2d9c5a';
+    return `<div style="background:${bg};border:1px solid ${dot}33;border-radius:6px;padding:.38rem .45rem;text-align:center;font-size:.7rem;cursor:pointer" onclick="document.getElementById('caseFilterCity').value='${city}';renderCaseTable()">
+      <div style="font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city}</div>
+      <div style="font-size:1rem;font-weight:700;color:${dot}">${cc.length}</div>
+      <div style="color:var(--muted);font-size:.65rem">${approved}✓ ${denied}✗</div>
+    </div>`;
+  }).join('');
+}
+
+function openPasteExtract(city) {
+  const modal = document.getElementById('pasteModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  if (city) {
+    const sel = document.getElementById('peCitySelect');
+    if (sel) sel.value = city;
+  }
+  document.getElementById('pasteArea').value = '';
+  document.getElementById('extractResult').innerHTML = '';
+}
+
+function closePasteModal() {
+  const modal = document.getElementById('pasteModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function runPasteExtract() {
+  const text = document.getElementById('pasteArea')?.value?.trim();
+  const city = document.getElementById('peCitySelect')?.value || 'Raleigh';
+  const resultEl = document.getElementById('extractResult');
+  if (!text) { showToast('Paste some case text first', 'e'); return; }
+  if (!apiKey) { showToast('Connect your Claude API key first', 'e'); return; }
+  resultEl.innerHTML = '<span style="color:var(--muted)">⏳ Extracting fields with Claude...</span>';
+  const prompt = `Extract structured fields from this planning/rezoning case text. Return ONLY a raw JSON object — no markdown fences, no explanation, just the JSON. Use exactly these fields:
+{
+  "case_number": "string or null",
+  "city": "${city}",
+  "meeting_date": "YYYY-MM-DD or as written",
+  "title": "string",
+  "change_requested": "brief description of rezoning change",
+  "acreage": number or null,
+  "outcome": "approved" | "denied" | "withdrawn" | "continued" | "pending",
+  "adjacent_single_family": true | false,
+  "height_stories_proposed": number or null,
+  "traffic_study_mentioned": true | false,
+  "affordable_housing_mentioned": true | false,
+  "transition_buffer_mentioned": true | false,
+  "staff_recommendation": "approve" | "deny" | "approve with conditions" | "continue" | "unknown",
+  "vote_yes": number or null,
+  "vote_no": number or null,
+  "notes": "key conditions, neighbor objections, or notable details",
+  "public_oppose_count": number or null,
+  "public_support_count": number or null,
+  "council_avg_sentiment": "positive" | "neutral" | "negative" | "mixed" | null,
+  "staff_avg_sentiment": "positive" | "neutral" | "negative" | null
+}
+
+Case text to extract from:
+${text.substring(0, 7000)}`;
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response — paste more complete case text');
+    const caseObj = JSON.parse(jsonMatch[0]);
+    caseObj.city = city;
+    caseObj._added = new Date().toISOString();
+    lwCasesDb.push(caseObj);
+    saveCasesDb();
+    renderCaseTable();
+    renderCityCards();
+    resultEl.innerHTML = `<div style="background:#0d2a1a;border:1px solid #1e5c3a;border-radius:6px;padding:.65rem;color:#6dbf7e;font-size:.8rem">
+      ✅ Saved: <strong>${caseObj.case_number || 'Case'}</strong> — ${caseObj.title || caseObj.change_requested || '(no title extracted)'}<br>
+      <span style="color:rgba(109,191,126,.75)">Outcome: ${caseObj.outcome||'?'} · Vote: ${caseObj.vote_yes||'?'}–${caseObj.vote_no||'?'} · Staff: ${caseObj.staff_recommendation||'?'} · Acreage: ${caseObj.acreage||'?'}</span><br>
+      <button class="btn btn-s" style="margin-top:.4rem;font-size:.72rem" onclick="document.getElementById('pasteArea').value='';document.getElementById('extractResult').innerHTML=''">+ Add Another</button>
+    </div>`;
+    showToast(`Case ${caseObj.case_number || ''} saved to database`, 's');
+  } catch(e) {
+    resultEl.innerHTML = `<div style="background:#2a0d0d;border:1px solid #8a1a1a;border-radius:6px;padding:.65rem;color:#e07070;font-size:.8rem">❌ Extraction failed: ${e.message}. Try pasting more complete case text including the case number, date, vote count, and staff recommendation.</div>`;
+  }
+}
+
+function deleteCase(idx) {
+  if (!confirm('Remove this case from the database?')) return;
+  lwCasesDb.splice(idx, 1);
+  saveCasesDb();
+  renderCaseTable();
+  renderCityCards();
+}
+
+function clearCaseDb() {
+  if (lwCasesDb.length === 0) { showToast('Database is already empty', 'i'); return; }
+  if (!confirm(`Remove all ${lwCasesDb.length} cases from the database? This cannot be undone.`)) return;
+  lwCasesDb = [];
+  saveCasesDb();
+  renderCaseTable();
+  renderCityCards();
+  showToast('Case database cleared', 'i');
+}
+
+function openCSVImport() {
+  const wrap = document.getElementById('csvImportWrap');
+  if (wrap) wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function importCSV() {
+  const raw = document.getElementById('csvPasteArea')?.value?.trim();
+  if (!raw) { showToast('Paste CSV content first', 'e'); return; }
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length < 2) { showToast('CSV needs a header row + at least one data row', 'e'); return; }
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  let added = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const vals = parseCSVLine(lines[i]);
+    if (!vals.length) continue;
+    const obj = {};
+    headers.forEach((h, j) => { obj[h] = (vals[j] !== undefined ? vals[j] : '').trim().replace(/^"|"$/g, ''); });
+    ['adjacent_single_family','traffic_study_mentioned','affordable_housing_mentioned','transition_buffer_mentioned'].forEach(k => {
+      obj[k] = obj[k] === 'true' || obj[k] === '1' || obj[k] === 'True';
+    });
+    ['acreage','height_stories_proposed','vote_yes','vote_no','public_oppose_count','public_support_count'].forEach(k => {
+      if (obj[k] !== '' && obj[k] !== null) obj[k] = parseFloat(obj[k]) || null;
+    });
+    obj._added = new Date().toISOString();
+    lwCasesDb.push(obj);
+    added++;
+  }
+  saveCasesDb();
+  renderCaseTable();
+  renderCityCards();
+  document.getElementById('csvPasteArea').value = '';
+  document.getElementById('csvImportWrap').style.display = 'none';
+  showToast(`Imported ${added} case${added !== 1 ? 's' : ''} from CSV`, 's');
+}
+
+// ═══════════════════════ PROJECT EVALUATOR ═══════════════════════
+
+function evaluateProject() {
+  if (!apiKey) { showToast('Connect your Claude API key first', 'e'); return; }
+  const city     = document.getElementById('evCity')?.value || 'Raleigh';
+  const acreage  = document.getElementById('evAcreage')?.value || '?';
+  const curZone  = document.getElementById('evCurZone')?.value || '?';
+  const propZone = document.getElementById('evPropZone')?.value || '?';
+  const stories  = document.getElementById('evStories')?.value || '?';
+  const useType  = document.getElementById('evUseType')?.value || 'residential';
+  const adjSF    = document.getElementById('evAdjSF')?.checked;
+  const buffer   = document.getElementById('evBuffer')?.checked;
+  const traffic  = document.getElementById('evTraffic')?.checked;
+  const ah       = document.getElementById('evAH')?.checked;
+  const oppLevel = document.getElementById('evOpp')?.value || 'none';
+  const staffRec = document.getElementById('evStaff')?.value || 'unknown';
+  const notes    = document.getElementById('evNotes')?.value || '';
+
+  const cityCases = lwCasesDb.filter(c => c.city === city);
+  const useCases  = cityCases.length >= 3 ? cityCases : lwCasesDb;
+  const label     = cityCases.length >= 3 ? city : 'all Wake County cities';
+
+  const caseSummary = useCases.slice(0, 30).map(c =>
+    `• ${c.case_number||'?'} (${c.city}, ${(c.meeting_date||'?').substring(0,10)}): ${c.change_requested||c.title||'—'} | ${c.outcome} | ${c.vote_yes||'?'}–${c.vote_no||'?'} vote | staff: ${c.staff_recommendation} | adj-SF: ${c.adjacent_single_family} | traffic: ${c.traffic_study_mentioned} | AH: ${c.affordable_housing_mentioned} | buffer: ${c.transition_buffer_mentioned} | oppose: ${c.public_oppose_count||0}`
+  ).join('\n');
+
+  const prompt = `You are a Wake County NC planning intelligence analyst with deep knowledge of how Raleigh-area city councils and planning boards decide rezoning cases.
+
+MY PROJECT:
+- City: ${city}
+- Rezoning: ${curZone} → ${propZone}
+- Description: ${useType}
+- Acreage: ${acreage} | Stories: ${stories}
+- Adjacent single-family: ${adjSF ? 'YES' : 'NO'}
+- Transition buffer proposed: ${buffer ? 'YES' : 'NO'}
+- Traffic study: ${traffic ? 'YES' : 'NO'}
+- Affordable housing offered: ${ah ? 'YES' : 'NO'}
+- Community opposition: ${oppLevel}
+- Staff recommendation: ${staffRec}
+${notes ? '- Additional context: ' + notes : ''}
+
+COMPARABLE CASES FROM DATABASE (${useCases.length} cases from ${label}):
+${caseSummary || 'No cases in database yet — use general Wake County knowledge.'}
+
+Respond with exactly this format:
+
+**APPROVAL PROBABILITY: X%**
+One sentence rationale.
+
+**TOP 3 RISKS**
+1. [Specific risk — reference a comparable case number if available]
+2. [Specific risk]
+3. [Specific risk]
+
+**TOP 3 IMPROVEMENTS**
+1. [Specific action that would meaningfully increase approval odds]
+2. [Specific action]
+3. [Specific action]
+
+**COMPARABLE CASES**
+List 2–3 most similar cases from the database with case numbers and outcomes, or note if the database needs more cases for reliable comparison.
+
+**HEARING STRATEGY**
+One short paragraph on how to approach the public hearing.`;
+
+  const resultEl = document.getElementById('evalResult');
+  resultEl.innerHTML = '<div style="color:var(--muted);padding:.75rem;font-size:.82rem">⏳ Analyzing against ' + useCases.length + ' cases from ' + label + '...</div>';
+  aiAsk(prompt);
+  resultEl.innerHTML = `<div style="background:var(--subtle);border:1px solid var(--border);border-radius:6px;padding:.65rem;font-size:.8rem;color:var(--muted)">
+    ✅ Evaluation sent — the full analysis (approval probability, risks, comparable cases, strategy) is appearing in the <strong>AI Assistant sidebar</strong> on the left.
+    <br><span style="font-size:.72rem;margin-top:.25rem;display:block">Analyzed ${useCases.length} cases from ${label}</span>
+  </div>`;
+}
+
+// ═══════════════════════ CITY CARDS ═══════════════════════
+
+const CITY_PORTALS = {
+  'Raleigh':       { url: 'https://raleigh.granicus.com/ViewPublisher.php?view_id=5', label: 'Granicus Videos' },
+  'Cary':          { url: 'https://www.carync.gov/connect-engage/transparency/public-hearings/public-hearing-cases/rezoning-cases-active-historic', label: 'Rezoning Cases' },
+  'Apex':          { url: 'https://www.apexnc.org/planning', label: 'Planning Portal' },
+  'Wake Forest':   { url: 'https://www.wakeforestnc.gov/government/boards-and-committees/planning-board', label: 'Planning Board' },
+  'Holly Springs': { url: 'https://www.hollyspringsnc.us/planning', label: 'Planning Dept' },
+  'Morrisville':   { url: 'https://www.morrisvillenc.gov/government/departments/planning', label: 'Planning Dept' },
+  'Fuquay-Varina': { url: 'https://www.fuquay-varina.org/government/planning-inspections', label: 'Planning & Inspections' },
+  'Garner':        { url: 'https://www.garnernc.gov/government/departments/planning-and-community-development', label: 'Planning Dept' },
+};
+
+function renderCityCards() {
+  const wrap = document.getElementById('cityCards');
+  if (!wrap) return;
+  wrap.innerHTML = Object.entries(CITY_PORTALS).map(([city, portal]) => {
+    const cc = lwCasesDb.filter(c => c.city === city);
+    const approved = cc.filter(c => c.outcome === 'approved').length;
+    const denied   = cc.filter(c => c.outcome === 'denied').length;
+    const other    = cc.length - approved - denied;
+    const pct      = cc.length > 0 ? Math.round(approved / cc.length * 100) : null;
+    const lastDate = cc.map(c => c.meeting_date || c._added || '').filter(Boolean).sort().pop();
+    const dot      = cc.length === 0 ? '#c44' : cc.length < 5 ? '#b87a00' : '#2d9c5a';
+    const bg       = cc.length === 0 ? 'rgba(180,40,40,.1)' : cc.length < 5 ? 'rgba(160,110,0,.1)' : 'rgba(30,92,58,.1)';
+    return `<div style="background:${bg};border:1px solid ${dot}44;border-radius:8px;padding:.7rem;display:flex;flex-direction:column;gap:.35rem">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:600;font-size:.88rem">${city}</div>
+        <div style="background:${dot};color:white;border-radius:10px;padding:.08rem .45rem;font-size:.7rem;font-weight:700">${cc.length} case${cc.length!==1?'s':''}</div>
+      </div>
+      ${pct !== null
+        ? `<div>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:.18rem"><span>Approval rate</span><span style="font-weight:600;color:var(--text)">${pct}%</span></div>
+            <div style="background:var(--border);border-radius:3px;height:5px"><div style="background:#2d9c5a;width:${pct}%;height:5px;border-radius:3px;transition:width .4s"></div></div>
+            <div style="font-size:.68rem;color:var(--muted);margin-top:.18rem">${approved} approved · ${denied} denied · ${other} other</div>
+          </div>`
+        : `<div style="font-size:.72rem;color:${dot};font-weight:500">No cases yet — add some!</div>`}
+      ${lastDate ? `<div style="font-size:.68rem;color:var(--muted)">Last: ${lastDate.substring(0,10)}</div>` : ''}
+      <div style="display:flex;gap:.35rem;margin-top:.1rem">
+        <button class="btn btn-s" style="flex:1;font-size:.72rem;padding:.22rem .4rem;background:#1a3a5c;color:white" onclick="openPasteExtract('${city}')">+ Add Case</button>
+        <a href="${portal.url}" target="_blank" class="btn btn-s" style="flex:1;font-size:.72rem;padding:.22rem .4rem;text-decoration:none;text-align:center">🔗 ${portal.label}</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── init case db on page load ───
+document.addEventListener('DOMContentLoaded', () => {
+  loadCasesDb();
+  renderCaseTable();
+  renderCityCards();
+});
 </script>
 </body>
 </html>
