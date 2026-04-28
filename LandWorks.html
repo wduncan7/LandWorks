@@ -3426,20 +3426,17 @@ function buildSitePlanSVG(parcelsData, opts) {
   const isCrossX = x => crossXPositions.some(cx => Math.abs(cx - x) < fp(3));
 
   // ── Collector roads + double-loaded buildings ──
+  // Buildings are pre-collected per row; road only drawn if ≥1 building placed.
   rowYs.forEach((rowY, ri) => {
-    // Trim road extent to parcel boundary
+    // Trim road extent to parcel boundary (step inward until inside parcel)
     let rX1 = lBZminX, rX2 = lBZmaxX;
-    const sStep = fp(15);
-    while (rX1 < lBZmaxX && !inPL(rX1, rowY)) rX1 += sStep;
-    while (rX2 > lBZminX && !inPL(rX2, rowY)) rX2 -= sStep;
-    if (rX1 >= rX2 - bldgPitch) return;
+    const sStep = fp(10);
+    while (rX1 < lBZmaxX - fp(10) && !inPL(rX1 + fp(5), rowY)) rX1 += sStep;
+    while (rX2 > lBZminX + fp(10) && !inPL(rX2 - fp(5), rowY)) rX2 -= sStep;
+    if (rX1 >= rX2 - bldgW) return;  // not enough room for even one building — skip row
 
-    // Road surface
-    dSVG += `<polygon points="${[svgPt(rX1,rowY-roadHW),svgPt(rX2,rowY-roadHW),svgPt(rX2,rowY+roadHW),svgPt(rX1,rowY+roadHW)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5"/>`;
-    const [cl1x,cl1y]=toLSVG(rX1,rowY),[cl2x,cl2y]=toLSVG(rX2,rowY);
-    dSVG += `<line x1="${cl1x.toFixed(1)}" y1="${cl1y.toFixed(1)}" x2="${cl2x.toFixed(1)}" y2="${cl2y.toFixed(1)}" stroke="#e8e4d8" stroke-width="0.8" stroke-dasharray="12,9"/>`;
-    const [rlx,rly]=toLSVG((rX1+rX2)*0.5,rowY);
-    dSVG += `<text x="${rlx.toFixed(1)}" y="${rly.toFixed(1)}" font-family="sans-serif" font-size="6" fill="#888" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${rlx.toFixed(1)},${rly.toFixed(1)})">COLLECTOR — 26′ R/W</text>`;
+    // Pre-collect building SVG for this row; only draw road if buildings placed
+    let rowBldgSVG = '', rowHasBldg = false;
 
     // Buildings on both sides of road
     [-1,1].forEach(side => {
@@ -3450,37 +3447,53 @@ function buildSitePlanSVG(parcelsData, opts) {
       const aMinY = Math.min(rowY + side*roadHW, bFY);
       const aMaxY = Math.max(rowY + side*roadHW, bFY);
 
-      let slotX = lBZminX + fp(8), slotN = 0;
-      while (slotX + bldgW <= rX2 - fp(8) && unitCount < target) {
+      // Start slots from the trimmed road start, not from lBZminX
+      let slotX = rX1, slotN = 0;
+      while (slotX + bldgW <= rX2 && unitCount < target) {
         slotN++;
         if (isCrossX(slotX)) { slotX += crossW; continue; }
         const bX2 = slotX + bldgW;
         if (!lRF(slotX, bMinY, bldgW, bDepth)) { slotX += bldgPitch; continue; }
 
+        rowHasBldg = true;
+
         // Private alley
-        dSVG += `<polygon points="${[svgPt(slotX,aMinY),svgPt(bX2,aMinY),svgPt(bX2,aMaxY),svgPt(slotX,aMaxY)].join(' ')}" fill="#d8d4c8" opacity="0.9"/>`;
+        rowBldgSVG += `<polygon points="${[svgPt(slotX,aMinY),svgPt(bX2,aMinY),svgPt(bX2,aMaxY),svgPt(slotX,aMaxY)].join(' ')}" fill="#d8d4c8" opacity="0.9"/>`;
         if (ri===0 && side===1 && slotN===1) {
           const [alx,aly]=toLSVG(slotX+bldgW/2,(aMinY+aMaxY)/2);
-          dSVG += `<text x="${alx.toFixed(1)}" y="${aly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${alx.toFixed(1)},${aly.toFixed(1)})">PRIV. ALLEY 20′</text>`;
+          rowBldgSVG += `<text x="${alx.toFixed(1)}" y="${aly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${alx.toFixed(1)},${aly.toFixed(1)})">PRIV. ALLEY 20′</text>`;
         }
 
         // Building
         const unitsHere = Math.min(UPB, target - unitCount);
         const thisBW    = unitsHere * bUnitW;
         const fill      = bnum % 2 === 1 ? cA : cB;
-        dSVG += `<polygon points="${[svgPt(slotX,bMinY),svgPt(slotX+thisBW,bMinY),svgPt(slotX+thisBW,bMaxY),svgPt(slotX,bMaxY)].join(' ')}" fill="${fill}" stroke="#5a3e08" stroke-width="0.9"/>`;
+        rowBldgSVG += `<polygon points="${[svgPt(slotX,bMinY),svgPt(slotX+thisBW,bMinY),svgPt(slotX+thisBW,bMaxY),svgPt(slotX,bMaxY)].join(' ')}" fill="${fill}" stroke="#5a3e08" stroke-width="0.9"/>`;
         // Unit dividers (perpendicular to road, in local Y direction)
         for (let u=1; u<unitsHere; u++) {
           const [d1x,d1y]=toLSVG(slotX+u*bUnitW,bMinY),[d2x,d2y]=toLSVG(slotX+u*bUnitW,bMaxY);
-          dSVG += `<line x1="${d1x.toFixed(1)}" y1="${d1y.toFixed(1)}" x2="${d2x.toFixed(1)}" y2="${d2y.toFixed(1)}" stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+          rowBldgSVG += `<line x1="${d1x.toFixed(1)}" y1="${d1y.toFixed(1)}" x2="${d2x.toFixed(1)}" y2="${d2y.toFixed(1)}" stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
         }
-        // Building number
+        // Building number label
         const [bmx,bmy]=toLSVG(slotX+thisBW/2,(bMinY+bMaxY)/2);
-        dSVG += `<text x="${bmx.toFixed(1)}" y="${bmy.toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
+        rowBldgSVG += `<text x="${bmx.toFixed(1)}" y="${bmy.toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
         unitCount += unitsHere;
         slotX += bldgPitch;
       }
     });
+
+    // Only draw road if at least one building was placed in this row
+    if (!rowHasBldg) return;
+
+    // Road surface
+    dSVG += `<polygon points="${[svgPt(rX1,rowY-roadHW),svgPt(rX2,rowY-roadHW),svgPt(rX2,rowY+roadHW),svgPt(rX1,rowY+roadHW)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5"/>`;
+    const [cl1x,cl1y]=toLSVG(rX1,rowY),[cl2x,cl2y]=toLSVG(rX2,rowY);
+    dSVG += `<line x1="${cl1x.toFixed(1)}" y1="${cl1y.toFixed(1)}" x2="${cl2x.toFixed(1)}" y2="${cl2y.toFixed(1)}" stroke="#e8e4d8" stroke-width="0.8" stroke-dasharray="12,9"/>`;
+    const [rlx,rly]=toLSVG((rX1+rX2)*0.5,rowY);
+    dSVG += `<text x="${rlx.toFixed(1)}" y="${rly.toFixed(1)}" font-family="sans-serif" font-size="6" fill="#888" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${rlx.toFixed(1)},${rly.toFixed(1)})">COLLECTOR — 26′ R/W</text>`;
+
+    // Append buildings (drawn on top of road)
+    dSVG += rowBldgSVG;
   });
 
   // ── Cross-streets: connect adjacent row road centerlines ──
@@ -3560,40 +3573,57 @@ function buildSitePlanSVG(parcelsData, opts) {
     dSVG += `<text x="${oalx.toFixed(1)}" y="${oaly.toFixed(1)}" font-family="sans-serif" font-size="9" fill="#1f5c1a" text-anchor="middle" font-weight="bold" opacity="0.7">HOA Open Space / Conservation Area</text>`;
   }
 
-  // ── Stormwater pond: in the open zone between last building row and riparian buffer ──
-  // Centre it on the best-fit point inside the parcel within the open zone.
+  // ── Stormwater wet detention pond — guaranteed placement ──
+  // Scan multiple Y zones and X positions in priority order.
+  // Final fallback is the parcel centroid (local 0,0) which is always inside the parcel.
   const pondRxL = fp(72), pondRyL = fp(46);
-  // Try several X positions, pick first that fits inside parcel
+  const lastBackY   = rowYs.length > 0 ? rowYs[rowYs.length-1] + toBack  : lBZmaxY;
+  const firstFrontY = rowYs.length > 0 ? rowYs[0]              - toBack  : lBZminY;
+  // X candidates: centre, offset left/right, near edges, centroid
   const pondCandX = [
     openZoneMidX,
-    openZoneMidX - fp(100),
-    openZoneMidX + fp(100),
-    lBZminX + fp(80),
-    lBZmaxX - fp(80),
+    openZoneMidX - fp(90),
+    openZoneMidX + fp(90),
+    lBZminX + fp(100),
+    lBZmaxX - fp(100),
+    (lBZminX + lBZmaxX) * 0.5 - fp(40),
+    0,  // parcel centroid X
   ];
-  const pondLY = openZoneY2 > openZoneY1 + fp(60)
-    ? openZoneMidY                              // use centre of open zone
-    : lBZmaxY + fp(opts.buffer * 0.35);         // fall back into riparian buffer
-  const pondLX = pondCandX.find(cx => inPL(cx, pondLY)) ?? openZoneMidX;
+  // Y candidates in priority order: below last row, buffer mid, above first row, centroid
+  const pondYCands = [
+    lastBackY  + pondRyL + fp(20),                       // below last building row
+    (lastBackY + lMaxY)  * 0.5,                          // mid of sub-row space
+    lMaxY - fp(opts.buffer * 0.45) - pondRyL,           // upper edge of buffer zone
+    firstFrontY - pondRyL - fp(20),                      // above first building row
+    lBZmaxY - pondRyL - fp(15),                          // inside lower buildable zone
+    0,                                                    // centroid Y (always in parcel)
+  ];
+  let pondLX = 0, pondLY = 0;
+  let pondFound = false;
+  pondSearch: for (const py of pondYCands) {
+    for (const px of pondCandX) {
+      if (inPL(px, py)) { pondLX = px; pondLY = py; pondFound = true; break pondSearch; }
+    }
+  }
+  // Absolute fallback: centroid (0,0 in local = SVG centroid, guaranteed inside parcel)
+  if (!pondFound) { pondLX = 0; pondLY = 0; }
 
-  if (inPL(pondLX, pondLY)) {
+  {
     const poly20 = (rx, ry) => Array.from({length:20}, (_,i) => {
       const a = i*Math.PI*2/20;
       return svgPt(pondLX+rx*Math.cos(a), pondLY+ry*Math.sin(a));
     }).join(' ');
-    // HOA open space ring (drawn first, behind pond)
-    dSVG += `<polygon points="${poly20(pondRxL+fp(28),pondRyL+fp(18))}" fill="#5cb85c" opacity="0.28" stroke="#3a8c4a" stroke-width="0.6"/>`;
-    // Pond surface
+    // HOA open space / riparian fringe ring (behind pond)
+    dSVG += `<polygon points="${poly20(pondRxL+fp(30),pondRyL+fp(20))}" fill="#5cb85c" opacity="0.28" stroke="#3a8c4a" stroke-width="0.6"/>`;
+    // Pond water surface
     dSVG += `<polygon points="${poly20(pondRxL,pondRyL)}" fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
+    // Inner ripple rings
     for (let ri=1;ri<=3;ri++) dSVG += `<polygon points="${poly20(pondRxL*0.25*ri,pondRyL*0.25*ri)}" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
-    const [pcx,pcy]=toLSVG(pondLX, pondLY-fp(7));
+    // Labels
+    const [pcx,pcy]=toLSVG(pondLX, pondLY-fp(6));
     dSVG += `<text x="${pcx.toFixed(1)}" y="${pcy.toFixed(1)}" font-family="sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
-    const [pc2x,pc2y]=toLSVG(pondLX, pondLY+fp(6));
+    const [pc2x,pc2y]=toLSVG(pondLX, pondLY+fp(7));
     dSVG += `<text x="${pc2x.toFixed(1)}" y="${pc2y.toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
-  } else {
-    // Pond can't fit in open zone — draw at parcel centroid as fallback with notice
-    const [pcx,pcy]=toLSVG(openZoneMidX, pondLY);
-    dSVG += `<text x="${pcx.toFixed(1)}" y="${pcy.toFixed(1)}" font-family="sans-serif" font-size="8" fill="#2a6e8a" text-anchor="middle">[SCM — field locate per topo]</text>`;
   }
 
   // ── Entry drive (local X-min end, centred in local Y) ──
