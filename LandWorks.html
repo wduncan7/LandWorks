@@ -3496,23 +3496,59 @@ function buildSitePlanSVG(parcelsData, opts) {
       const csY2 = rowYs[ri+1];
       if (!inPL(cx+crossW/2, (csY1+csY2)/2)) continue;
       dSVG += `<polygon points="${[svgPt(cx,csY1),svgPt(cx+crossW,csY1),svgPt(cx+crossW,csY2),svgPt(cx,csY2)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.4"/>`;
+      // Cross-street centerline dash
+      const [csx1,csy1]=toLSVG(cx+crossW/2,csY1), [csx2,csy2]=toLSVG(cx+crossW/2,csY2);
+      dSVG += `<line x1="${csx1.toFixed(1)}" y1="${csy1.toFixed(1)}" x2="${csx2.toFixed(1)}" y2="${csy2.toFixed(1)}" stroke="#e8e4d8" stroke-width="0.7" stroke-dasharray="10,8"/>`;
     }
   });
+
+  // ── Entry loop connector: spine road in local Y connecting all rows at X-min end ──
+  // This gives loop connectivity: entry drive → spine → cross-streets → all collectors
+  if (rowYs.length > 0) {
+    const spY1 = rowYs[0] - roadHW;
+    const spY2 = rowYs[rowYs.length-1] + roadHW;
+    const spX1 = lBZminX - crossW/2;
+    const spX2 = lBZminX + crossW/2;
+    if (inPL(spX1 + crossW/2, (spY1+spY2)/2)) {
+      dSVG += `<polygon points="${[svgPt(spX1,spY1),svgPt(spX2,spY1),svgPt(spX2,spY2),svgPt(spX1,spY2)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5"/>`;
+      // Entry label on spine
+      const [spLx,spLy]=toLSVG(spX1+crossW/2,(spY1+spY2)/2);
+      const perpAng = (_parcelAngleDeg+90);
+      dSVG += `<text x="${spLx.toFixed(1)}" y="${spLy.toFixed(1)}" font-family="sans-serif" font-size="5.5" fill="#888" text-anchor="middle" dominant-baseline="middle" transform="rotate(${perpAng.toFixed(1)},${spLx.toFixed(1)},${spLy.toFixed(1)})">Entry Loop — 26′ R/W</text>`;
+    }
+    // ── X-max connector: stub spine road at far end connecting all rows ──
+    const exY1 = rowYs[0] - roadHW;
+    const exY2 = rowYs[rowYs.length-1] + roadHW;
+    const exX1 = lBZmaxX - crossW/2;
+    const exX2 = lBZmaxX + crossW/2;
+    if (inPL(exX1 + crossW/2, (exY1+exY2)/2)) {
+      dSVG += `<polygon points="${[svgPt(exX1,exY1),svgPt(exX2,exY1),svgPt(exX2,exY2),svgPt(exX1,exY2)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5" opacity="0.8"/>`;
+      // Stub bar at X-max end
+      const [esb1x,esb1y]=toLSVG(exX2,exY1-fp(12)),[esb2x,esb2y]=toLSVG(exX2,exY2+fp(12));
+      dSVG += `<line x1="${esb1x.toFixed(1)}" y1="${esb1y.toFixed(1)}" x2="${esb2x.toFixed(1)}" y2="${esb2y.toFixed(1)}" stroke="#e07820" stroke-width="3.5" stroke-linecap="butt"/>`;
+      const [estx,esty]=toLSVG(exX2+fp(14),(exY1+exY2)/2);
+      dSVG += `<text x="${estx.toFixed(1)}" y="${esty.toFixed(1)}" font-family="sans-serif" font-size="5.5" fill="#e07820" dominant-baseline="middle" transform="rotate(${(_parcelAngleDeg+90).toFixed(1)},${estx.toFixed(1)},${esty.toFixed(1)})">STUB — Future Conn.</text>`;
+    }
+  }
 
   // ── Side stubs at local Y-min and Y-max parcel edges ──
   crossXPositions.forEach(cx => {
     const csMid = cx + crossW/2;
-    // Y-min stub (one short end of parcel)
+    // Y-min stub
     if (inPL(csMid, lMinY + (lBZminY-lMinY)*0.5)) {
       dSVG += `<polygon points="${[svgPt(cx,lMinY),svgPt(cx+crossW,lMinY),svgPt(cx+crossW,lBZminY),svgPt(cx,lBZminY)].join(' ')}" fill="#d0cdc0" opacity="0.75"/>`;
       const [b1x,b1y]=toLSVG(cx-fp(8),lMinY),[b2x,b2y]=toLSVG(cx+crossW+fp(8),lMinY);
       dSVG += `<line x1="${b1x.toFixed(1)}" y1="${b1y.toFixed(1)}" x2="${b2x.toFixed(1)}" y2="${b2y.toFixed(1)}" stroke="#e07820" stroke-width="3"/>`;
+      const [stx,sty]=toLSVG(csMid, lMinY-fp(10));
+      dSVG += `<text x="${stx.toFixed(1)}" y="${sty.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#e07820" text-anchor="middle" transform="rotate(${(_parcelAngleDeg+90).toFixed(1)},${stx.toFixed(1)},${sty.toFixed(1)})">STUB</text>`;
     }
-    // Y-max stub (other short end)
+    // Y-max stub
     if (inPL(csMid, lBZmaxY + (lMaxY-lBZmaxY)*0.5)) {
       dSVG += `<polygon points="${[svgPt(cx,lBZmaxY),svgPt(cx+crossW,lBZmaxY),svgPt(cx+crossW,lMaxY),svgPt(cx,lMaxY)].join(' ')}" fill="#d0cdc0" opacity="0.75"/>`;
       const [b1x,b1y]=toLSVG(cx-fp(8),lMaxY),[b2x,b2y]=toLSVG(cx+crossW+fp(8),lMaxY);
       dSVG += `<line x1="${b1x.toFixed(1)}" y1="${b1y.toFixed(1)}" x2="${b2x.toFixed(1)}" y2="${b2y.toFixed(1)}" stroke="#e07820" stroke-width="3"/>`;
+      const [stx,sty]=toLSVG(csMid, lMaxY+fp(10));
+      dSVG += `<text x="${stx.toFixed(1)}" y="${sty.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#e07820" text-anchor="middle" transform="rotate(${(_parcelAngleDeg+90).toFixed(1)},${stx.toFixed(1)},${sty.toFixed(1)})">STUB</text>`;
     }
   });
 
@@ -3540,7 +3576,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   const entHW   = entDW / 2;
   const entLY   = (lBZminY + lBZmaxY) * 0.5;
   const entX1   = lMinX;
-  const entX2   = lBZminX + fp(15);
+  const entX2   = lBZminX + crossW/2;  // connect to spine road centreline
   dSVG += `<polygon points="${[svgPt(entX1,entLY-entHW),svgPt(entX2,entLY-entHW),svgPt(entX2,entLY+entHW),svgPt(entX1,entLY+entHW)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5"/>`;
   const [ec1x,ec1y]=toLSVG(entX1,entLY),[ec2x,ec2y]=toLSVG(entX2,entLY);
   dSVG += `<line x1="${ec1x.toFixed(1)}" y1="${ec1y.toFixed(1)}" x2="${ec2x.toFixed(1)}" y2="${ec2y.toFixed(1)}" stroke="#e8e4d8" stroke-width="0.8" stroke-dasharray="8,6"/>`;
