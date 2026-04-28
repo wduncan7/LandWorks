@@ -442,6 +442,92 @@ textarea{resize:vertical;min-height:68px;}
 .hub-stat-num{font-size:1.8rem;font-weight:800;color:var(--forest);}
 .hub-stat-lbl{font-size:.72rem;color:var(--muted);margin-top:.2rem;}
 .hub-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem;}
+
+/* ══════════════════════════════════════════════════
+   HOME BUILDER MODE
+   ══════════════════════════════════════════════════ */
+
+/* Mode switcher bar */
+.mode-bar{background:linear-gradient(90deg,#0c1810,#152a1e);border-bottom:1px solid rgba(255,255,255,.07);padding:.42rem 1.5rem;display:flex;align-items:center;gap:.85rem;}
+.mode-lbl{font-size:.66rem;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;}
+.mode-pill{display:flex;background:rgba(255,255,255,.08);border-radius:20px;padding:2px;}
+.mode-btn{padding:.3rem .95rem;border-radius:18px;border:none;font-size:.78rem;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.45);transition:all .2s;display:flex;align-items:center;gap:5px;}
+.mode-btn.on{background:var(--amber);color:var(--forest);}
+.mode-btn:not(.on):hover{color:var(--white);}
+.mode-sep{width:1px;background:rgba(255,255,255,.12);height:20px;margin:0 .25rem;}
+#modeDesc{font-size:.72rem;color:rgba(255,255,255,.38);}
+
+/* HB panels */
+.hb-panel{display:none;animation:fadeUp .2s ease;}
+.hb-panel.on{display:block;}
+
+/* HB hero banner */
+.hb-hero{background:linear-gradient(135deg,#1a3550,#2c5f8a);border-radius:var(--r-lg);padding:1.4rem;color:var(--white);margin-bottom:1.2rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;}
+.hb-hero-icon{font-size:2.8rem;flex-shrink:0;}
+.hb-hero h2{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:3px;}
+.hb-hero p{color:#9dd4e8;font-size:.82rem;line-height:1.6;}
+
+/* Style picker */
+.style-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.7rem;margin-bottom:1rem;}
+.style-card{border:2px solid var(--border);border-radius:var(--r);padding:.8rem .55rem;text-align:center;cursor:pointer;transition:all .18s;background:var(--white);}
+.style-card:hover{border-color:var(--fern);background:var(--foam);}
+.style-card.on{border-color:var(--forest);background:var(--foam);box-shadow:0 0 0 2px rgba(27,61,40,.15);}
+.style-card .sc-icon{font-size:1.9rem;margin-bottom:.25rem;}
+.style-card .sc-name{font-size:.74rem;font-weight:700;color:var(--forest);}
+.style-card .sc-desc{font-size:.62rem;color:var(--muted);margin-top:1px;}
+
+/* Budget breakdown */
+.bget-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:.3rem 0;}
+.bget-fill{height:100%;border-radius:4px;transition:width .4s;}
+.bget-row{display:grid;grid-template-columns:1fr auto 60px;gap:.5rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--border);}
+.bget-row:last-child{border-bottom:none;}
+
+/* Permit tracker table */
+.hb-pt{width:100%;border-collapse:collapse;}
+.hb-pt thead th{background:var(--forest);color:var(--white);padding:.45rem .75rem;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:left;white-space:nowrap;}
+.hb-pt td{padding:.5rem .7rem;border-bottom:1px solid var(--border);font-size:.81rem;vertical-align:middle;}
+.hb-pt tr:nth-child(even) td{background:var(--parch);}
+.hb-pt select,.hb-pt input[type=text],.hb-pt input[type=date]{width:100%;border:none;background:transparent;font-size:.78rem;font-family:inherit;padding:2px 4px;}
+.hb-pt select:focus,.hb-pt input:focus{outline:1px solid var(--fern);border-radius:3px;background:#fff;}
+.hb-pt .phase-hdr td{background:var(--pine)!important;color:var(--white);font-size:.72rem;font-weight:700;padding:.35rem .75rem;letter-spacing:.04em;}
+
+/* Construction phase rows */
+.hb-phase{display:grid;grid-template-columns:26px 1fr 100px 100px 95px 95px 1fr 34px;gap:.45rem;align-items:center;padding:.6rem .5rem;border-bottom:1px solid var(--border);}
+.hb-phase:last-child{border-bottom:none;}
+.hb-phase input,.hb-phase select{border:none;background:transparent;font-size:.78rem;font-family:inherit;padding:2px 4px;width:100%;}
+.hb-phase input:focus,.hb-phase select:focus{outline:1px solid var(--fern);border-radius:3px;background:#fff;}
+.hb-ph-num{width:22px;height:22px;background:var(--forest);color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.hb-progress{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:2px;}
+.hb-progress-fill{height:100%;background:var(--sage);border-radius:3px;}
+
+/* Inspection checklist */
+.insp-grid{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:.55rem 1rem;align-items:center;padding:.55rem 0;border-bottom:1px solid var(--border);}
+.insp-grid:last-child{border-bottom:none;}
+.insp-grid input[type=checkbox]{width:16px;height:16px;accent-color:var(--sage);cursor:pointer;}
+.insp-grid label{font-size:.84rem;cursor:pointer;}
+.insp-grid input[type=date]{border:1.5px solid var(--border);border-radius:5px;padding:3px 7px;font-size:.75rem;background:var(--cream);width:100%;font-family:inherit;}
+
+/* Comps table */
+.comps-tbl{width:100%;border-collapse:collapse;}
+.comps-tbl th{background:var(--sky);color:var(--white);padding:.42rem .75rem;font-size:.68rem;font-weight:700;text-transform:uppercase;text-align:left;}
+.comps-tbl td{padding:.45rem .7rem;border-bottom:1px solid var(--border);font-size:.82rem;vertical-align:middle;}
+.comps-tbl input{border:none;background:transparent;width:100%;font-size:.8rem;font-family:inherit;padding:2px 4px;}
+.comps-tbl input:focus{outline:1px solid var(--fern);border-radius:3px;background:#fff;}
+.comps-tbl tr:nth-child(even) td{background:var(--parch);}
+.comps-avg-row td{background:var(--forest)!important;color:var(--white)!important;font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+/* Net proceeds */
+.np-row{display:flex;justify-content:space-between;align-items:center;padding:.48rem .9rem;border-bottom:1px solid var(--border);}
+.np-row:last-child{border-bottom:none;}
+.np-lbl{font-size:.84rem;}
+.np-amt{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:600;}
+.np-tot-row{background:var(--forest);border-radius:0 0 var(--r) var(--r);}
+.np-tot-row .np-lbl,.np-tot-row .np-amt{color:var(--white);font-size:.95rem;}
+
+/* Status dots */
+.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;flex-shrink:0;}
+.sdot-ns{background:#ccc;}.sdot-ip{background:#f0ad4e;}.sdot-sub{background:#5bc0de;}
+.sdot-app{background:#5cb85c;}.sdot-act{background:#0275d8;}.sdot-cld{background:#292b2c;}.sdot-na{background:#e8e8e8;}
 </style>
 </head>
 <body>
@@ -576,6 +662,17 @@ textarea{resize:vertical;min-height:68px;}
   </div>
 </header>
 
+<!-- MODE SWITCHER BAR -->
+<div class="mode-bar">
+  <span class="mode-lbl">Mode</span>
+  <div class="mode-pill">
+    <button class="mode-btn on" data-mode="dev" onclick="setMode('dev')">🏗 Developer</button>
+    <button class="mode-btn" data-mode="hb" onclick="setMode('hb')">🏠 Home Builder</button>
+  </div>
+  <div class="mode-sep"></div>
+  <span id="modeDesc">Multi-lot / subdivision development tools</span>
+</div>
+
 <!-- SEARCH -->
 <div class="search-bar">
   <span class="s-label">📍 Parcel PIN</span>
@@ -592,7 +689,7 @@ textarea{resize:vertical;min-height:68px;}
 </div>
 
 <!-- TABS -->
-<div class="tabs">
+<div class="tabs" id="devTabBar">
   <button class="tab on" onclick="sw('overview',this)">📋 Project Overview</button>
   <button class="tab" onclick="sw('stats',this)">📊 Statistics</button>
   <button class="tab" onclick="sw('siteplan',this)">🗺 Site Plan</button>
@@ -608,6 +705,16 @@ textarea{resize:vertical;min-height:68px;}
   <button class="tab" onclick="sw('market',this)">📈 Market Research</button>
   <button class="tab" onclick="sw('construction',this)">🏗 Construction</button>
   <button class="tab" onclick="sw('hub',this)">🏠 Project Hub</button>
+</div>
+
+<!-- HOME BUILDER TABS (hidden until HB mode activated) -->
+<div class="tabs" id="hbTabBar" style="display:none">
+  <button class="tab on" onclick="swHB('lot',this)">🏠 Lot Analysis</button>
+  <button class="tab" onclick="swHB('design',this)">🎨 Design Studio</button>
+  <button class="tab" onclick="swHB('permits',this)">📄 Permit Tracker</button>
+  <button class="tab" onclick="swHB('build',this)">🔨 Construction</button>
+  <button class="tab" onclick="swHB('closeout',this)">✅ Closeout &amp; CO</button>
+  <button class="tab" onclick="swHB('sell',this)">💰 Market &amp; Sale</button>
 </div>
 
 <!-- LAYOUT -->
@@ -1465,6 +1572,409 @@ textarea{resize:vertical;min-height:68px;}
     <button class="btn btn-g" onclick="aiAsk('Review my construction tracking data. I have '+document.getElementById(\'orderBody\')?.children.length+' orders tracked and my budget utilization is '+document.getElementById(\'conPctComplete\')?.value+'. What should I be focused on to keep construction on schedule and on budget?')">🤖 AI Construction Review</button>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     HOME BUILDER PANELS
+     Six-stage workflow: Lot → Design → Permits → Build → CO → Sale
+     ══════════════════════════════════════════════════════════════════ -->
+
+<!-- ── HB PANEL 1: LOT ANALYSIS ── -->
+<div class="hb-panel" id="hbp-lot">
+  <div class="hb-hero">
+    <div class="hb-hero-icon">📍</div>
+    <div>
+      <h2>Lot Analysis</h2>
+      <p>Enter the parcel PIN above to pull GIS data automatically, or fill in manually below. Use this panel to evaluate the lot before — or right after — purchase.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>🏡 Project & Lot Info</h3>
+      <button class="btn btn-g" onclick="saveHB()">💾 Save</button>
+    </div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f w2"><label>Project Name / Address</label><input type="text" id="hb-projName" placeholder="123 Oak St — my new build" oninput="saveHB()"></div>
+        <div class="f"><label>Parcel PIN</label><input type="text" id="hb-pin" placeholder="Wake County PIN" oninput="saveHB()"></div>
+        <div class="f"><label>Jurisdiction</label>
+          <select id="hb-juris" onchange="saveHB()">
+            <option value="">— Select —</option>
+            <option>City of Raleigh</option><option>Town of Cary</option><option>Town of Apex</option>
+            <option>Town of Holly Springs</option><option>Town of Morrisville</option>
+            <option>Town of Fuquay-Varina</option><option>Unincorporated Wake County</option>
+          </select>
+        </div>
+        <div class="f"><label>Lot Size (sq ft)</label><input type="number" id="hb-lotSF" placeholder="e.g. 9,600" oninput="hbCalc();saveHB()"></div>
+        <div class="f"><label>Lot Dimensions (approx.)</label><input type="text" id="hb-lotDim" placeholder="80′ × 120′" oninput="saveHB()"></div>
+        <div class="f"><label>Zoning District</label><input type="text" id="hb-zone" placeholder="e.g. R-4, R-6, NX-3" oninput="saveHB()"></div>
+        <div class="f"><label>Project Type</label>
+          <select id="hb-projType" onchange="saveHB()">
+            <option>Teardown &amp; Rebuild</option>
+            <option>Vacant Lot — New Construction</option>
+            <option>Spec Home</option>
+            <option>Custom Build (for client)</option>
+          </select>
+        </div>
+        <div class="f"><label>Flood Zone</label>
+          <select id="hb-flood" onchange="saveHB()">
+            <option value="X">Zone X — Minimal Risk</option>
+            <option value="AE">Zone AE — 100-yr Floodplain</option>
+            <option value="X500">Zone X-500 — 500-yr Floodplain</option>
+            <option value="AO">Zone AO — Sheet Flow</option>
+            <option value="VE">Zone VE — Coastal</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-sky"><h3>📏 Zoning Regulations</h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Front Setback (ft)</label><input type="number" id="hb-fSetbk" value="20" oninput="hbCalc();saveHB()"></div>
+        <div class="f"><label>Side Setback (ft)</label><input type="number" id="hb-sSetbk" value="5" oninput="hbCalc();saveHB()"></div>
+        <div class="f"><label>Rear Setback (ft)</label><input type="number" id="hb-rSetbk" value="20" oninput="hbCalc();saveHB()"></div>
+        <div class="f"><label>Max Lot Coverage (%)</label><input type="number" id="hb-maxCov" value="40" oninput="hbCalc();saveHB()"></div>
+        <div class="f"><label>Max Height (ft)</label><input type="number" id="hb-maxHgt" value="35" oninput="saveHB()"></div>
+        <div class="f"><label>Min Lot Width (ft)</label><input type="number" id="hb-minLotW" value="50" oninput="saveHB()"></div>
+      </div>
+      <div id="hb-envelopeStats" style="margin-top:1rem;padding:1rem;background:var(--foam);border:1px solid var(--mint);border-radius:var(--r);font-size:.84rem;display:none">
+        <!-- Populated by hbCalc() -->
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-gold"><h3>💵 Purchase & Holding Costs</h3></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Purchase Price ($)</label><input type="number" id="hb-purchase" placeholder="475000" oninput="saveHB()"></div>
+        <div class="f"><label>Purchase Date</label><input type="date" id="hb-purchaseDate" oninput="saveHB()"></div>
+        <div class="f"><label>Teardown Est. Cost ($)</label><input type="number" id="hb-tdCost" placeholder="18000" oninput="saveHB()"></div>
+        <div class="f"><label>Monthly Carry Cost ($)</label><input type="number" id="hb-carry" placeholder="2800" oninput="saveHB()"></div>
+        <div class="f w2"><label>Additional Notes</label><textarea id="hb-lotNotes" rows="2" oninput="saveHB()" placeholder="Utility connections, neighbors, easements, deed restrictions…"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="saveHB()">💾 Save Project</button>
+    <button class="btn btn-g" onclick="aiAsk('I am evaluating a '+hbGet('hb-projType')+' project on a '+hbGet('hb-lotSF')+' SF lot zoned '+hbGet('hb-zone')+' in '+hbGet('hb-juris')+'. Purchase price is $'+hbGet('hb-purchase')+'. Setbacks are F:'+hbGet('hb-fSetbk')+'ft S:'+hbGet('hb-sSetbk')+'ft R:'+hbGet('hb-rSetbk')+'ft with '+hbGet('hb-maxCov')+'% max lot coverage. What are the key due-diligence items I should verify before closing? What risks should I know about?')">🤖 AI Due Diligence Check</button>
+    <button class="btn btn-g" onclick="aiAsk('For a '+hbGet('hb-projType')+' in '+hbGet('hb-juris')+' on a lot zoned '+hbGet('hb-zone')+', what are the key design constraints I need to know? What is typically allowed by-right vs. what requires a variance or special use permit?')">🤖 AI Zoning Analysis</button>
+  </div>
+</div>
+
+<!-- ── HB PANEL 2: DESIGN STUDIO ── -->
+<div class="hb-panel" id="hbp-design">
+  <div class="hb-hero">
+    <div class="hb-hero-icon">🎨</div>
+    <div>
+      <h2>Design Studio</h2>
+      <p>Choose your home style, configure rooms and square footage, and get an instant budget estimate. All figures flow into the Permit Tracker and Net Proceeds calculator.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>🏡 Home Style</h3></div>
+    <div class="card-body">
+      <div class="style-grid" id="styleGrid">
+        <!-- Populated by buildStyleGrid() -->
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>📐 Home Configuration</h3>
+      <button class="btn btn-g" onclick="hbDesignCalc()">⟳ Recalculate</button>
+    </div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="f"><label>Target Finished SF</label><input type="number" id="hb-targetSF" value="2200" oninput="hbDesignCalc();saveHB()"></div>
+        <div class="f"><label>Stories</label>
+          <select id="hb-stories" onchange="hbDesignCalc();saveHB()">
+            <option value="1">1 Story (Ranch)</option>
+            <option value="1.5">1.5 Story</option>
+            <option value="2" selected>2 Story</option>
+            <option value="3">3 Story</option>
+          </select>
+        </div>
+        <div class="f"><label>Bedrooms</label>
+          <select id="hb-beds" onchange="saveHB()">
+            <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+          </select>
+        </div>
+        <div class="f"><label>Full Baths</label>
+          <select id="hb-baths" onchange="saveHB()">
+            <option>1</option><option>2</option><option selected>3</option><option>4</option>
+          </select>
+        </div>
+        <div class="f"><label>Half Baths</label>
+          <select id="hb-halfBaths" onchange="saveHB()">
+            <option>0</option><option selected>1</option><option>2</option>
+          </select>
+        </div>
+        <div class="f"><label>Garage Bays</label>
+          <select id="hb-garage" onchange="hbDesignCalc();saveHB()">
+            <option>0 — No garage</option><option>1</option><option selected>2</option><option>3</option>
+          </select>
+        </div>
+        <div class="f"><label>Basement</label>
+          <select id="hb-basement" onchange="hbDesignCalc();saveHB()">
+            <option value="none">None — Slab or Crawlspace</option>
+            <option value="crawl">Crawlspace</option>
+            <option value="unfin">Unfinished Basement</option>
+            <option value="fin">Finished Basement</option>
+          </select>
+        </div>
+        <div class="f"><label>Finish Level</label>
+          <select id="hb-finish" onchange="hbDesignCalc();saveHB()">
+            <option value="economy">Economy — Builder Grade (~$145/SF)</option>
+            <option value="standard" selected>Standard (~$175/SF)</option>
+            <option value="upscale">Upscale (~$220/SF)</option>
+            <option value="luxury">Luxury (~$295/SF)</option>
+            <option value="custom">Custom (enter $/SF below)</option>
+          </select>
+        </div>
+        <div class="f"><label>Custom $/SF (if custom finish)</label><input type="number" id="hb-customPSF" placeholder="185" oninput="hbDesignCalc();saveHB()"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-gold"><h3>💵 Construction Budget Estimate</h3></div>
+    <div class="card-body">
+      <div class="stat-row" id="hb-budgetStats"></div>
+      <div style="margin-top:1rem">
+        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.65rem">TYPICAL COST BREAKDOWN BY TRADE</div>
+        <div id="hb-budgetBreakdown"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="saveHB()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('I am building a '+hbGet('hb-targetSF')+' SF '+hbGet('hb-stories')+'-story home with '+hbGet('hb-beds')+' beds/'+hbGet('hb-baths')+' baths and '+hbGet('hb-garage')+' car garage in '+hbGet('hb-juris')+'. My budget is $'+document.getElementById(\'hb-budgetTotal\')?.textContent+'. What are the biggest cost risks in today\'s market? What value-engineering options should I consider without sacrificing resale value?')">🤖 AI Budget Review</button>
+    <button class="btn btn-g" onclick="aiAsk('What are the most popular home styles and features in '+hbGet('hb-juris')+' right now that command the best resale premium? For a '+hbGet('hb-targetSF')+' SF home, what finishes and features should I prioritize for maximum ROI?')">🤖 AI Market Fit</button>
+  </div>
+</div>
+
+<!-- ── HB PANEL 3: PERMIT TRACKER ── -->
+<div class="hb-panel" id="hbp-permits">
+  <div class="hb-hero">
+    <div class="hb-hero-icon">📄</div>
+    <div>
+      <h2>Permit Tracker</h2>
+      <p>Every permit you need for a single-lot SFR in Wake County, organized in sequence. Track application dates, approval dates, fees, and inspector contacts — all in one place.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📋 Permit Log</h3>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span id="hb-permitProgress" style="font-size:.8rem;color:var(--mint)"></span>
+        <button class="btn btn-g" onclick="saveHB()">💾 Save</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="hb-pt" id="hb-permitTable">
+        <thead><tr>
+          <th>#</th><th>Permit / Action</th><th>Agency</th><th>Status</th>
+          <th>Applied</th><th>Approved</th><th>Fee ($)</th><th>Notes / Inspector</th>
+        </tr></thead>
+        <tbody id="hb-permitBody"><!-- filled by buildHBPermits() --></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="saveHB()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('I am doing a '+hbGet('hb-projType')+' in '+hbGet('hb-juris')+'. Walk me through the permit sequence in detail. What are the most common reasons permits get delayed or rejected? What should I prepare before submitting the building permit application?')">🤖 AI Permit Walkthrough</button>
+    <button class="btn btn-g" onclick="aiAsk('What are the current permitting timelines in '+hbGet('hb-juris')+' for residential construction? What are common reasons for plan review rejections and how can I avoid them?')">🤖 Timeline Expectations</button>
+  </div>
+</div>
+
+<!-- ── HB PANEL 4: CONSTRUCTION ── -->
+<div class="hb-panel" id="hbp-build">
+  <div class="hb-hero">
+    <div class="hb-hero-icon">🔨</div>
+    <div>
+      <h2>Construction Timeline</h2>
+      <p>Track each phase of construction: start date, projected end date, budget, actual spend, and percentage complete. Runs from site prep through final punch list.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>📅 Phase Tracker</h3>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span id="hb-buildProgress" style="font-size:.8rem;color:var(--mint)"></span>
+        <button class="btn btn-g" onclick="saveHB()">💾 Save</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <div style="padding:.6rem 1rem;background:var(--parch);border-bottom:1px solid var(--border);display:grid;grid-template-columns:26px 1fr 100px 100px 95px 95px 1fr 34px;gap:.45rem;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">
+        <span>#</span><span>Phase</span><span>Start</span><span>Est. End</span><span>Budget</span><span>Actual</span><span>% Complete</span><span></span>
+      </div>
+      <div id="hb-phaseBody"><!-- filled by buildHBPhases() --></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-gold"><h3>💰 Budget Summary</h3></div>
+    <div class="card-body">
+      <div class="stat-row" id="hb-buildBudgetStats" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>📝 Site Log &amp; Issues</h3></div>
+    <div class="card-body">
+      <textarea id="hb-buildNotes" rows="5" style="width:100%" placeholder="Daily observations, inspector comments, subcontractor issues, weather delays, change orders…" oninput="saveHB()"></textarea>
+    </div>
+  </div>
+
+  <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="saveHB()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('I am building a new home in '+hbGet('hb-juris')+'. Give me a realistic construction timeline with typical duration ranges for each phase: demo, site prep, foundation, framing, roofing, rough MEP, insulation, drywall, trim, flooring, finishes, and punch list. What phases can run parallel and what are the most common schedule delays?')">🤖 Timeline Guide</button>
+    <button class="btn btn-g" onclick="aiAsk('What are the most important things to inspect and verify at each required inspection milestone for a new single family home in Wake County NC? What should the owner or GC be watching for?')">🤖 Inspection Prep</button>
+  </div>
+</div>
+
+<!-- ── HB PANEL 5: CLOSEOUT & CO ── -->
+<div class="hb-panel" id="hbp-closeout">
+  <div class="hb-hero">
+    <div class="hb-hero-icon">✅</div>
+    <div>
+      <h2>Closeout &amp; Certificate of Occupancy</h2>
+      <p>Track every required inspection from footing to final. Check off each milestone as it passes — and don't miss the items that often delay the CO.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd" style="justify-content:space-between">
+      <h3>🔍 Required Inspections</h3>
+      <span id="hb-inspProgress" style="font-size:.82rem;color:var(--mint)"></span>
+    </div>
+    <div class="card-body">
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.65rem">Check each inspection as it passes. Enter the approval date.</div>
+      <div id="hb-inspBody"><!-- filled by buildHBInspections() --></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-gold"><h3>🔑 CO Checklist — Final Deliverables</h3></div>
+    <div class="card-body">
+      <div id="hb-coChecklist"><!-- filled by buildHBCOChecklist() --></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>📝 Punch List &amp; Final Notes</h3></div>
+    <div class="card-body">
+      <textarea id="hb-closeoutNotes" rows="5" style="width:100%" placeholder="Open punch list items, warranty items, utility activation status, final cleaning schedule…" oninput="saveHB()"></textarea>
+    </div>
+  </div>
+
+  <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="saveHB()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('What does the Certificate of Occupancy process look like for a new single family home in '+hbGet('hb-juris')+'? What are the most common reasons CO gets delayed at final inspection? What should I make sure is complete before scheduling the final inspection?')">🤖 CO Process Guide</button>
+    <button class="btn btn-g" onclick="aiAsk('Create a comprehensive punch list template for a new '+hbGet('hb-targetSF')+' SF single-family home in the final stage before CO. Organize by room/area and include common items that builders forget.')">🤖 AI Punch List</button>
+  </div>
+</div>
+
+<!-- ── HB PANEL 6: MARKET & SALE ── -->
+<div class="hb-panel" id="hbp-sell">
+  <div class="hb-hero">
+    <div class="hb-hero-icon">💰</div>
+    <div>
+      <h2>Market &amp; Sale</h2>
+      <p>Pull comparable sales, set your list price, and see your projected net proceeds before you list. Track key dates from listing through closing.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd card-hd-sky"><h3>📊 Comparable Sales</h3>
+      <button class="btn btn-g" onclick="hbSellCalc()">⟳ Recalculate</button>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="comps-tbl">
+        <thead><tr>
+          <th>#</th><th>Address</th><th>Sq Ft</th><th>Sale Price</th><th>$/SF</th><th>Sale Date</th><th>Beds/Ba</th><th>Notes</th>
+        </tr></thead>
+        <tbody id="hb-compsBody"><!-- filled by buildHBComps() --></tbody>
+        <tfoot><tr class="comps-avg-row">
+          <td colspan="2">AVERAGE / YOUR HOME</td>
+          <td id="hb-compAvgSF">—</td>
+          <td id="hb-compAvgPrice">—</td>
+          <td id="hb-compAvgPSF">—</td>
+          <td colspan="3">Suggested list: <strong id="hb-compSuggest">—</strong></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem;flex-wrap:wrap" class="two-col-cards">
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hd card-hd-gold"><h3>💵 Net Proceeds</h3></div>
+      <div class="card-body" style="padding:.5rem 0">
+        <div class="np-row"><span class="np-lbl">List / Sale Price ($)</span>
+          <input type="number" id="hb-listPrice" placeholder="650000" style="width:120px;padding:.3rem .5rem;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.84rem;text-align:right" oninput="hbSellCalc();saveHB()">
+        </div>
+        <div class="np-row"><span class="np-lbl">Agent Commission (%)</span>
+          <input type="number" id="hb-agentComm" value="5.5" step="0.25" style="width:70px;padding:.3rem .5rem;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.84rem;text-align:right" oninput="hbSellCalc();saveHB()">
+        </div>
+        <div class="np-row"><span class="np-lbl">Closing Costs (seller, %)</span>
+          <input type="number" id="hb-closingPct" value="1.0" step="0.25" style="width:70px;padding:.3rem .5rem;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.84rem;text-align:right" oninput="hbSellCalc();saveHB()">
+        </div>
+        <div class="np-row"><span class="np-lbl">Staging &amp; Photography ($)</span>
+          <input type="number" id="hb-stagingCost" value="3500" style="width:120px;padding:.3rem .5rem;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.84rem;text-align:right" oninput="hbSellCalc();saveHB()">
+        </div>
+        <div class="np-row"><span class="np-lbl">Remaining Loan Balance ($)</span>
+          <input type="number" id="hb-loanBalance" placeholder="380000" style="width:120px;padding:.3rem .5rem;border:1.5px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.84rem;text-align:right" oninput="hbSellCalc();saveHB()">
+        </div>
+        <div style="border-top:2px solid var(--border);margin:.3rem 0"></div>
+        <div id="hb-npBreakdown" style="padding:0 .5rem"></div>
+        <div class="np-row np-tot-row" style="border-radius:var(--r);margin:.5rem .5rem 0">
+          <span class="np-lbl">ESTIMATED NET PROCEEDS</span>
+          <span class="np-amt" id="hb-npTotal">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hd"><h3>📅 Key Dates &amp; Agent</h3></div>
+      <div class="card-body">
+        <div class="fg">
+          <div class="f"><label>List Date</label><input type="date" id="hb-listDate" oninput="saveHB()"></div>
+          <div class="f"><label>Target Contract Date</label><input type="date" id="hb-contractDate" oninput="saveHB()"></div>
+          <div class="f"><label>Target Close Date</label><input type="date" id="hb-closeDate" oninput="saveHB()"></div>
+          <div class="f"><label>Agent Name</label><input type="text" id="hb-agentName" placeholder="Jane Smith" oninput="saveHB()"></div>
+          <div class="f"><label>Agent Phone</label><input type="text" id="hb-agentPhone" oninput="saveHB()"></div>
+          <div class="f w2"><label>Agent Email</label><input type="text" id="hb-agentEmail" oninput="saveHB()"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><h3>📋 Listing Prep Checklist</h3></div>
+    <div class="card-body">
+      <div id="hb-listingChecklist"><!-- filled by buildHBListingChecklist() --></div>
+    </div>
+  </div>
+
+  <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="saveHB()">💾 Save</button>
+    <button class="btn btn-g" onclick="aiAsk('I am listing a new '+hbGet('hb-targetSF')+' SF '+hbGet('hb-stories')+'-story home with '+hbGet('hb-beds')+' beds/'+hbGet('hb-baths')+' baths in '+hbGet('hb-juris')+'. Based on the current market, what list price strategy should I use? What features should I highlight in marketing? What are the best platforms and timing to list a new construction home?')">🤖 Pricing Strategy</button>
+    <button class="btn btn-g" onclick="aiAsk('Write a compelling MLS property description for a new construction home: '+hbGet('hb-targetSF')+' SF, '+hbGet('hb-beds')+' beds/'+hbGet('hb-baths')+' baths, '+hbGet('hb-stories')+' stories, '+hbGet('hb-garage')+' car garage, style: '+document.querySelector(\'.style-card.on .sc-name\')?.textContent+', in '+hbGet('hb-juris')+'. Make it compelling and highlight the new construction quality and warranty.')">🤖 Write MLS Description</button>
+    <button class="btn btn-g" onclick="aiAsk('What warranties and disclosures are required when selling a new construction home in North Carolina? What should the builder provide to the buyer at closing?')">🤖 NC Closing Requirements</button>
+  </div>
+</div>
+
+<!-- ── END HB PANELS ── -->
 
 </div><!-- /main -->
 
@@ -4611,7 +5121,681 @@ async function triggerServerRefresh() {
 // Check data server on load (non-blocking)
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => checkDataServer(), 1500);
+  initHBMode();
 });
+
+// ════════════════════════════════════════════════════════════════════
+//  HOME BUILDER MODE
+// ════════════════════════════════════════════════════════════════════
+
+// ── Static data ──────────────────────────────────────────────────────
+const HB_STYLES = [
+  { id:'craftsman',   icon:'🏡', name:'Craftsman',        desc:'Wide porches, tapered columns' },
+  { id:'farmhouse',   icon:'🏚', name:'Modern Farmhouse', desc:'Board & batten, metal accents' },
+  { id:'traditional', icon:'🏠', name:'Traditional',      desc:'Classic symmetry & trim' },
+  { id:'colonial',    icon:'🏛', name:'Colonial',         desc:'Formal, two-story symmetry' },
+  { id:'ranch',       icon:'🏘', name:'Ranch',            desc:'Single-story, open plan' },
+  { id:'contemporary',icon:'🏢', name:'Contemporary',     desc:'Clean lines, large windows' },
+  { id:'tudor',       icon:'🏰', name:'Tudor / Cottage',  desc:'Steeply pitched, charming' },
+  { id:'transitional',icon:'🏗', name:'Transitional',     desc:'Blends classic & modern' },
+];
+
+const HB_FINISH_PSF = { economy:145, standard:175, upscale:220, luxury:295 };
+
+const HB_BUDGET_SPLITS = [
+  { label:'Site Work & Foundation',  pct:12, color:'#5a9e74' },
+  { label:'Framing & Structure',     pct:18, color:'#b8882a' },
+  { label:'Roofing & Exterior',      pct:10, color:'#8b3a2a' },
+  { label:'Rough MEP (Mech/Elec/Plumb)',pct:16, color:'#2c5f8a' },
+  { label:'Insulation & Drywall',    pct:8,  color:'#5a4a7a' },
+  { label:'Trim & Millwork',         pct:7,  color:'#c49a3a' },
+  { label:'Flooring & Tile',         pct:8,  color:'#3d7a55' },
+  { label:'Cabinets & Counters',     pct:8,  color:'#7a5c00' },
+  { label:'Fixtures & Appliances',   pct:5,  color:'#4a4a4a' },
+  { label:'Landscaping & Flatwork',  pct:4,  color:'#2a7a2a' },
+  { label:'Contingency (10%)',        pct:4,  color:'#cc3300' },
+];
+
+const HB_DEFAULT_PERMITS = [
+  // Phase — Pre-Construction
+  { phase:'Pre-Construction', id:'demo',   name:'Demolition Permit',           agency:'City Building Services',         req:true  },
+  { phase:'Pre-Construction', id:'tree',   name:'Tree Conservation / Save Plan', agency:'Urban Forestry',               req:false },
+  { phase:'Pre-Construction', id:'esc',    name:'Erosion & Sediment Control',   agency:'City Stormwater',               req:true  },
+  { phase:'Pre-Construction', id:'grade',  name:'Land Disturbance / Grading Permit', agency:'City Stormwater / DEMLR',  req:false },
+  // Phase — Utilities
+  { phase:'Utilities',        id:'water',  name:'Water / Sewer Tap Application', agency:'City Public Utilities',        req:true  },
+  { phase:'Utilities',        id:'elecapp',name:'Electric Service Entrance',     agency:'Duke Energy Progress',         req:true  },
+  { phase:'Utilities',        id:'gas',    name:'Natural Gas Service',           agency:'Dominion / Piedmont Energy',   req:false },
+  { phase:'Utilities',        id:'drivewy',name:'Driveway / Curb Cut Permit',    agency:'City Transportation / NCDOT',  req:true  },
+  // Phase — Construction Permits
+  { phase:'Construction',     id:'bldg',   name:'Building Permit (BP)',          agency:'City Building Services',       req:true  },
+  { phase:'Construction',     id:'elec',   name:'Electrical Permit',             agency:'City Building Services',       req:true  },
+  { phase:'Construction',     id:'mech',   name:'Mechanical / HVAC Permit',      agency:'City Building Services',       req:true  },
+  { phase:'Construction',     id:'plumb',  name:'Plumbing Permit',               agency:'City Building Services',       req:true  },
+  // Phase — Final
+  { phase:'Final',            id:'addr',   name:'Address Assignment',            agency:'City GIS / 911 Addressing',    req:true  },
+  { phase:'Final',            id:'co',     name:'Certificate of Occupancy (CO)', agency:'City Building Services',       req:true  },
+];
+
+const HB_DEFAULT_PHASES = [
+  { name:'Pre-Construction & Mobilization', dur:2  },
+  { name:'Site Prep & Demolition',          dur:1  },
+  { name:'Temp Utilities & Erosion Control',dur:1  },
+  { name:'Foundation (footings, walls, slab)',dur:3 },
+  { name:'Framing',                         dur:4  },
+  { name:'Roofing & Exterior Wrap',         dur:2  },
+  { name:'Rough MEP (Mech / Elec / Plumb)', dur:3  },
+  { name:'Insulation',                      dur:1  },
+  { name:'Drywall & Painting',              dur:3  },
+  { name:'Trim, Cabinets & Millwork',       dur:3  },
+  { name:'Flooring & Tile',                 dur:2  },
+  { name:'Fixtures, Appliances & Hardware', dur:2  },
+  { name:'Exterior — Driveway & Landscaping',dur:2 },
+  { name:'Punch List & Final Inspections',  dur:2  },
+];
+
+const HB_INSPECTIONS = [
+  'Footing / Pre-pour Foundation',
+  'Foundation Walls / Masonry',
+  'Rough Framing',
+  'Rough Electrical',
+  'Rough Plumbing',
+  'Rough HVAC / Mechanical',
+  'Insulation',
+  'Final Electrical',
+  'Final Plumbing',
+  'Final HVAC / Mechanical',
+  'Final Building / Structural',
+  'Driveway / Curb Inspection',
+  'Final Survey / As-Built Plat',
+  'Certificate of Occupancy',
+];
+
+const HB_CO_CHECKLIST = [
+  'All permit cards posted and signed off',
+  'All trade permits finaled (elec, plumb, mech)',
+  'Address numbers installed and visible',
+  'Smoke & CO detectors installed and tested',
+  'HVAC system operational and balanced',
+  'Hot water heater functional',
+  'Electrical panel labeled; AFCI/GFCI in place',
+  'Plumbing fixtures installed and leak-tested',
+  'Stair railings & guards installed to code',
+  'Exterior grading drains away from foundation',
+  'Insulation certificates on file (per energy code)',
+  'Blower door / energy test passed (if required)',
+  'Survey / as-built plat recorded',
+  'All temp facilities removed from site',
+  'Final cleaning complete',
+  'Builder warranty documents prepared',
+];
+
+const HB_LISTING_CHECKLIST = [
+  'Professional photography scheduled',
+  'Aerial / drone photography',
+  'Floor plan / measurement scan',
+  '3D Matterport virtual tour',
+  'Home warranty purchased for buyer',
+  'New construction disclosure form prepared',
+  'Seller property disclosure (NC law)',
+  'Survey / plat recorded and ready',
+  'Utility transfer instructions documented',
+  'HOA docs (if applicable) assembled',
+  'Builder spec sheet / feature list prepared',
+  'MLS listing drafted and reviewed',
+  'Lock box and sign installed',
+  'Staging / furnishings (if model)',
+  'All permits and CO copies filed',
+];
+
+// ── State ─────────────────────────────────────────────────────────────
+let _appMode = 'dev';
+let HB = {};  // current home builder project data
+
+function hbGet(id) {
+  const el = document.getElementById(id);
+  return el ? (el.type === 'checkbox' ? el.checked : el.value) : '';
+}
+
+// ── Mode switching ────────────────────────────────────────────────────
+function initHBMode() {
+  buildStyleGrid();
+  const savedMode = localStorage.getItem('lwMode') || 'dev';
+  setMode(savedMode, true);
+  loadHB();
+}
+
+function setMode(mode, silent) {
+  _appMode = mode;
+  localStorage.setItem('lwMode', mode);
+
+  const devBar = document.getElementById('devTabBar');
+  const hbBar  = document.getElementById('hbTabBar');
+  const mainPanels = document.querySelectorAll('#mainPanel > .panel');
+  const hbPanels   = document.querySelectorAll('#mainPanel > .hb-panel');
+
+  if (mode === 'dev') {
+    if (devBar) devBar.style.display = '';
+    if (hbBar)  hbBar.style.display  = 'none';
+    hbPanels.forEach(p => p.classList.remove('on'));
+    if (!silent) {
+      // Re-activate first dev tab
+      const firstTab = devBar && devBar.querySelector('.tab');
+      if (firstTab) sw('overview', firstTab);
+    }
+  } else {
+    if (devBar) devBar.style.display = 'none';
+    if (hbBar)  hbBar.style.display  = '';
+    mainPanels.forEach(p => p.classList.remove('on'));
+    if (!silent) {
+      const firstTab = hbBar && hbBar.querySelector('.tab');
+      swHB('lot', firstTab);
+    } else {
+      // Just show lot panel by default
+      const lotPanel = document.getElementById('hbp-lot');
+      if (lotPanel) lotPanel.classList.add('on');
+    }
+  }
+
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.mode === mode);
+  });
+  const desc = document.getElementById('modeDesc');
+  if (desc) desc.textContent = mode === 'dev'
+    ? 'Multi-lot / subdivision development tools'
+    : 'Single-lot home build — lot to closing';
+}
+
+function swHB(panelId, btn) {
+  document.querySelectorAll('.hb-panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('#hbTabBar .tab').forEach(t => t.classList.remove('on'));
+  const p = document.getElementById('hbp-' + panelId);
+  if (p) p.classList.add('on');
+  if (btn) btn.classList.add('on');
+  // Refresh dynamic content when switching tabs
+  if (panelId === 'design') hbDesignCalc();
+  if (panelId === 'permits') renderHBPermitProgress();
+  if (panelId === 'build')   renderHBBuildProgress();
+  if (panelId === 'closeout') renderHBInspProgress();
+  if (panelId === 'sell')    hbSellCalc();
+}
+
+// ── Save / Load ────────────────────────────────────────────────────────
+function saveHB() {
+  const fields = ['hb-projName','hb-pin','hb-juris','hb-lotSF','hb-lotDim','hb-zone',
+    'hb-projType','hb-flood','hb-fSetbk','hb-sSetbk','hb-rSetbk','hb-maxCov','hb-maxHgt',
+    'hb-minLotW','hb-purchase','hb-purchaseDate','hb-tdCost','hb-carry','hb-lotNotes',
+    'hb-targetSF','hb-stories','hb-beds','hb-baths','hb-halfBaths','hb-garage',
+    'hb-basement','hb-finish','hb-customPSF','hb-buildNotes','hb-closeoutNotes',
+    'hb-listPrice','hb-agentComm','hb-closingPct','hb-stagingCost','hb-loanBalance',
+    'hb-listDate','hb-contractDate','hb-closeDate','hb-agentName','hb-agentPhone','hb-agentEmail'];
+  const vals = {};
+  fields.forEach(id => { const el = document.getElementById(id); if (el) vals[id] = el.value; });
+
+  // Collect permits
+  const permitRows = document.querySelectorAll('#hb-permitBody tr[data-pid]');
+  const permits = [];
+  permitRows.forEach(row => {
+    permits.push({
+      id:     row.dataset.pid,
+      status: row.querySelector('.hp-status')?.value || '',
+      applied:row.querySelector('.hp-applied')?.value || '',
+      approved:row.querySelector('.hp-approved')?.value || '',
+      fee:    row.querySelector('.hp-fee')?.value || '',
+      notes:  row.querySelector('.hp-notes')?.value || '',
+    });
+  });
+
+  // Collect phases
+  const phaseRows = document.querySelectorAll('#hb-phaseBody .hb-phase[data-pi]');
+  const phases = [];
+  phaseRows.forEach(row => {
+    phases.push({
+      i:       row.dataset.pi,
+      start:   row.querySelector('.ph-start')?.value || '',
+      end:     row.querySelector('.ph-end')?.value || '',
+      budget:  row.querySelector('.ph-budget')?.value || '',
+      actual:  row.querySelector('.ph-actual')?.value || '',
+      pct:     row.querySelector('.ph-pct')?.value || '',
+    });
+  });
+
+  // Collect inspections
+  const inspRows = document.querySelectorAll('#hb-inspBody .insp-grid');
+  const insps = [];
+  inspRows.forEach(row => {
+    insps.push({
+      done: row.querySelector('input[type=checkbox]')?.checked || false,
+      date: row.querySelector('input[type=date]')?.value || '',
+    });
+  });
+
+  // Collect CO checklist
+  const coCks = [];
+  document.querySelectorAll('#hb-coChecklist input[type=checkbox]').forEach(cb => coCks.push(cb.checked));
+
+  // Collect listing checklist
+  const listCks = [];
+  document.querySelectorAll('#hb-listingChecklist input[type=checkbox]').forEach(cb => listCks.push(cb.checked));
+
+  // Collect comps
+  const comps = [];
+  document.querySelectorAll('#hb-compsBody tr[data-ci]').forEach(row => {
+    comps.push({
+      addr:  row.querySelector('.hbc-addr')?.value || '',
+      sf:    row.querySelector('.hbc-sf')?.value || '',
+      price: row.querySelector('.hbc-price')?.value || '',
+      date:  row.querySelector('.hbc-date')?.value || '',
+      beds:  row.querySelector('.hbc-beds')?.value || '',
+      notes: row.querySelector('.hbc-notes')?.value || '',
+    });
+  });
+
+  // Collect selected style
+  const activeStyle = document.querySelector('#styleGrid .style-card.on');
+  vals['hb-style'] = activeStyle ? activeStyle.dataset.style : 'craftsman';
+
+  HB = { vals, permits, phases, insps, coCks, listCks, comps };
+  try { localStorage.setItem('lwHB', JSON.stringify(HB)); } catch(e) {}
+  hbCalc();
+  renderHBPermitProgress();
+  renderHBBuildProgress();
+  renderHBInspProgress();
+}
+
+function loadHB() {
+  // Build the DOM first
+  buildHBPermits();
+  buildHBPhases();
+  buildHBInspections();
+  buildHBCOChecklist();
+  buildHBListingChecklist();
+  buildHBComps();
+  hbDesignCalc();
+
+  try {
+    const raw = localStorage.getItem('lwHB');
+    if (!raw) return;
+    HB = JSON.parse(raw);
+    const vals = HB.vals || {};
+
+    // Restore field values
+    Object.entries(vals).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    });
+
+    // Restore style
+    if (vals['hb-style']) {
+      document.querySelectorAll('#styleGrid .style-card').forEach(c => {
+        c.classList.toggle('on', c.dataset.style === vals['hb-style']);
+      });
+    }
+
+    // Restore permits
+    (HB.permits || []).forEach(p => {
+      const row = document.querySelector(`#hb-permitBody tr[data-pid="${p.id}"]`);
+      if (!row) return;
+      if (p.status)   { const el = row.querySelector('.hp-status');   if (el) el.value = p.status; }
+      if (p.applied)  { const el = row.querySelector('.hp-applied');  if (el) el.value = p.applied; }
+      if (p.approved) { const el = row.querySelector('.hp-approved'); if (el) el.value = p.approved; }
+      if (p.fee)      { const el = row.querySelector('.hp-fee');      if (el) el.value = p.fee; }
+      if (p.notes)    { const el = row.querySelector('.hp-notes');    if (el) el.value = p.notes; }
+    });
+
+    // Restore phases
+    (HB.phases || []).forEach(p => {
+      const row = document.querySelector(`#hb-phaseBody .hb-phase[data-pi="${p.i}"]`);
+      if (!row) return;
+      ['start','end','budget','actual','pct'].forEach(f => {
+        const el = row.querySelector('.ph-'+f);
+        if (el && p[f] !== undefined) el.value = p[f];
+      });
+    });
+
+    // Restore inspections
+    const inspRows = document.querySelectorAll('#hb-inspBody .insp-grid');
+    (HB.insps || []).forEach((insp, i) => {
+      const row = inspRows[i]; if (!row) return;
+      const cb = row.querySelector('input[type=checkbox]');
+      const dt = row.querySelector('input[type=date]');
+      if (cb) cb.checked = insp.done;
+      if (dt && insp.date) dt.value = insp.date;
+    });
+
+    // Restore CO checklist
+    const coCbs = document.querySelectorAll('#hb-coChecklist input[type=checkbox]');
+    (HB.coCks || []).forEach((v, i) => { if (coCbs[i]) coCbs[i].checked = v; });
+
+    // Restore listing checklist
+    const listCbs = document.querySelectorAll('#hb-listingChecklist input[type=checkbox]');
+    (HB.listCks || []).forEach((v, i) => { if (listCbs[i]) listCbs[i].checked = v; });
+
+    // Restore comps
+    const compRows = document.querySelectorAll('#hb-compsBody tr[data-ci]');
+    (HB.comps || []).forEach((c, i) => {
+      const row = compRows[i]; if (!row) return;
+      ['addr','sf','price','date','beds','notes'].forEach(f => {
+        const el = row.querySelector('.hbc-'+f);
+        if (el && c[f]) el.value = c[f];
+      });
+    });
+
+  } catch(e) {}
+
+  hbCalc();
+  hbDesignCalc();
+  hbSellCalc();
+  renderHBPermitProgress();
+  renderHBBuildProgress();
+  renderHBInspProgress();
+}
+
+// ── Lot Analysis calc ─────────────────────────────────────────────────
+function hbCalc() {
+  const lotSF = parseFloat(document.getElementById('hb-lotSF')?.value) || 0;
+  const fS    = parseFloat(document.getElementById('hb-fSetbk')?.value) || 20;
+  const sS    = parseFloat(document.getElementById('hb-sSetbk')?.value) || 5;
+  const rS    = parseFloat(document.getElementById('hb-rSetbk')?.value) || 20;
+  const maxC  = parseFloat(document.getElementById('hb-maxCov')?.value) || 40;
+  const el    = document.getElementById('hb-envelopeStats');
+  if (!el) return;
+  if (lotSF < 100) { el.style.display = 'none'; return; }
+
+  const maxByCov = lotSF * (maxC / 100);
+  const acres    = (lotSF / 43560).toFixed(3);
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem">
+      <div class="hub-stat"><div class="hub-stat-num">${acres}</div><div class="hub-stat-lbl">Acres</div></div>
+      <div class="hub-stat"><div class="hub-stat-num">${lotSF.toLocaleString()}</div><div class="hub-stat-lbl">Lot Sq Ft</div></div>
+      <div class="hub-stat"><div class="hub-stat-num">${Math.round(maxByCov).toLocaleString()}</div><div class="hub-stat-lbl">Max Coverage SF (${maxC}%)</div></div>
+      <div class="hub-stat"><div class="hub-stat-num">F${fS}′ S${sS}′ R${rS}′</div><div class="hub-stat-lbl">Setbacks</div></div>
+    </div>`;
+}
+
+// ── Design Studio ─────────────────────────────────────────────────────
+function buildStyleGrid() {
+  const grid = document.getElementById('styleGrid');
+  if (!grid) return;
+  grid.innerHTML = HB_STYLES.map(s => `
+    <div class="style-card" data-style="${s.id}" onclick="selectStyle('${s.id}');saveHB()">
+      <div class="sc-icon">${s.icon}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-desc">${s.desc}</div>
+    </div>`).join('');
+  // Default selection
+  const def = grid.querySelector('[data-style="craftsman"]');
+  if (def) def.classList.add('on');
+}
+
+function selectStyle(id) {
+  document.querySelectorAll('#styleGrid .style-card').forEach(c => c.classList.toggle('on', c.dataset.id === id || c.dataset.style === id));
+}
+
+function hbDesignCalc() {
+  const finish = document.getElementById('hb-finish')?.value || 'standard';
+  let psf = HB_FINISH_PSF[finish] || parseFloat(document.getElementById('hb-customPSF')?.value) || 175;
+  if (finish === 'custom') psf = parseFloat(document.getElementById('hb-customPSF')?.value) || 185;
+  const sf      = parseFloat(document.getElementById('hb-targetSF')?.value) || 2200;
+  const garage  = parseInt(document.getElementById('hb-garage')?.value) || 2;
+  const basementType = document.getElementById('hb-basement')?.value || 'none';
+  const basementAdj = basementType === 'fin' ? sf * 0.35 * 0.6 : basementType === 'unfin' ? sf * 0.3 * 0.25 : 0;
+  const garageSF = garage * 440; // ~440 SF per bay
+  const totalBudget = Math.round(sf * psf + garageSF * 65 + basementAdj);
+  const contingency = Math.round(totalBudget * 0.10);
+  const grand       = totalBudget + contingency;
+
+  const statsEl = document.getElementById('hb-budgetStats');
+  if (statsEl) {
+    const el = document.getElementById('hb-budgetTotal') || document.createElement('span');
+    el.id = 'hb-budgetTotal';
+    statsEl.innerHTML = `
+      <div class="stat hi"><div class="stat-lbl">Construction Budget</div><div class="stat-val" id="hb-budgetTotal">$${grand.toLocaleString()}</div><div class="stat-unit">incl. 10% contingency</div></div>
+      <div class="stat"><div class="stat-lbl">$/SF</div><div class="stat-val">$${psf}</div><div class="stat-unit">finished area</div></div>
+      <div class="stat"><div class="stat-lbl">Finished SF</div><div class="stat-val">${sf.toLocaleString()}</div><div class="stat-unit">${garage}-bay garage not included</div></div>
+      <div class="stat"><div class="stat-lbl">Contingency</div><div class="stat-val">$${contingency.toLocaleString()}</div><div class="stat-unit">10% of base</div></div>`;
+  }
+
+  const bkEl = document.getElementById('hb-budgetBreakdown');
+  if (!bkEl) return;
+  bkEl.innerHTML = HB_BUDGET_SPLITS.map(s => {
+    const amt = Math.round(grand * s.pct / 100);
+    const barW = Math.round(s.pct * 4);
+    return `<div class="bget-row">
+      <span style="font-size:.82rem">${s.label}</span>
+      <div>
+        <div class="bget-bar"><div class="bget-fill" style="width:${barW}%;background:${s.color}"></div></div>
+        <span style="font-size:.65rem;color:var(--muted)">${s.pct}%</span>
+      </div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;text-align:right">$${amt.toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Permit table ───────────────────────────────────────────────────────
+function buildHBPermits() {
+  const tbody = document.getElementById('hb-permitBody');
+  if (!tbody) return;
+  let html = '', phase = '', n = 0;
+  HB_DEFAULT_PERMITS.forEach((p, i) => {
+    if (p.phase !== phase) {
+      phase = p.phase;
+      html += `<tr class="phase-hdr"><td colspan="8">— ${phase} —</td></tr>`;
+    }
+    n++;
+    html += `<tr data-pid="${p.id}">
+      <td style="text-align:center;font-size:.75rem;color:var(--muted)">${n}</td>
+      <td><strong style="font-size:.82rem">${p.name}</strong>${p.req ? '' : ' <span style="font-size:.65rem;color:var(--muted)">(if applicable)</span>'}</td>
+      <td style="font-size:.77rem;color:var(--muted)">${p.agency}</td>
+      <td>
+        <select class="hp-status" onchange="renderHBPermitProgress();saveHB()" style="min-width:115px">
+          <option value="ns">Not Started</option>
+          <option value="prep">In Prep</option>
+          <option value="sub">Submitted</option>
+          <option value="rev">Under Review</option>
+          <option value="app">Approved ✓</option>
+          <option value="act">Active / Open</option>
+          <option value="cld">Closed / Final</option>
+          <option value="na">N/A</option>
+        </select>
+      </td>
+      <td><input type="date" class="hp-applied"  onchange="saveHB()"></td>
+      <td><input type="date" class="hp-approved" onchange="saveHB()"></td>
+      <td><input type="text" class="hp-fee" placeholder="$" style="width:70px;text-align:right" onchange="saveHB()"></td>
+      <td><input type="text" class="hp-notes" placeholder="Inspector, notes…" onchange="saveHB()"></td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+  renderHBPermitProgress();
+}
+
+function renderHBPermitProgress() {
+  const el = document.getElementById('hb-permitProgress');
+  if (!el) return;
+  const statuses = [...document.querySelectorAll('#hb-permitBody .hp-status')].map(s => s.value);
+  const done = statuses.filter(s => s === 'cld' || s === 'app').length;
+  const total = statuses.filter(s => s !== 'na').length;
+  el.textContent = `${done} / ${total} completed`;
+}
+
+// ── Construction phases ────────────────────────────────────────────────
+function buildHBPhases() {
+  const body = document.getElementById('hb-phaseBody');
+  if (!body) return;
+  body.innerHTML = HB_DEFAULT_PHASES.map((p, i) => `
+    <div class="hb-phase" data-pi="${i}">
+      <div class="hb-ph-num">${i+1}</div>
+      <div>
+        <div style="font-size:.84rem;font-weight:600">${p.name}</div>
+        <div class="hb-progress"><div class="hb-progress-fill ph-bar-${i}" style="width:0%"></div></div>
+      </div>
+      <input type="date" class="ph-start" onchange="saveHB()">
+      <input type="date" class="ph-end"   onchange="saveHB()">
+      <input type="number" class="ph-budget" placeholder="Budget $" oninput="renderHBBuildProgress();saveHB()">
+      <input type="number" class="ph-actual" placeholder="Actual $" oninput="renderHBBuildProgress();saveHB()">
+      <div>
+        <input type="number" class="ph-pct" placeholder="% done" min="0" max="100" oninput="document.querySelector('.ph-bar-${i}').style.width=this.value+'%';renderHBBuildProgress();saveHB()">
+        <div class="hb-progress" style="margin-top:3px"><div class="hb-progress-fill ph-bar-${i}" style="width:0%"></div></div>
+      </div>
+      <button onclick="this.closest('.hb-phase').querySelectorAll('input').forEach(i=>i.value='')" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:.85rem" title="Clear row">✕</button>
+    </div>`).join('');
+  renderHBBuildProgress();
+}
+
+function renderHBBuildProgress() {
+  const rows = document.querySelectorAll('#hb-phaseBody .hb-phase[data-pi]');
+  let totalBudget=0, totalActual=0, phasesStarted=0;
+  rows.forEach(row => {
+    const b = parseFloat(row.querySelector('.ph-budget')?.value) || 0;
+    const a = parseFloat(row.querySelector('.ph-actual')?.value) || 0;
+    const pct = parseFloat(row.querySelector('.ph-pct')?.value) || 0;
+    totalBudget += b; totalActual += a;
+    if (pct > 0) phasesStarted++;
+    const bar = row.querySelector(`[class*="ph-bar-"]`);
+    if (bar) bar.style.width = Math.min(100, pct) + '%';
+  });
+
+  const statsEl = document.getElementById('hb-buildBudgetStats');
+  if (statsEl) {
+    const variance = totalBudget - totalActual;
+    const varPct   = totalBudget > 0 ? ((variance/totalBudget)*100).toFixed(1) : 0;
+    statsEl.innerHTML = `
+      <div class="stat"><div class="stat-lbl">Total Budget</div><div class="stat-val">$${totalBudget.toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-lbl">Spent to Date</div><div class="stat-val">$${totalActual.toLocaleString()}</div></div>
+      <div class="stat ${variance>=0?'':'hi'}"><div class="stat-lbl">Remaining / Over</div><div class="stat-val ${variance>=0?'vp':'vn'}">$${Math.abs(variance).toLocaleString()}</div><div class="stat-unit">${variance>=0?'under budget':'OVER budget'}</div></div>
+      <div class="stat"><div class="stat-lbl">Phases Active</div><div class="stat-val">${phasesStarted} / ${rows.length}</div></div>`;
+  }
+
+  const progEl = document.getElementById('hb-buildProgress');
+  if (progEl) {
+    const pcts = [...rows].map(r => parseFloat(r.querySelector('.ph-pct')?.value) || 0);
+    const avg  = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : 0;
+    progEl.textContent = `${avg}% overall complete`;
+  }
+}
+
+// ── Inspections ────────────────────────────────────────────────────────
+function buildHBInspections() {
+  const body = document.getElementById('hb-inspBody');
+  if (!body) return;
+  body.innerHTML = HB_INSPECTIONS.map((name, i) => `
+    <div class="insp-grid" data-ii="${i}">
+      <input type="checkbox" id="insp-${i}" onchange="renderHBInspProgress();saveHB()">
+      <label for="insp-${i}">${name}</label>
+      <span style="font-size:.72rem;color:var(--muted);white-space:nowrap">Date passed:</span>
+      <input type="date" onchange="saveHB()">
+    </div>`).join('');
+  renderHBInspProgress();
+}
+
+function renderHBInspProgress() {
+  const cbs = document.querySelectorAll('#hb-inspBody input[type=checkbox]');
+  const done = [...cbs].filter(c => c.checked).length;
+  const el = document.getElementById('hb-inspProgress');
+  if (el) el.textContent = `${done} / ${cbs.length} passed`;
+}
+
+function buildHBCOChecklist() {
+  const el = document.getElementById('hb-coChecklist');
+  if (!el) return;
+  el.innerHTML = HB_CO_CHECKLIST.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:.65rem;padding:.42rem 0;border-bottom:1px solid var(--border)">
+      <input type="checkbox" id="co-${i}" onchange="saveHB()" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer">
+      <label for="co-${i}" style="font-size:.84rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400">${item}</label>
+    </div>`).join('');
+}
+
+// ── Comps & Sale ───────────────────────────────────────────────────────
+function buildHBComps() {
+  const tbody = document.getElementById('hb-compsBody');
+  if (!tbody) return;
+  tbody.innerHTML = Array.from({length:6}, (_,i) => `
+    <tr data-ci="${i}">
+      <td style="text-align:center;color:var(--muted);font-size:.75rem">${i+1}</td>
+      <td><input class="hbc-addr"  placeholder="123 Oak St, Raleigh" oninput="hbSellCalc();saveHB()"></td>
+      <td><input class="hbc-sf"    type="number" placeholder="2100" oninput="hbSellCalc();saveHB()" style="width:70px"></td>
+      <td><input class="hbc-price" type="number" placeholder="620000" oninput="hbSellCalc();saveHB()" style="width:90px"></td>
+      <td id="hbc-ppsf-${i}" style="font-family:'JetBrains Mono',monospace;font-size:.78rem">—</td>
+      <td><input class="hbc-date"  type="date" onchange="saveHB()"></td>
+      <td><input class="hbc-beds"  placeholder="4/3" style="width:55px" oninput="saveHB()"></td>
+      <td><input class="hbc-notes" placeholder="Notes" oninput="saveHB()"></td>
+    </tr>`).join('');
+  hbSellCalc();
+}
+
+function hbSellCalc() {
+  // Calculate $/SF for each comp
+  let validPSFs = [], totalSF = 0, totalPrice = 0, count = 0;
+  document.querySelectorAll('#hb-compsBody tr[data-ci]').forEach((row, i) => {
+    const sf    = parseFloat(row.querySelector('.hbc-sf')?.value)    || 0;
+    const price = parseFloat(row.querySelector('.hbc-price')?.value) || 0;
+    const cell  = document.getElementById('hbc-ppsf-'+i);
+    if (sf > 0 && price > 0) {
+      const psf = Math.round(price / sf);
+      if (cell) cell.textContent = '$'+psf.toLocaleString();
+      validPSFs.push(psf);
+      totalSF += sf; totalPrice += price; count++;
+    } else {
+      if (cell) cell.textContent = '—';
+    }
+  });
+
+  const mySF    = parseFloat(document.getElementById('hb-targetSF')?.value) || 0;
+  const avgPSF  = count > 0 ? Math.round(validPSFs.reduce((a,b)=>a+b,0)/validPSFs.length) : 0;
+  const suggest = mySF > 0 && avgPSF > 0 ? Math.round(mySF * avgPSF) : 0;
+
+  const avgSFEl  = document.getElementById('hb-compAvgSF');
+  const avgPrEl  = document.getElementById('hb-compAvgPrice');
+  const avgPsfEl = document.getElementById('hb-compAvgPSF');
+  const sugEl    = document.getElementById('hb-compSuggest');
+  if (avgSFEl)  avgSFEl.textContent  = count > 0 ? Math.round(totalSF/count).toLocaleString() : '—';
+  if (avgPrEl)  avgPrEl.textContent  = count > 0 ? '$'+Math.round(totalPrice/count).toLocaleString() : '—';
+  if (avgPsfEl) avgPsfEl.textContent = avgPSF > 0 ? '$'+avgPSF.toLocaleString() : '—';
+  if (sugEl)    sugEl.textContent    = suggest > 0 ? '$'+suggest.toLocaleString() : '—';
+
+  // Net proceeds
+  const listPrice   = parseFloat(document.getElementById('hb-listPrice')?.value)    || 0;
+  const commission  = parseFloat(document.getElementById('hb-agentComm')?.value)    || 5.5;
+  const closingPct  = parseFloat(document.getElementById('hb-closingPct')?.value)   || 1.0;
+  const staging     = parseFloat(document.getElementById('hb-stagingCost')?.value)  || 0;
+  const loan        = parseFloat(document.getElementById('hb-loanBalance')?.value)  || 0;
+
+  const commAmt    = Math.round(listPrice * commission / 100);
+  const closingAmt = Math.round(listPrice * closingPct / 100);
+  const netProceeds = listPrice - commAmt - closingAmt - staging - loan;
+
+  const bkEl = document.getElementById('hb-npBreakdown');
+  if (bkEl) {
+    bkEl.innerHTML = [
+      { lbl:'List Price',                         amt: listPrice,   sign:'+' },
+      { lbl:`Commission (${commission}%)`,         amt:-commAmt,    sign:'-' },
+      { lbl:`Seller Closing Costs (${closingPct}%)`,amt:-closingAmt,sign:'-' },
+      { lbl:'Staging & Marketing',                amt:-staging,    sign:'-' },
+      { lbl:'Remaining Loan Payoff',              amt:-loan,       sign:'-' },
+    ].map(r => `<div class="np-row">
+      <span class="np-lbl">${r.sign === '-' ? '<span style="color:var(--rust)">−</span> ' : ''}${r.lbl}</span>
+      <span class="np-amt" style="${r.sign==='-'?'color:var(--rust)':''}">$${Math.abs(r.amt).toLocaleString()}</span>
+    </div>`).join('');
+  }
+
+  const totEl = document.getElementById('hb-npTotal');
+  if (totEl) {
+    totEl.textContent = listPrice > 0 ? '$'+netProceeds.toLocaleString() : '—';
+    totEl.style.color = netProceeds < 0 ? '#ff8080' : 'var(--amber)';
+  }
+}
+
+function buildHBListingChecklist() {
+  const el = document.getElementById('hb-listingChecklist');
+  if (!el) return;
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .5rem">` +
+    HB_LISTING_CHECKLIST.map((item, i) => `
+      <div style="display:flex;align-items:center;gap:.55rem;padding:.35rem 0;border-bottom:1px solid var(--border)">
+        <input type="checkbox" id="lk-${i}" onchange="saveHB()" style="width:15px;height:15px;accent-color:var(--sage);cursor:pointer;flex-shrink:0">
+        <label for="lk-${i}" style="font-size:.82rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;line-height:1.4">${item}</label>
+      </div>`).join('') + `</div>`;
+}
 </script>
 </body>
 </html>
