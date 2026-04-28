@@ -596,6 +596,7 @@ textarea{resize:vertical;min-height:68px;}
   <button class="tab on" onclick="sw('overview',this)">📋 Project Overview</button>
   <button class="tab" onclick="sw('stats',this)">📊 Statistics</button>
   <button class="tab" onclick="sw('siteplan',this)">🗺 Site Plan</button>
+  <button class="tab" onclick="sw('planning',this)">🏛 Planning Intel</button>
   <button class="tab" onclick="sw('proforma',this)">💰 Proforma</button>
   <button class="tab" onclick="sw('permits',this)">📄 Permit Library</button>
   <button class="tab" onclick="sw('folders',this)">📁 Submittal Folders</button>
@@ -789,6 +790,125 @@ textarea{resize:vertical;min-height:68px;}
     <button class="btn" style="background:var(--sky);color:white;font-weight:700" onclick="generateSitePlan()">🗺 Generate Site Plan</button>
     <button class="btn btn-s" onclick="exportSitePlanSVG()">⬇ Export SVG</button>
     <button class="btn btn-g" onclick="aiAsk('Based on my site plan for '+getField('pType')+' on '+document.getElementById(\'spUnitW\').value+'ft wide × '+document.getElementById(\'spUnitD\').value+'ft deep units, '+document.getElementById(\'sU\').value+' units proposed on '+document.getElementById(\'exAcres\').value+' acres: What are the key site design considerations, typical HOA amenities for this product type, and any Wake County design standards I should know?')">🤖 Sport: Design Review</button>
+  </div>
+</div>
+
+<!-- ── PLANNING INTELLIGENCE ── -->
+<div class="panel" id="panel-planning">
+  <!-- Header -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#1a3a5c,#2d6a9f)">
+      <h3>🏛 Planning Intelligence <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.75)">— Council concerns, rezoning context, compliance checklist</span></h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.82rem;color:var(--muted);margin:0 0 .5rem">Track what planning boards and city councils care about. Paste council meeting summaries from Claude in Chrome to build your intelligence base. Use AI prompts to prepare for hearings.</p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('concerns')">🤖 What concerns apply to my project?</button>
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('prep')">🎤 Prepare hearing talking points</button>
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('comp')">📋 Check Comp Plan consistency</button>
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('design')">🏗 Flag design standard issues</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Municipality selector + Granicus link -->
+  <div class="card">
+    <div class="card-hd card-hd-sky"><h3>🏙 Municipality</h3></div>
+    <div class="card-body">
+      <div class="f-row" style="gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+        <div class="f" style="flex:1;min-width:160px">
+          <label>Jurisdiction</label>
+          <select id="planMuni" onchange="savePlan()">
+            <option value="Raleigh">Raleigh</option>
+            <option value="Cary">Cary</option>
+            <option value="Apex">Apex</option>
+            <option value="Wake Forest">Wake Forest</option>
+            <option value="Morrisville">Morrisville</option>
+            <option value="Fuquay-Varina">Fuquay-Varina</option>
+            <option value="Garner">Garner</option>
+            <option value="Holly Springs">Holly Springs</option>
+            <option value="Knightdale">Knightdale</option>
+            <option value="Zebulon">Zebulon</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="f" style="flex:1;min-width:160px">
+          <label>Rezoning Case # (if applicable)</label>
+          <input id="planCaseNum" placeholder="e.g., Z-22-25" oninput="savePlan()">
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-bottom:.15rem">
+          <a href="https://raleigh.granicus.com/ViewPublisher.php?view_id=5" target="_blank" class="btn btn-s" style="background:#2d6a9f;color:white;text-decoration:none">▶ Raleigh Council Videos</a>
+          <a href="https://raleigh.legistar.com/Calendar.aspx" target="_blank" class="btn btn-s" style="text-decoration:none">📅 Raleigh Legistar</a>
+          <a href="https://wake-county.maps.arcgis.com/apps/webappviewer/index.html" target="_blank" class="btn btn-s" style="text-decoration:none">🗺 Wake GIS</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Council Concerns Checklist -->
+  <div class="card">
+    <div class="card-hd" style="background:#2d4a1e"><h3>⚠️ Common Council Concerns — <span id="planMuniLabel">Raleigh</span></h3></div>
+    <div class="card-body">
+      <p style="font-size:.78rem;color:var(--muted);margin:0 0 .75rem">Check each concern and note your project's response. These reflect recurring themes from Wake County planning board and city council hearings.</p>
+      <div id="planConcerns"></div>
+    </div>
+  </div>
+
+  <!-- Council Meeting Summary Paste Area -->
+  <div class="card">
+    <div class="card-hd card-hd-sky"><h3>📋 Council Meeting Summaries</h3></div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .5rem">Paste summaries from Claude in Chrome watching Granicus videos, or type notes from meetings you attended. Each entry builds your planning intelligence knowledge base.</p>
+      <div id="planMeetings"></div>
+      <button class="btn btn-s btn-g" style="margin-top:.5rem" onclick="addMeetingNote()">+ Add Meeting Note</button>
+    </div>
+  </div>
+
+  <!-- Comp Plan &amp; Design Standards Notes -->
+  <div class="card">
+    <div class="card-hd" style="background:#4a2d6a"><h3>📖 Comprehensive Plan &amp; Design Standards Notes</h3></div>
+    <div class="card-body">
+      <div class="f-row" style="gap:.75rem;flex-wrap:wrap">
+        <div class="f" style="flex:1;min-width:200px">
+          <label>Future Land Use Designation</label>
+          <input id="planFLU" placeholder="e.g., Mixed Use Residential" oninput="savePlan()">
+        </div>
+        <div class="f" style="flex:1;min-width:200px">
+          <label>Zoning District Requested</label>
+          <input id="planZoneReq" placeholder="e.g., R-6" oninput="savePlan()">
+        </div>
+      </div>
+      <div class="f">
+        <label>Comp Plan Consistency Argument</label>
+        <textarea id="planCompArg" rows="3" placeholder="Explain how your project aligns with the Comprehensive Plan goals and policies..." oninput="savePlan()" style="font-size:.82rem"></textarea>
+      </div>
+      <div class="f">
+        <label>Design Standard Considerations</label>
+        <textarea id="planDesign" rows="3" placeholder="Notes on building orientation, parking placement, street connectivity, and buffering..." oninput="savePlan()" style="font-size:.82rem"></textarea>
+      </div>
+      <div class="f">
+        <label>Neighborhood Character &amp; Height Transition Notes</label>
+        <textarea id="planCharacter" rows="3" placeholder="How your project transitions to adjacent uses, building heights, buffering strategy..." oninput="savePlan()" style="font-size:.82rem"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Municipality Intelligence Hub -->
+  <div class="card">
+    <div class="card-hd" style="background:#5a3a1a"><h3>🗺 Wake County Multi-Municipality Intel</h3></div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Quick links to council meeting archives for all major Wake County municipalities. Use Claude in Chrome to watch and summarize recent development hearings.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.5rem">
+        <a href="https://raleigh.granicus.com/ViewPublisher.php?view_id=5" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Raleigh</a>
+        <a href="https://www.townofcary.org/government/mayor-and-council/council-meetings" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Cary</a>
+        <a href="https://www.apexnc.org/AgendaCenter" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Apex</a>
+        <a href="https://www.wakeforestnc.gov/government/town-council/minutes-and-agendas" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Wake Forest</a>
+        <a href="https://www.townofmorrisville.org/government/town-council" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Morrisville</a>
+        <a href="https://www.fuquay-varina.org/AgendaCenter" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Fuquay-Varina</a>
+        <a href="https://www.garnernc.gov/government/town-council" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Garner</a>
+        <a href="https://www.hollyspringsnc.us/AgendaCenter" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Holly Springs</a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1683,6 +1803,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadMarket(); loadConstruction();
   buildStatCards(); buildFolders(); buildPEItems(); buildPermits(); loadForm();
   buildMeetings(); buildSchedule(); buildHub();
+  buildPlanConcerns(); loadPlan();
 });
 
 // ═══════════════════════ ONBOARDING ═══════════════════════
@@ -1782,6 +1903,7 @@ function sw(id, btn) {
   document.getElementById('panel-'+id).classList.add('on');
   if (btn && btn.classList) btn.classList.add('on');
   else document.querySelectorAll('.tab').forEach(t => { if (t.getAttribute('onclick').includes("'"+id+"'")) t.classList.add('on'); });
+  if (id === 'planning') { buildPlanConcerns(); loadPlan(); }
 }
 
 // ═══════════════════════ MULTI-PARCEL ═══════════════════════
@@ -2856,6 +2978,140 @@ function buildIMAPSIn() {
 
 function setIM(k,v){if(!D.imaps)D.imaps={};D.imaps[k]=v;}
 
+// ═══════════════════════ PLANNING INTELLIGENCE ═══════════════════════
+
+const PLAN_CONCERNS = [
+  { id:'affordable',  icon:'🏠', label:'Affordable Housing Contribution',
+    detail:'Council expects $400K–$1.5M voluntary contributions for rezonings above 50 units. Have a number ready.' },
+  { id:'traffic',     icon:'🚗', label:'Traffic & Infrastructure First',
+    detail:'Applicants must show traffic impact has been studied and mitigations (turn lanes, signals) are committed before approval.' },
+  { id:'compplan',    icon:'📖', label:'Comprehensive Plan Consistency',
+    detail:'Staff will cite Comp Plan Future Land Use map. Explain how requested zoning is consistent or why a policy exception is justified.' },
+  { id:'design',      icon:'🏗', label:'Design Standards — No Surface Parking at Street',
+    detail:'Council frequently requires buildings placed at or near street with parking behind/below. Screen surface lots from public ROW.' },
+  { id:'stubs',       icon:'🛣', label:'Street Connectivity & Stubs',
+    detail:'Provide street stubs to all adjacent undeveloped parcels. Stub spacing should match NCDOT/City standards (~660 ft max).' },
+  { id:'character',   icon:'🏘', label:'Neighborhood Character & Height Transition',
+    detail:'Transition building height and massing to adjacent single-family. Buffer plantings and step-down stories are often required.' },
+  { id:'stormwater',  icon:'💧', label:'Stormwater & Tree Canopy',
+    detail:'Post-development runoff ≤ pre-development. Tree preservation plan and canopy percentage targets are common conditions.' },
+  { id:'schools',     icon:'🎓', label:'School Capacity',
+    detail:'Wake County Schools may comment on student generation. Voluntary school contribution letters are sometimes requested.' },
+];
+
+function savePlan() {
+  if (!D.planning) D.planning = {};
+  const ids = ['planMuni','planCaseNum','planFLU','planZoneReq','planCompArg','planDesign','planCharacter'];
+  ids.forEach(id => { const el=document.getElementById(id); if(el) D.planning[id]=el.tagName==='SELECT'?el.value:el.value; });
+  // Save concern statuses
+  D.planning.concerns = {};
+  PLAN_CONCERNS.forEach(c => {
+    const chk = document.getElementById('concern_'+c.id);
+    const note = document.getElementById('concernNote_'+c.id);
+    if (chk) D.planning.concerns[c.id] = { checked: chk.checked, note: note ? note.value : '' };
+  });
+  save();
+  const ml = document.getElementById('planMuniLabel');
+  const ms = document.getElementById('planMuni');
+  if (ml && ms) ml.textContent = ms.value;
+}
+
+function loadPlan() {
+  if (!D.planning) return;
+  const ids = ['planMuni','planCaseNum','planFLU','planZoneReq','planCompArg','planDesign','planCharacter'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && D.planning[id] !== undefined) el.value = D.planning[id];
+  });
+  if (D.planning.concerns) {
+    PLAN_CONCERNS.forEach(c => {
+      const d = D.planning.concerns[c.id];
+      if (!d) return;
+      const chk = document.getElementById('concern_'+c.id);
+      const note = document.getElementById('concernNote_'+c.id);
+      if (chk) chk.checked = d.checked;
+      if (note) note.value = d.note || '';
+    });
+  }
+  const ml = document.getElementById('planMuniLabel');
+  const ms = document.getElementById('planMuni');
+  if (ml && ms) ml.textContent = ms.value || 'Raleigh';
+  buildMeetingNotes();
+}
+
+function buildPlanConcerns() {
+  const el = document.getElementById('planConcerns');
+  if (!el) return;
+  el.innerHTML = '';
+  PLAN_CONCERNS.forEach(c => {
+    const saved = (D.planning && D.planning.concerns && D.planning.concerns[c.id]) || {};
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;margin-bottom:.5rem;background:var(--card)';
+    div.innerHTML = `
+      <div style="display:flex;gap:.6rem;align-items:flex-start">
+        <input type="checkbox" id="concern_${c.id}" ${saved.checked?'checked':''} onchange="savePlan()" style="margin-top:.2rem;width:16px;height:16px;flex-shrink:0">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:.87rem;margin-bottom:.2rem">${c.icon} ${c.label}</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">${c.detail}</div>
+          <input type="text" id="concernNote_${c.id}" value="${(saved.note||'').replace(/"/g,'&quot;')}" placeholder="Your response / mitigation plan..." oninput="savePlan()" style="width:100%;box-sizing:border-box;font-size:.8rem">
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function addMeetingNote() {
+  if (!D.planning) D.planning = {};
+  if (!D.planning.meetings) D.planning.meetings = [];
+  const today = new Date().toISOString().slice(0,10);
+  D.planning.meetings.unshift({ id: Date.now(), date: today, muni: '', title: '', summary: '', action: '' });
+  save();
+  buildMeetingNotes();
+}
+
+function buildMeetingNotes() {
+  const el = document.getElementById('planMeetings');
+  if (!el) return;
+  el.innerHTML = '';
+  const meetings = (D.planning && D.planning.meetings) || [];
+  if (meetings.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:.82rem;font-style:italic">No meeting notes yet. Click &quot;+ Add Meeting Note&quot; to start, or paste a Claude in Chrome summary below.</p>';
+    return;
+  }
+  meetings.forEach((m, mi) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:.75rem;margin-bottom:.6rem;background:var(--card)';
+    div.innerHTML = `
+      <div class="f-row" style="gap:.5rem;margin-bottom:.4rem;flex-wrap:wrap">
+        <input type="date" value="${m.date||''}" onchange="D.planning.meetings[${mi}].date=this.value;save()" style="width:130px">
+        <input placeholder="Municipality" value="${(m.muni||'').replace(/"/g,'&quot;')}" oninput="D.planning.meetings[${mi}].muni=this.value;save()" style="flex:1;min-width:120px">
+        <input placeholder="Meeting / Hearing Title" value="${(m.title||'').replace(/"/g,'&quot;')}" oninput="D.planning.meetings[${mi}].title=this.value;save()" style="flex:2;min-width:160px">
+        <button class="btn btn-s" style="background:#c0392b;color:white;padding:.2rem .5rem" onclick="D.planning.meetings.splice(${mi},1);save();buildMeetingNotes()">✕</button>
+      </div>
+      <textarea rows="5" placeholder="Paste council meeting summary from Claude in Chrome, or type your own notes from the hearing..." oninput="D.planning.meetings[${mi}].summary=this.value;save()" style="width:100%;box-sizing:border-box;font-size:.8rem;margin-bottom:.35rem">${(m.summary||'').replace(/</g,'&lt;')}</textarea>
+      <input placeholder="Action item / follow-up required..." value="${(m.action||'').replace(/"/g,'&quot;')}" oninput="D.planning.meetings[${mi}].action=this.value;save()" style="width:100%;box-sizing:border-box;font-size:.8rem">`;
+    el.appendChild(div);
+  });
+}
+
+function planAI(type) {
+  const muni = (document.getElementById('planMuni') && document.getElementById('planMuni').value) || 'Raleigh';
+  const caseNum = (document.getElementById('planCaseNum') && document.getElementById('planCaseNum').value) || '';
+  const flu = (document.getElementById('planFLU') && document.getElementById('planFLU').value) || '';
+  const D2 = D;
+  const unitCount = D2.units || '?';
+  const acres = D2.acres || '?';
+  const address = D2.address || 'this parcel';
+
+  const prompts = {
+    concerns: `I'm rezoning ${address} in ${muni} (${acres} acres, ${unitCount} units${caseNum?' case '+caseNum:''}${flu?', future land use: '+flu:''}). Based on common ${muni} City Council and planning board concerns for residential rezoning, which of these issues are MOST LIKELY to come up at my hearing: affordable housing contribution, traffic impact, Comp Plan consistency, design standards (parking placement, building orientation), street connectivity/stubs, neighborhood character/height transition, stormwater, school capacity? For each that applies, give me a specific response strategy.`,
+    prep: `Help me prepare talking points for a ${muni} planning board hearing for a ${unitCount}-unit townhome project on ${acres} acres${caseNum?' (case '+caseNum+')':''}. Cover: (1) how the project meets Comp Plan goals, (2) traffic mitigations, (3) affordable housing position, (4) design standard compliance, (5) neighborhood compatibility. Make the talking points concise and persuasive for a 5-minute presentation.`,
+    comp: `Is a ${unitCount}-unit townhome rezoning on ${acres} acres consistent with ${muni}'s Comprehensive Plan${flu?' given a Future Land Use designation of "'+flu+'"':''}? What specific Comp Plan policies support this? What policies might staff use to object, and how should I respond?`,
+    design: `What design standards will ${muni} planning staff likely require for a ${unitCount}-unit townhome development on ${acres} acres? Focus on: building placement at street vs. parking placement, façade articulation, landscaping buffers, street connectivity, dumpster/utility screening. What are the most common design conditions attached to ${muni} rezonings?`,
+  };
+  aiAsk(prompts[type] || prompts.concerns);
+}
+
 // ═══════════════════════ SITE PLAN ═══════════════════════
 
 let _lastSitePlanSVG = '';
@@ -3034,61 +3290,83 @@ function buildSitePlanSVG(parcelsData, opts) {
   const bzT=bT+rowPx+fPx, bzB=bB-rPx-bufPx;
   const bzW=bzR-bzL, bzH=bzB-bzT;
 
-  // ═══ LOOP ROAD LAYOUT ═══
-  // Road traces a shrunken version of the parcel polygon → natural fit to site shape
-  // Buildings placed along road segments on the outside (between road and parcel boundary)
-  // Loop connectivity: no dead ends. Street stubs at side/rear edges for future connections.
+  // ═══ LOCAL-COORDINATE ORIENTED GRID LAYOUT ═══
+  // Roads follow the parcel's long axis (local X). All geometry computed in local space,
+  // then transformed back to SVG via toLSVG(). No polygon-shrinking — clean rectangles.
+  // Cross-section: road CL → 13′ → alley 20′ → building 45′ deep (both sides).
 
-  const target  = Math.max(1, opts.units || 96);
-  const UPB     = 6;
-  const bUnitW  = fp(opts.unitW);   // per-unit width (22ft)
-  const bDepth  = fp(opts.unitD);   // building depth (45ft)
-  const bldgW   = UPB * bUnitW;     // full building width (6 units × 22ft = 132ft)
-  const bldgGap = fp(18);           // gap between buildings along road
-  const rRW     = fp(26);           // loop road width (26ft)
-  const rRHW    = rRW / 2;          // road half-width (13ft)
-  const alleyW2 = fp(20);           // private alley (rear access, between road and building)
+  const target    = Math.max(1, opts.units || 96);
+  const UPB       = 6;
+  const bUnitW    = fp(opts.unitW);              // per-unit width (22 ft)
+  const bDepth    = fp(opts.unitD);              // building depth (45 ft)
+  const bldgW     = UPB * bUnitW;               // full building = 132 ft
+  const bldgPitch = bldgW + fp(20);             // slot pitch: 132 + 20 gap = 152 ft
+  const roadW     = fp(26);                     // road width
+  const roadHW    = roadW / 2;                  // 13 ft
+  const alleyW    = fp(20);                     // private alley
+  const toFront   = roadHW + alleyW;            // CL → building front = 33 ft
+  const toBack    = toFront + bDepth;           // CL → building back  = 78 ft
+  const modY      = toBack * 2 + fp(12);        // row pitch ≈ 168 ft (12 ft back gap)
+  const crossW    = fp(26);                     // cross-street width
+  const crossEv   = 3;                          // cross-street every N building slots
+  const entDW     = fp(28);                     // entry drive width
 
-  // Total inset from parcel edge to road centerline:
-  // parcel → setback → building → alley → road center
-  const insetRoad = fp(opts.sSetbk) + bDepth + alleyW2 + rRHW;
-
-  // ── Build shrunken road centerline polygon ──
-  // Outer parcel ring in SVG coords (deduplicate closed endpoint)
+  // ── Outer ring in SVG coords (deduplicate closed endpoint) ──
   const oPts0 = svgRings[0];
   const oPts  = (oPts0[0][0]===oPts0[oPts0.length-1][0] && oPts0[0][1]===oPts0[oPts0.length-1][1])
                 ? oPts0.slice(0,-1) : [...oPts0];
   const nPts  = oPts.length;
 
-  // Parcel centroid
+  // Parcel centroid (SVG)
   const pCX0 = oPts.reduce((s,[x])=>s+x, 0) / nPts;
   const pCY0 = oPts.reduce((s,[,y])=>s+y, 0) / nPts;
 
-  // Shrink each vertex toward centroid by insetRoad pixels
+  // shrinkPoly: used for setback indicator line only (visual, not structural)
   const shrinkPoly = (pts, dist) => pts.map(([x,y]) => {
     const dx = pCX0-x, dy = pCY0-y, len = Math.sqrt(dx*dx+dy*dy);
     return len < dist+1 ? [pCX0, pCY0] : [x+dx/len*dist, y+dy/len*dist];
   });
 
-  const roadCL  = shrinkPoly(oPts, insetRoad);   // road centerline vertices
-  const innerCL = shrinkPoly(oPts, insetRoad + fp(160)); // inner loop (if parcel big enough)
-  const innerSpread = innerCL.reduce((s,[x,y])=>s+Math.sqrt((x-pCX0)**2+(y-pCY0)**2),0)/nPts;
-  const hasInner = innerSpread > fp(40);
+  // ── Local coordinate transforms: parcel long axis → local X ──
+  // _parcelAngleDeg = SVG-space angle of the longest parcel edge
+  const lRad = _parcelAngleDeg * Math.PI / 180;
+  const cL   = Math.cos(lRad), sL = Math.sin(lRad);
+  // toLocal: SVG → local (rotate by −θ so long edge maps to local X)
+  const toLocal = (sx, sy) => {
+    const dx = sx - pCX0, dy = sy - pCY0;
+    return [dx*cL + dy*sL, -dx*sL + dy*cL];
+  };
+  // toLSVG: local → SVG (rotate by +θ)
+  const toLSVG = (lx, ly) => [pCX0 + lx*cL - ly*sL, pCY0 + lx*sL + ly*cL];
+  // SVG "x,y" string from local coords (for polygon points="...")
+  const svgPt = (lx, ly) => { const [x,y]=toLSVG(lx,ly); return `${x.toFixed(1)},${y.toFixed(1)}`; };
 
-  // Check road is not degenerate (all collapsed to centroid)
-  const roadSpread = roadCL.reduce((s,[x,y])=>s+Math.sqrt((x-pCX0)**2+(y-pCY0)**2),0)/nPts;
-  const hasLoop = roadSpread > fp(25);
+  // ── Local bounding box of parcel ──
+  const lPts  = oPts.map(([sx,sy]) => toLocal(sx,sy));
+  const lMinX = Math.min(...lPts.map(([x])=>x));
+  const lMaxX = Math.max(...lPts.map(([x])=>x));
+  const lMinY = Math.min(...lPts.map(([,y])=>y));
+  const lMaxY = Math.max(...lPts.map(([,y])=>y));
 
-  // ── Entry edge: northernmost edge of parcel (smallest Y in SVG) ──
-  let entryEdgeIdx = 0, minMidY = Infinity;
-  for (let i=0; i<nPts; i++) {
-    const my = (oPts[i][1]+oPts[(i+1)%nPts][1])/2;
-    if (my < minMidY) { minMidY=my; entryEdgeIdx=i; }
-  }
-  const ePt1 = oPts[entryEdgeIdx], ePt2 = oPts[(entryEdgeIdx+1)%nPts];
-  const entryParcelMid = [(ePt1[0]+ePt2[0])/2, (ePt1[1]+ePt2[1])/2];
-  const entryRoadMid   = [(roadCL[entryEdgeIdx][0]+roadCL[(entryEdgeIdx+1)%nPts][0])/2,
-                          (roadCL[entryEdgeIdx][1]+roadCL[(entryEdgeIdx+1)%nPts][1])/2];
+  // ── Buildable zone in local space (apply setbacks) ──
+  const lSetbk  = Math.max(fp(opts.fSetbk), fp(opts.sSetbk), fp(opts.rSetbk), fp(15));
+  const lBZminX = lMinX + lSetbk + fp(opts.rowDed);
+  const lBZmaxX = lMaxX - lSetbk;
+  const lBZminY = lMinY + lSetbk;
+  const lBZmaxY = lMaxY - lSetbk - fp(opts.buffer);
+
+  // ── Containment helpers in local space ──
+  const inPL = (lx, ly) => { const [sx,sy]=toLSVG(lx,ly); return inParcel(sx,sy); };
+  const lRF  = (lx, ly, lw, lh) =>    // true if ≥4 of 5 sample pts inside parcel
+    [[lx+1,ly+1],[lx+lw-1,ly+1],[lx+1,ly+lh-1],[lx+lw-1,ly+lh-1],[lx+lw/2,ly+lh/2]]
+    .filter(([a,b])=>inPL(a,b)).length >= 4;
+
+  // ── Row Y positions centred in buildable zone ──
+  const lBZH      = lBZmaxY - lBZminY;
+  const nRows     = Math.max(1, Math.floor((lBZH - toBack*2) / modY) + 1);
+  const rowSpan   = (nRows-1) * modY;
+  const rowStartY = (lBZminY + lBZmaxY) / 2 - rowSpan / 2;
+  const rowYs     = Array.from({length:nRows}, (_,i) => rowStartY + i*modY);
 
   // ── Start SVG ──
   let b = '';
@@ -3131,209 +3409,167 @@ function buildSitePlanSVG(parcelsData, opts) {
   b+=`<text x="${(bL+bzL)/2 < bL+10 ? bL+7 : (bL+3).toFixed(1)}" y="${(bzT-4).toFixed(1)}"
       font-family="sans-serif" font-size="7.5" fill="#e07820">F${opts.fSetbk}′ S${opts.sSetbk}′ R${opts.rSetbk}′ setbacks</text>`;
 
-  // ── Development elements (loop road, buildings, stubs, pond) ──
+  // ── Development elements: oriented grid layout ──
   let dSVG = '';
+  let unitCount = 0, bnum = 101;
+  const cA = '#c49a3a', cB = '#a87c22';
 
-  // ── Inner open space fill (area inside road loop) ──
-  if (hasLoop) {
-    const innerFill = roadCL.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    dSVG += `<polygon points="${innerFill}" fill="#a8d4b0" opacity="0.35"/>`;
-  }
-  // Second inner loop fill if parcel has room
-  if (hasInner) {
-    const innerFill2 = innerCL.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    dSVG += `<polygon points="${innerFill2}" fill="#7dc49a" opacity="0.28"/>`;
-  }
-
-  // ── Outer loop road ──
-  if (hasLoop) {
-    const roadPts = [...roadCL, roadCL[0]].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    dSVG += `<polyline points="${roadPts}" fill="none" stroke="#bebab0" stroke-width="${rRW.toFixed(1)}" stroke-linejoin="round" stroke-linecap="round"/>`;
-    dSVG += `<polyline points="${roadPts}" fill="none" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="12,9" stroke-linejoin="round"/>`;
-
-    // Road label on longest segment
-    let lsLen=0, lsI=0;
-    for(let i=0;i<roadCL.length;i++){
-      const [x1,y1]=roadCL[i],[x2,y2]=roadCL[(i+1)%roadCL.length];
-      const l=Math.sqrt((x2-x1)**2+(y2-y1)**2); if(l>lsLen){lsLen=l;lsI=i;}
-    }
-    const [lx1,ly1]=roadCL[lsI],[lx2,ly2]=roadCL[(lsI+1)%roadCL.length];
-    const lmx=(lx1+lx2)/2,lmy=(ly1+ly2)/2,lang=Math.atan2(ly2-ly1,lx2-lx1)*180/Math.PI;
-    dSVG += `<text x="${lmx.toFixed(1)}" y="${lmy.toFixed(1)}" font-family="sans-serif" font-size="6.5" fill="#777" text-anchor="middle" transform="rotate(${lang.toFixed(1)},${lmx.toFixed(1)},${lmy.toFixed(1)})">LOOP ROAD — 26′ R/W</text>`;
-  }
-
-  // ── Inner loop road (if parcel big enough for double loop) ──
-  if (hasInner) {
-    const innerPts = [...innerCL, innerCL[0]].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    dSVG += `<polyline points="${innerPts}" fill="none" stroke="#bebab0" stroke-width="${rRW.toFixed(1)}" stroke-linejoin="round" stroke-linecap="round"/>`;
-    dSVG += `<polyline points="${innerPts}" fill="none" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="12,9" stroke-linejoin="round"/>`;
-
-    // Cross-connects (radial roads linking inner to outer loop, at each vertex)
-    for (let i=0; i<roadCL.length; i+=Math.max(1,Math.floor(roadCL.length/4))) {
-      const [ox,oy]=roadCL[i],[ix,iy]=innerCL[i];
-      dSVG += `<line x1="${ox.toFixed(1)}" y1="${oy.toFixed(1)}" x2="${ix.toFixed(1)}" y2="${iy.toFixed(1)}" stroke="#bebab0" stroke-width="${rRW.toFixed(1)}" stroke-linecap="round"/>`;
-      dSVG += `<line x1="${ox.toFixed(1)}" y1="${oy.toFixed(1)}" x2="${ix.toFixed(1)}" y2="${iy.toFixed(1)}" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="8,6"/>`;
+  // ── Pre-compute cross-street X positions across buildable zone ──
+  const crossXPositions = [];
+  { let cSlotX = lBZminX + fp(8), cSlot = 0;
+    while (cSlotX < lBZmaxX - fp(8)) {
+      cSlot++;
+      if (cSlot % crossEv === 0) { crossXPositions.push(cSlotX); cSlotX += crossW; }
+      else cSlotX += bldgPitch;
     }
   }
+  const isCrossX = x => crossXPositions.some(cx => Math.abs(cx - x) < fp(3));
 
-  // ── Entry drive (from parcel edge to loop) ──
-  const entDW = fp(28);
-  const entDX1=entryParcelMid[0], entDY1=entryParcelMid[1];
-  const entDX2=entryRoadMid[0],   entDY2=entryRoadMid[1];
-  dSVG += `<line x1="${entDX1.toFixed(1)}" y1="${entDY1.toFixed(1)}" x2="${entDX2.toFixed(1)}" y2="${entDY2.toFixed(1)}" stroke="#bebab0" stroke-width="${entDW.toFixed(1)}" stroke-linecap="round"/>`;
-  dSVG += `<line x1="${entDX1.toFixed(1)}" y1="${entDY1.toFixed(1)}" x2="${entDX2.toFixed(1)}" y2="${entDY2.toFixed(1)}" stroke="#f0ede0" stroke-width="0.9" stroke-dasharray="8,6"/>`;
+  // ── Collector roads + double-loaded buildings ──
+  rowYs.forEach((rowY, ri) => {
+    // Trim road extent to parcel boundary
+    let rX1 = lBZminX, rX2 = lBZmaxX;
+    const sStep = fp(15);
+    while (rX1 < lBZmaxX && !inPL(rX1, rowY)) rX1 += sStep;
+    while (rX2 > lBZminX && !inPL(rX2, rowY)) rX2 -= sStep;
+    if (rX1 >= rX2 - bldgPitch) return;
 
-  // Entry monuments
-  const entDDX=entDX2-entDX1, entDDY=entDY2-entDY1, entDLen=Math.sqrt(entDDX*entDDX+entDDY*entDDY)||1;
-  const entPerpX=-(entDDY/entDLen), entPerpY=(entDDX/entDLen);
-  [-1,1].forEach(side=>{
-    const gx=entDX1+entPerpX*side*(entDW/2+fp(3)), gy=entDY1+entPerpY*side*(entDW/2+fp(3));
-    dSVG += `<rect x="${(gx-fp(4)).toFixed(1)}" y="${(gy-fp(6)).toFixed(1)}" width="${fp(8).toFixed(1)}" height="${fp(12).toFixed(1)}" fill="#d4a843" stroke="#5a3e08" stroke-width="0.8" rx="1"/>`;
-  });
-  dSVG += `<text x="${((entDX1+entDX2)/2).toFixed(1)}" y="${((entDY1+entDY2)/2-fp(3)).toFixed(1)}" font-family="sans-serif" font-size="6" fill="#5a3e08" text-anchor="middle">Entry Gate</text>`;
+    // Road surface
+    dSVG += `<polygon points="${[svgPt(rX1,rowY-roadHW),svgPt(rX2,rowY-roadHW),svgPt(rX2,rowY+roadHW),svgPt(rX1,rowY+roadHW)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5"/>`;
+    const [cl1x,cl1y]=toLSVG(rX1,rowY),[cl2x,cl2y]=toLSVG(rX2,rowY);
+    dSVG += `<line x1="${cl1x.toFixed(1)}" y1="${cl1y.toFixed(1)}" x2="${cl2x.toFixed(1)}" y2="${cl2y.toFixed(1)}" stroke="#e8e4d8" stroke-width="0.8" stroke-dasharray="12,9"/>`;
+    const [rlx,rly]=toLSVG((rX1+rX2)*0.5,rowY);
+    dSVG += `<text x="${rlx.toFixed(1)}" y="${rly.toFixed(1)}" font-family="sans-serif" font-size="6" fill="#888" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${rlx.toFixed(1)},${rly.toFixed(1)})">COLLECTOR — 26′ R/W</text>`;
 
-  // Clubhouse near entry inside loop
-  const clbW=fp(48), clbH=fp(28);
-  const clbX=entryRoadMid[0]-clbW/2, clbY=entryRoadMid[1]+rRHW+fp(6);
-  if(inParcel(clbX+clbW/2, clbY+clbH/2)){
-    dSVG+=`<rect x="${clbX.toFixed(1)}" y="${clbY.toFixed(1)}" width="${clbW.toFixed(1)}" height="${clbH.toFixed(1)}" fill="#5a4a7a" opacity="0.75" rx="3"/>`;
-    dSVG+=`<text x="${(clbX+clbW/2).toFixed(1)}" y="${(clbY+clbH/2+4).toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle" font-weight="bold">Clubhouse</text>`;
-  }
+    // Stub at road far end (local X-max)
+    const [tx1,ty1]=toLSVG(rX2,rowY-fp(16)),[tx2,ty2]=toLSVG(rX2,rowY+fp(16));
+    dSVG += `<line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="#e07820" stroke-width="3" stroke-linecap="butt"/>`;
+    const [tlx,tly]=toLSVG(rX2+fp(10),rowY);
+    dSVG += `<text x="${tlx.toFixed(1)}" y="${tly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#e07820" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${tlx.toFixed(1)},${tly.toFixed(1)})">STUB</text>`;
 
-  // ── Street stubs at side/rear parcel edges ──
-  for (let i=0; i<nPts; i++) {
-    if (i===entryEdgeIdx) continue;
-    const [ex1,ey1]=oPts[i], [ex2,ey2]=oPts[(i+1)%nPts];
-    const eLen = Math.sqrt((ex2-ex1)**2+(ey2-ey1)**2);
-    if (eLen < fp(80)) continue; // skip short edges
-    // Midpoint on parcel edge and road centerline edge
-    const emx=(ex1+ex2)/2, emy=(ey1+ey2)/2;
-    const [rx1,ry1]=roadCL[i],[rx2,ry2]=roadCL[(i+1)%nPts];
-    const rmx=(rx1+rx2)/2, rmy=(ry1+ry2)/2;
-    const sdx=emx-rmx, sdy=emy-rmy, slen=Math.sqrt(sdx*sdx+sdy*sdy);
-    if (slen < fp(15)) continue;
-    // Stub road from loop to parcel boundary
-    dSVG += `<line x1="${rmx.toFixed(1)}" y1="${rmy.toFixed(1)}" x2="${emx.toFixed(1)}" y2="${emy.toFixed(1)}" stroke="#bebab0" stroke-width="${fp(26).toFixed(1)}" stroke-linecap="butt" opacity="0.9"/>`;
-    dSVG += `<line x1="${rmx.toFixed(1)}" y1="${rmy.toFixed(1)}" x2="${emx.toFixed(1)}" y2="${emy.toFixed(1)}" stroke="#f0ede0" stroke-width="0.8" stroke-dasharray="7,5"/>`;
-    // Termination bar (orange — signals future connection)
-    const px=-(sdy/slen)*fp(16), py=(sdx/slen)*fp(16);
-    dSVG += `<line x1="${(emx+px).toFixed(1)}" y1="${(emy+py).toFixed(1)}" x2="${(emx-px).toFixed(1)}" y2="${(emy-py).toFixed(1)}" stroke="#e07820" stroke-width="3" stroke-linecap="butt"/>`;
-    // Label
-    const lx=(emx+rmx)/2, ly=(emy+rmy)/2;
-    const lang2=Math.atan2(sdy,sdx)*180/Math.PI;
-    dSVG += `<text x="${lx.toFixed(1)}" y="${(ly-4).toFixed(1)}" font-family="sans-serif" font-size="5.8" fill="#e07820" text-anchor="middle" font-weight="bold" transform="rotate(${lang2.toFixed(1)},${lx.toFixed(1)},${ly.toFixed(1)})">STUB — Future Connection</text>`;
-  }
+    // Buildings on both sides of road
+    [-1,1].forEach(side => {
+      const bFY   = rowY + side * toFront;
+      const bBY   = rowY + side * toBack;
+      const bMinY = Math.min(bFY, bBY);
+      const bMaxY = Math.max(bFY, bBY);
+      const aMinY = Math.min(rowY + side*roadHW, bFY);
+      const aMaxY = Math.max(rowY + side*roadHW, bFY);
 
-  // ── Buildings placed along outer road segments ──
-  // Buildings face road, with private alley behind (between road edge and building)
-  let unitCount=0, bnum=101;
-  const cA='#c49a3a', cB='#a87c22';
+      let slotX = lBZminX + fp(8), slotN = 0;
+      while (slotX + bldgW <= rX2 - fp(8) && unitCount < target) {
+        slotN++;
+        if (isCrossX(slotX)) { slotX += crossW; continue; }
+        const bX2 = slotX + bldgW;
+        if (!lRF(slotX, bMinY, bldgW, bDepth)) { slotX += bldgPitch; continue; }
 
-  for (let i=0; i<roadCL.length && unitCount<target; i++) {
-    const [x1,y1]=roadCL[i], [x2,y2]=roadCL[(i+1)%roadCL.length];
-    const dx=x2-x1, dy=y2-y1, segLen=Math.sqrt(dx*dx+dy*dy);
-    if (segLen < bldgW*0.6) continue;
-    const ux=dx/segLen, uy=dy/segLen; // unit vector along segment
+        // Private alley
+        dSVG += `<polygon points="${[svgPt(slotX,aMinY),svgPt(bX2,aMinY),svgPt(bX2,aMaxY),svgPt(slotX,aMaxY)].join(' ')}" fill="#d8d4c8" opacity="0.9"/>`;
+        if (ri===0 && side===1 && slotN===1) {
+          const [alx,aly]=toLSVG(slotX+bldgW/2,(aMinY+aMaxY)/2);
+          dSVG += `<text x="${alx.toFixed(1)}" y="${aly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${alx.toFixed(1)},${aly.toFixed(1)})">PRIV. ALLEY 20′</text>`;
+        }
 
-    // Outward normal: left normal is (-uy, ux), right is (uy, -ux)
-    // Test which points AWAY from centroid (outward = toward parcel boundary)
-    const testL = [x1+(-uy)*fp(30)+ux*segLen/2, y1+ux*fp(30)+uy*segLen/2];
-    const testR = [x1+uy*fp(30)+ux*segLen/2,    y1+(-ux)*fp(30)+uy*segLen/2];
-    const dL = Math.sqrt((testL[0]-pCX0)**2+(testL[1]-pCY0)**2);
-    const dR = Math.sqrt((testR[0]-pCX0)**2+(testR[1]-pCY0)**2);
-    const onx = dL > dR ? -uy : uy;  // outward normal X
-    const ony = dL > dR ?  ux : -ux; // outward normal Y
-
-    // Distance from road CL to building front face: rRHW + alleyW2
-    const bFrontOff = rRHW + alleyW2;
-
-    // How many buildings fit along this segment?
-    const margin = fp(20);
-    const slotPitch = bldgW + bldgGap;
-    const nBldgs = Math.max(0, Math.floor((segLen - margin*2 + bldgGap) / slotPitch));
-    const startOff = (segLen - (nBldgs*slotPitch - bldgGap)) / 2; // centre buildings on segment
-
-    for (let bi=0; bi<nBldgs && unitCount<target; bi++) {
-      const t = startOff + bi*slotPitch;
-      // Building front-left corner (road side, walking along segment)
-      const bx = x1 + ux*t + onx*bFrontOff;
-      const by = y1 + uy*t + ony*bFrontOff;
-
-      // Building is a parallelogram: along segment (bldgW), perpendicular outward (bDepth)
-      const unitsInBldg = Math.min(UPB, target-unitCount);
-      const thisBldgW = unitsInBldg * bUnitW;
-      const bMidX = bx + ux*thisBldgW/2 + onx*bDepth/2;
-      const bMidY = by + uy*thisBldgW/2 + ony*bDepth/2;
-
-      // Containment: test 5 points of the building footprint
-      const corners5 = [
-        [bx + ux*2          + onx*2,        by + uy*2          + ony*2],
-        [bx + ux*(thisBldgW-2) + onx*2,     by + uy*(thisBldgW-2) + ony*2],
-        [bx + ux*2          + onx*(bDepth-2),by + uy*2          + ony*(bDepth-2)],
-        [bx + ux*(thisBldgW-2) + onx*(bDepth-2), by + uy*(thisBldgW-2) + ony*(bDepth-2)],
-        [bMidX, bMidY]
-      ];
-      if (corners5.filter(([px,py])=>inParcel(px,py)).length < 4) continue;
-
-      // Draw private alley (between road edge and building front)
-      const aFx=bx-onx*alleyW2, aFy=by-ony*alleyW2;
-      const allyPts=[
-        [aFx,aFy],[aFx+ux*thisBldgW,aFy+uy*thisBldgW],
-        [aFx+ux*thisBldgW+onx*alleyW2,aFy+uy*thisBldgW+ony*alleyW2],
-        [aFx+onx*alleyW2,aFy+ony*alleyW2]
-      ].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-      dSVG += `<polygon points="${allyPts}" fill="#d0cbc0" opacity="0.9"/>`;
-      // Alley label
-      const allyLabel=[(aFx+(aFx+ux*thisBldgW))/2+onx*alleyW2/2, (aFy+(aFy+uy*thisBldgW))/2+ony*alleyW2/2];
-      const allyAng=Math.atan2(uy,ux)*180/Math.PI;
-      dSVG += `<text x="${allyLabel[0].toFixed(1)}" y="${allyLabel[1].toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" transform="rotate(${allyAng.toFixed(1)},${allyLabel[0].toFixed(1)},${allyLabel[1].toFixed(1)})">PRIV. ALLEY 20′</text>`;
-
-      // Draw building
-      const fill = bi%2===0 ? cA : cB;
-      const bldgPts=[
-        [bx,by],[bx+ux*thisBldgW,by+uy*thisBldgW],
-        [bx+ux*thisBldgW+onx*bDepth,by+uy*thisBldgW+ony*bDepth],
-        [bx+onx*bDepth,by+ony*bDepth]
-      ].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-      dSVG += `<polygon points="${bldgPts}" fill="${fill}" stroke="#5a3e08" stroke-width="0.9"/>`;
-
-      // Unit dividers
-      for (let u=1; u<unitsInBldg; u++) {
-        const dx2=ux*u*bUnitW, dy2=uy*u*bUnitW;
-        dSVG += `<line x1="${(bx+dx2).toFixed(1)}" y1="${(by+dy2).toFixed(1)}" x2="${(bx+dx2+onx*bDepth).toFixed(1)}" y2="${(by+dy2+ony*bDepth).toFixed(1)}" stroke="#5a3e08" stroke-width="0.35" opacity="0.55"/>`;
+        // Building
+        const unitsHere = Math.min(UPB, target - unitCount);
+        const thisBW    = unitsHere * bUnitW;
+        const fill      = bnum % 2 === 1 ? cA : cB;
+        dSVG += `<polygon points="${[svgPt(slotX,bMinY),svgPt(slotX+thisBW,bMinY),svgPt(slotX+thisBW,bMaxY),svgPt(slotX,bMaxY)].join(' ')}" fill="${fill}" stroke="#5a3e08" stroke-width="0.9"/>`;
+        // Unit dividers (perpendicular to road, in local Y direction)
+        for (let u=1; u<unitsHere; u++) {
+          const [d1x,d1y]=toLSVG(slotX+u*bUnitW,bMinY),[d2x,d2y]=toLSVG(slotX+u*bUnitW,bMaxY);
+          dSVG += `<line x1="${d1x.toFixed(1)}" y1="${d1y.toFixed(1)}" x2="${d2x.toFixed(1)}" y2="${d2y.toFixed(1)}" stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+        }
+        // Building number
+        const [bmx,bmy]=toLSVG(slotX+thisBW/2,(bMinY+bMaxY)/2);
+        dSVG += `<text x="${bmx.toFixed(1)}" y="${bmy.toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
+        unitCount += unitsHere;
+        slotX += bldgPitch;
       }
+    });
+  });
 
-      // Building number
-      dSVG += `<text x="${bMidX.toFixed(1)}" y="${(bMidY+3).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
-
-      unitCount += unitsInBldg;
+  // ── Cross-streets: connect adjacent row road centerlines ──
+  crossXPositions.forEach(cx => {
+    for (let ri=0; ri < rowYs.length-1; ri++) {
+      const csY1 = rowYs[ri];
+      const csY2 = rowYs[ri+1];
+      if (!inPL(cx+crossW/2, (csY1+csY2)/2)) continue;
+      dSVG += `<polygon points="${[svgPt(cx,csY1),svgPt(cx+crossW,csY1),svgPt(cx+crossW,csY2),svgPt(cx,csY2)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.4"/>`;
     }
+  });
+
+  // ── Side stubs at local Y-min and Y-max parcel edges ──
+  crossXPositions.forEach(cx => {
+    const csMid = cx + crossW/2;
+    // Y-min stub (one short end of parcel)
+    if (inPL(csMid, lMinY + (lBZminY-lMinY)*0.5)) {
+      dSVG += `<polygon points="${[svgPt(cx,lMinY),svgPt(cx+crossW,lMinY),svgPt(cx+crossW,lBZminY),svgPt(cx,lBZminY)].join(' ')}" fill="#d0cdc0" opacity="0.75"/>`;
+      const [b1x,b1y]=toLSVG(cx-fp(8),lMinY),[b2x,b2y]=toLSVG(cx+crossW+fp(8),lMinY);
+      dSVG += `<line x1="${b1x.toFixed(1)}" y1="${b1y.toFixed(1)}" x2="${b2x.toFixed(1)}" y2="${b2y.toFixed(1)}" stroke="#e07820" stroke-width="3"/>`;
+    }
+    // Y-max stub (other short end)
+    if (inPL(csMid, lBZmaxY + (lMaxY-lBZmaxY)*0.5)) {
+      dSVG += `<polygon points="${[svgPt(cx,lBZmaxY),svgPt(cx+crossW,lBZmaxY),svgPt(cx+crossW,lMaxY),svgPt(cx,lMaxY)].join(' ')}" fill="#d0cdc0" opacity="0.75"/>`;
+      const [b1x,b1y]=toLSVG(cx-fp(8),lMaxY),[b2x,b2y]=toLSVG(cx+crossW+fp(8),lMaxY);
+      dSVG += `<line x1="${b1x.toFixed(1)}" y1="${b1y.toFixed(1)}" x2="${b2x.toFixed(1)}" y2="${b2y.toFixed(1)}" stroke="#e07820" stroke-width="3"/>`;
+    }
+  });
+
+  // ── Stormwater pond: local X-max area, local Y centre ──
+  const pondLX  = lBZmaxX - fp(130);
+  const pondLY  = (lBZminY + lBZmaxY) * 0.5;
+  const pondRxL = fp(72), pondRyL = fp(46);
+  if (inPL(pondLX, pondLY)) {
+    const poly20 = (rx, ry) => Array.from({length:20}, (_,i) => {
+      const a = i*Math.PI*2/20;
+      return svgPt(pondLX+rx*Math.cos(a), pondLY+ry*Math.sin(a));
+    }).join(' ');
+    dSVG += `<polygon points="${poly20(pondRxL,pondRyL)}" fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
+    for (let ri=1;ri<=3;ri++) dSVG += `<polygon points="${poly20(pondRxL*0.25*ri,pondRyL*0.25*ri)}" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
+    dSVG += `<polygon points="${poly20(pondRxL+fp(28),pondRyL+fp(18))}" fill="#5cb85c" opacity="0.22" stroke="#3a8c4a" stroke-width="0.6"/>`;
+    const [pcx,pcy]=toLSVG(pondLX,pondLY-fp(6));
+    dSVG += `<text x="${pcx.toFixed(1)}" y="${pcy.toFixed(1)}" font-family="sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
+    const [pc2x,pc2y]=toLSVG(pondLX,pondLY+fp(7));
+    dSVG += `<text x="${pc2x.toFixed(1)}" y="${pc2y.toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">(100% site runoff)</text>`;
+    const [osx,osy]=toLSVG(pondLX,pondLY+pondRyL+fp(22));
+    dSVG += `<text x="${osx.toFixed(1)}" y="${osy.toFixed(1)}" font-family="sans-serif" font-size="7" fill="#1f5c1a" text-anchor="middle">HOA Open Space / Amenity</text>`;
   }
 
-  // ── Stormwater pond (at parcel centroid / interior open space) ──
-  const pondRx = Math.min(fp(90), roadSpread*0.45);
-  const pondRy = Math.min(fp(55), roadSpread*0.28);
-  dSVG += `<ellipse cx="${pCX0.toFixed(1)}" cy="${pCY0.toFixed(1)}" rx="${pondRx.toFixed(1)}" ry="${pondRy.toFixed(1)}" fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
-  for(let ri=1;ri<=3;ri++){
-    dSVG += `<ellipse cx="${pCX0.toFixed(1)}" cy="${pCY0.toFixed(1)}" rx="${(pondRx*0.25*ri).toFixed(1)}" ry="${(pondRy*0.25*ri).toFixed(1)}" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
+  // ── Entry drive (local X-min end, centred in local Y) ──
+  const entHW   = entDW / 2;
+  const entLY   = (lBZminY + lBZmaxY) * 0.5;
+  const entX1   = lMinX;
+  const entX2   = lBZminX + fp(15);
+  dSVG += `<polygon points="${[svgPt(entX1,entLY-entHW),svgPt(entX2,entLY-entHW),svgPt(entX2,entLY+entHW),svgPt(entX1,entLY+entHW)].join(' ')}" fill="#d0cdc0" stroke="#b5b2a8" stroke-width="0.5"/>`;
+  const [ec1x,ec1y]=toLSVG(entX1,entLY),[ec2x,ec2y]=toLSVG(entX2,entLY);
+  dSVG += `<line x1="${ec1x.toFixed(1)}" y1="${ec1y.toFixed(1)}" x2="${ec2x.toFixed(1)}" y2="${ec2y.toFixed(1)}" stroke="#e8e4d8" stroke-width="0.8" stroke-dasharray="8,6"/>`;
+  [-1,1].forEach(side => {
+    const [gx,gy]=toLSVG(entX1+fp(5), entLY+side*(entHW+fp(4)));
+    dSVG += `<rect x="${(gx-fp(3)).toFixed(1)}" y="${(gy-fp(5)).toFixed(1)}" width="${fp(7).toFixed(1)}" height="${fp(10).toFixed(1)}" fill="#d4a843" stroke="#5a3e08" stroke-width="0.8" rx="1"/>`;
+  });
+  const [elx,ely]=toLSVG((entX1+entX2)*0.5, entLY-fp(6));
+  dSVG += `<text x="${elx.toFixed(1)}" y="${ely.toFixed(1)}" font-family="sans-serif" font-size="6" fill="#5a3e08" text-anchor="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${elx.toFixed(1)},${ely.toFixed(1)})">Entry Drive</text>`;
+
+  // ── Clubhouse near entry ──
+  const clbLX = lBZminX + fp(10);
+  const clbW2 = fp(48), clbH2 = fp(28);
+  if (inPL(clbLX+clbW2/2, entLY)) {
+    dSVG += `<polygon points="${[svgPt(clbLX,entLY-clbH2/2),svgPt(clbLX+clbW2,entLY-clbH2/2),svgPt(clbLX+clbW2,entLY+clbH2/2),svgPt(clbLX,entLY+clbH2/2)].join(' ')}" fill="#5a4a7a" opacity="0.75"/>`;
+    const [clx,cly]=toLSVG(clbLX+clbW2/2,entLY);
+    dSVG += `<text x="${clx.toFixed(1)}" y="${cly.toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" transform="rotate(${_parcelAngleDeg.toFixed(1)},${clx.toFixed(1)},${cly.toFixed(1)})">Clubhouse</text>`;
   }
-  dSVG += `<text x="${pCX0.toFixed(1)}" y="${(pCY0-8).toFixed(1)}" font-family="sans-serif" font-size="9.5" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
-  dSVG += `<text x="${pCX0.toFixed(1)}" y="${(pCY0+7).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
 
-  // Open space / HOA amenity ring
-  dSVG += `<ellipse cx="${pCX0.toFixed(1)}" cy="${pCY0.toFixed(1)}" rx="${(pondRx+fp(28)).toFixed(1)}" ry="${(pondRy+fp(18)).toFixed(1)}" fill="#5cb85c" opacity="0.22" stroke="#3a8c4a" stroke-width="0.6" stroke-dasharray="4,3"/>`;
-  dSVG += `<text x="${pCX0.toFixed(1)}" y="${(pCY0+pondRy+fp(26)).toFixed(1)}" font-family="sans-serif" font-size="7" fill="#1f5c1a" text-anchor="middle">HOA Open Space / Amenity</text>`;
-
-  // ── Visitor parking pockets near entry ──
-  const pkH=fp(16), pkW=fp(20);
-  const pkNx=-entPerpY, pkNy=entPerpX; // normal along entry direction
-  [-1,1].forEach((side,si)=>{
-    const pkx=entDX2+entPerpX*side*(entDW/2+fp(6));
-    const pky=entDY2+entPerpY*side*(entDW/2+fp(6));
-    if(!inParcel(pkx,pky)) return;
-    const pkPts=[[pkx,pky],[pkx+pkNx*pkH,pky+pkNy*pkH],[pkx+pkNx*pkH+entPerpX*pkW*side,pky+pkNy*pkH+entPerpY*pkW*side],[pkx+entPerpX*pkW*side,pky+entPerpY*pkW*side]].map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    dSVG += `<polygon points="${pkPts}" fill="url(#pkg)" stroke="#bbb" stroke-width="0.6"/>`;
-    dSVG += `<text x="${(pkx+pkNx*pkH/2).toFixed(1)}" y="${(pky+pkNy*pkH/2+3).toFixed(1)}" font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle">Pkg</text>`;
+  // ── Visitor parking pockets flanking entry ──
+  [-1,1].forEach(side => {
+    const pkLX = entX2 - fp(22);
+    const pkLY1 = entLY + side * (entHW + fp(4));
+    const pkLY2 = pkLY1 + side * fp(18);
+    const pkMin = Math.min(pkLY1,pkLY2), pkMax = Math.max(pkLY1,pkLY2);
+    if (!inPL(pkLX+fp(11),(pkMin+pkMax)/2)) return;
+    dSVG += `<polygon points="${[svgPt(pkLX,pkMin),svgPt(pkLX+fp(22),pkMin),svgPt(pkLX+fp(22),pkMax),svgPt(pkLX,pkMax)].join(' ')}" fill="url(#pkg)" stroke="#bbb" stroke-width="0.6"/>`;
+    const [plx,ply]=toLSVG(pkLX+fp(11),(pkMin+pkMax)/2);
+    dSVG += `<text x="${plx.toFixed(1)}" y="${ply.toFixed(1)}" font-family="sans-serif" font-size="5.5" fill="#666" text-anchor="middle" dominant-baseline="middle">Pkg</text>`;
   });
 
   b += `<g clip-path="url(#pc)">${dSVG}</g>`;
@@ -3364,7 +3600,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   b+=`<rect x="${(bL+4).toFixed(1)}" y="${(bT+4).toFixed(1)}"
       width="138" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.3" opacity="0.94"/>`;
   b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+18).toFixed(1)}"
-      font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units · Loop Road Layout</text>`;
+      font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units · Grid Layout</text>`;
   b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+28).toFixed(1)}"
       font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary</text>`;
 
@@ -3394,7 +3630,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   const lX=SVG_W-PR+8, lY=HEAD+56;
   const LI=[
     [cA,        'Townhome building'],
-    ['#bebab0',  'Loop road (26′ R/W)'],
+    ['#d0cdc0',  'Collector road (26′ R/W)'],
     ['#d0cbc0',  'Private alley (20′)'],
     ['#4fa8cc',  'Wet detention pond'],
     ['#5cb85c',  'Open space / amenity'],
@@ -3423,23 +3659,23 @@ function buildSitePlanSVG(parcelsData, opts) {
       rx="4" fill="#f8f6f0" stroke="#ddd" stroke-width="1"/>`;
   b+=`<text x="${(lX+85).toFixed(1)}" y="${nY+14}" font-family="sans-serif" font-size="9" fill="#333"
       text-anchor="middle" font-weight="bold">LAYOUT TYPE</text>`;
-  b+=`<text x="${lX}" y="${nY+27}" font-family="sans-serif" font-size="8" fill="#555" font-weight="bold">Loop Road — Perimeter Alley-Loaded</text>`;
+  b+=`<text x="${lX}" y="${nY+27}" font-family="sans-serif" font-size="8" fill="#555" font-weight="bold">Oriented Grid — Double-Loaded Collector</text>`;
   const notes=[
-    '• Loop road follows parcel boundary',
-    '• Circular connectivity — no dead ends',
-    '• Street stubs at each parcel edge for',
-    '  future connections to adj. streets',
-    '• Buildings face loop road (front doors)',
+    '• Roads aligned to parcel long axis',
+    '• Circular connectivity via cross-streets',
+    '• Street stubs at parcel edges for',
+    '  future connections to adj. parcels',
+    '• Buildings face collector (front doors)',
     '• Private alley = rear garage access',
   ];
   notes.forEach((n,i)=>{ b+=`<text x="${lX}" y="${nY+42+i*13}" font-family="sans-serif" font-size="7.5" fill="#666">${n}</text>`; });
 
   b+=`<text x="${lX}" y="${nY+128}" font-family="sans-serif" font-size="9" fill="#333" font-weight="bold">COST DRIVERS</text>`;
   const costs=[
-    '• Loop = ~25% less ROW than grid',
+    '• Aligned grid = efficient utility runs',
     '• Shared alley = saves ~$2,500/lot',
-    '• Interior pond → riparian buffer',
-    '• Perimeter bldgs maximize density',
+    '• Rear pond → riparian buffer credit',
+    '• Parallel rows maximize density',
     '• Fewer driveways → lower curb cost',
     '• Stub streets = future revenue from',
     '  adjacent parcel connections',
@@ -3447,11 +3683,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   costs.forEach((c,i)=>{ b+=`<text x="${lX}" y="${nY+143+i*12}" font-family="sans-serif" font-size="7.5" fill="#666">${c}</text>`; });
 
   // Footer note
-  const axisNote = hasInner
-    ? 'Double loop road — circular connectivity — street stubs for future connections'
-    : hasLoop
-    ? 'Loop road follows parcel shape — circular connectivity — street stubs for future connections'
-    : 'Parcel too narrow for full loop — manual layout required';
+  const axisNote = `Oriented grid — ${nRows} collector rows × ~${Math.round(bldgPitch/(scale||1)/10)*10}′ slot pitch — street stubs for future connections`;
   b+=`<text x="${(SVG_W-PR/2)/2}" y="${SVG_H-3}" font-family="sans-serif" font-size="7" fill="#bbb"
       text-anchor="middle">Conceptual only — export SVG → refine in AutoCAD Civil 3D · ${axisNote}</text>`;
 
@@ -3464,7 +3696,7 @@ function buildSitePlanSVG(parcelsData, opts) {
   <text x="12" y="14" font-family="serif" font-size="12" fill="white" font-weight="bold">
     CONCEPTUAL SITE PLAN — ${titleLine}</text>
   <text x="12" y="26" font-family="sans-serif" font-size="9" fill="#9dd4b0">
-    ${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D loop road layout · 1″≈${niceScale}ft · NC State Plane${parcelsData.length>1?' · '+parcelsData.map(p=>p.pin).join(', '):''}</text>
+    ${opts.acres} ac · ${unitCount} units · ${opts.unitW}′W×${opts.unitD}′D oriented grid · 1″≈${niceScale}ft · NC State Plane${parcelsData.length>1?' · '+parcelsData.map(p=>p.pin).join(', '):''}</text>
   ${b}
 </svg>`;
 }
@@ -3791,6 +4023,7 @@ function onFileLoad(event) {
       buildStages(); buildPF(); buildChecklist(); buildIMAPSIn(); buildFolders(); buildPEItems(); buildPermits();
       loadMarket(); loadConstruction();
       buildMeetings(); buildSchedule(); buildHub();
+      buildPlanConcerns(); loadPlan();
       if (D.pPIN) {
         document.getElementById('pinIn').value = D.pPIN;
         document.getElementById('activePin').textContent = D.pPIN;
