@@ -3441,12 +3441,6 @@ function buildSitePlanSVG(parcelsData, opts) {
     const [rlx,rly]=toLSVG((rX1+rX2)*0.5,rowY);
     dSVG += `<text x="${rlx.toFixed(1)}" y="${rly.toFixed(1)}" font-family="sans-serif" font-size="6" fill="#888" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${rlx.toFixed(1)},${rly.toFixed(1)})">COLLECTOR — 26′ R/W</text>`;
 
-    // Stub at road far end (local X-max)
-    const [tx1,ty1]=toLSVG(rX2,rowY-fp(16)),[tx2,ty2]=toLSVG(rX2,rowY+fp(16));
-    dSVG += `<line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="#e07820" stroke-width="3" stroke-linecap="butt"/>`;
-    const [tlx,tly]=toLSVG(rX2+fp(10),rowY);
-    dSVG += `<text x="${tlx.toFixed(1)}" y="${tly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#e07820" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${tlx.toFixed(1)},${tly.toFixed(1)})">STUB</text>`;
-
     // Buildings on both sides of road
     [-1,1].forEach(side => {
       const bFY   = rowY + side * toFront;
@@ -3552,24 +3546,54 @@ function buildSitePlanSVG(parcelsData, opts) {
     }
   });
 
-  // ── Stormwater pond: local X-max area, local Y centre ──
-  const pondLX  = lBZmaxX - fp(130);
-  const pondLY  = (lBZminY + lBZmaxY) * 0.5;
+  // ── Open space zone: below last building row, above riparian buffer ──
+  // This is where the pond, HOA amenity and conservation area live.
+  const lastRowBldgBackY = rowYs.length > 0 ? rowYs[rowYs.length-1] + toBack : lBZmaxY;
+  const openZoneY1 = lastRowBldgBackY + fp(20);   // 20 ft clear of last building back
+  const openZoneY2 = lBZmaxY;                      // stops at riparian buffer setback
+  const openZoneMidY = (openZoneY1 + openZoneY2) * 0.5;
+  const openZoneMidX = (lBZminX + lBZmaxX) * 0.5;
+
+  // Open space / HOA amenity fill (only if the zone is large enough)
+  if (openZoneY2 > openZoneY1 + fp(30) && inPL(openZoneMidX, openZoneMidY)) {
+    const [oalx, oaly] = toLSVG(openZoneMidX, openZoneMidY);
+    dSVG += `<text x="${oalx.toFixed(1)}" y="${oaly.toFixed(1)}" font-family="sans-serif" font-size="9" fill="#1f5c1a" text-anchor="middle" font-weight="bold" opacity="0.7">HOA Open Space / Conservation Area</text>`;
+  }
+
+  // ── Stormwater pond: in the open zone between last building row and riparian buffer ──
+  // Centre it on the best-fit point inside the parcel within the open zone.
   const pondRxL = fp(72), pondRyL = fp(46);
+  // Try several X positions, pick first that fits inside parcel
+  const pondCandX = [
+    openZoneMidX,
+    openZoneMidX - fp(100),
+    openZoneMidX + fp(100),
+    lBZminX + fp(80),
+    lBZmaxX - fp(80),
+  ];
+  const pondLY = openZoneY2 > openZoneY1 + fp(60)
+    ? openZoneMidY                              // use centre of open zone
+    : lBZmaxY + fp(opts.buffer * 0.35);         // fall back into riparian buffer
+  const pondLX = pondCandX.find(cx => inPL(cx, pondLY)) ?? openZoneMidX;
+
   if (inPL(pondLX, pondLY)) {
     const poly20 = (rx, ry) => Array.from({length:20}, (_,i) => {
       const a = i*Math.PI*2/20;
       return svgPt(pondLX+rx*Math.cos(a), pondLY+ry*Math.sin(a));
     }).join(' ');
+    // HOA open space ring (drawn first, behind pond)
+    dSVG += `<polygon points="${poly20(pondRxL+fp(28),pondRyL+fp(18))}" fill="#5cb85c" opacity="0.28" stroke="#3a8c4a" stroke-width="0.6"/>`;
+    // Pond surface
     dSVG += `<polygon points="${poly20(pondRxL,pondRyL)}" fill="#4fa8cc" stroke="#2a6e8a" stroke-width="1.8" opacity="0.88"/>`;
     for (let ri=1;ri<=3;ri++) dSVG += `<polygon points="${poly20(pondRxL*0.25*ri,pondRyL*0.25*ri)}" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>`;
-    dSVG += `<polygon points="${poly20(pondRxL+fp(28),pondRyL+fp(18))}" fill="#5cb85c" opacity="0.22" stroke="#3a8c4a" stroke-width="0.6"/>`;
-    const [pcx,pcy]=toLSVG(pondLX,pondLY-fp(6));
+    const [pcx,pcy]=toLSVG(pondLX, pondLY-fp(7));
     dSVG += `<text x="${pcx.toFixed(1)}" y="${pcy.toFixed(1)}" font-family="sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="bold">Wet Detention Pond</text>`;
-    const [pc2x,pc2y]=toLSVG(pondLX,pondLY+fp(7));
-    dSVG += `<text x="${pc2x.toFixed(1)}" y="${pc2y.toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">(100% site runoff)</text>`;
-    const [osx,osy]=toLSVG(pondLX,pondLY+pondRyL+fp(22));
-    dSVG += `<text x="${osx.toFixed(1)}" y="${osy.toFixed(1)}" font-family="sans-serif" font-size="7" fill="#1f5c1a" text-anchor="middle">HOA Open Space / Amenity</text>`;
+    const [pc2x,pc2y]=toLSVG(pondLX, pondLY+fp(6));
+    dSVG += `<text x="${pc2x.toFixed(1)}" y="${pc2y.toFixed(1)}" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">(sized for 100% site runoff)</text>`;
+  } else {
+    // Pond can't fit in open zone — draw at parcel centroid as fallback with notice
+    const [pcx,pcy]=toLSVG(openZoneMidX, pondLY);
+    dSVG += `<text x="${pcx.toFixed(1)}" y="${pcy.toFixed(1)}" font-family="sans-serif" font-size="8" fill="#2a6e8a" text-anchor="middle">[SCM — field locate per topo]</text>`;
   }
 
   // ── Entry drive (local X-min end, centred in local Y) ──
