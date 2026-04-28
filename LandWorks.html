@@ -1142,6 +1142,86 @@ textarea{resize:vertical;min-height:68px;}
     </div>
   </div>
 
+  <!-- ── COUNCIL INTELLIGENCE ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#1a1a5c,#3a1a5c)">
+      <h3>🏛 Council Intelligence — Know Who's Voting</h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Track individual council members' voting patterns and stated concerns from hearing transcripts. Build profiles over time to know who to meet before submitting — and what to say to each one.</p>
+
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+        <select id="councilFilterCity" onchange="renderCouncilCards()" style="font-size:.78rem;padding:.22rem .4rem;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+          <option value="">All Cities</option>
+          <option>Raleigh</option><option>Cary</option><option>Apex</option>
+          <option>Wake Forest</option><option>Holly Springs</option>
+          <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+        </select>
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="openTranscriptExtract()">🎬 Extract from Hearing Transcript</button>
+        <button class="btn btn-s" onclick="openAddMember()">+ Add Member Manually</button>
+        <button class="btn btn-s" style="background:#5a1a1a;color:white;margin-left:auto" onclick="clearCouncilDb()">🗑 Clear All</button>
+      </div>
+
+      <!-- Add member form (hidden) -->
+      <div id="addMemberForm" style="display:none;background:var(--subtle);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
+        <div style="font-size:.82rem;font-weight:600;margin-bottom:.5rem;color:var(--text)">Add Council Member</div>
+        <div class="f-row" style="gap:.55rem;flex-wrap:wrap">
+          <div class="f" style="flex:2;min-width:150px"><label style="font-size:.72rem">Name</label><input id="cmName" placeholder="First Last" style="font-size:.82rem"></div>
+          <div class="f" style="flex:1;min-width:120px">
+            <label style="font-size:.72rem">City</label>
+            <select id="cmCity" style="font-size:.82rem">
+              <option>Raleigh</option><option>Cary</option><option>Apex</option>
+              <option>Wake Forest</option><option>Holly Springs</option>
+              <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+            </select>
+          </div>
+          <div class="f" style="flex:1;min-width:120px"><label style="font-size:.72rem">District / Role</label><input id="cmDistrict" placeholder="At-Large, District A…" style="font-size:.82rem"></div>
+          <div class="f" style="flex:1;min-width:100px"><label style="font-size:.72rem">Email (optional)</label><input id="cmEmail" placeholder="name@city.gov" style="font-size:.82rem"></div>
+        </div>
+        <div class="f"><label style="font-size:.72rem">Known Concerns / Notes</label>
+          <textarea id="cmNotes" rows="2" placeholder="e.g. Always asks about affordable housing percentage. Skeptical of density near single-family. Can be won over with pedestrian connectivity." style="font-size:.78rem"></textarea>
+        </div>
+        <div style="display:flex;gap:.4rem;margin-top:.35rem">
+          <button class="btn btn-s" style="background:#1e5c3a;color:white" onclick="saveNewMember()">Save Member</button>
+          <button class="btn btn-s" onclick="document.getElementById('addMemberForm').style.display='none'">Cancel</button>
+        </div>
+      </div>
+
+      <div id="councilCardsWrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.65rem"></div>
+      <div id="councilEmpty" style="font-size:.82rem;color:var(--muted);padding:.5rem 0;display:none">No council members yet. Use "Extract from Hearing Transcript" after pasting a video summary, or add members manually.</div>
+    </div>
+  </div>
+
+  <!-- ── PRE-HEARING STRATEGY ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#3a1a1a,#1a3a1a)">
+      <h3>🎯 Pre-Hearing Strategy — Who to Meet &amp; What to Say</h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Generate a tailored political strategy based on who's on the council and what your project looks like. Identifies who to meet one-on-one before the hearing, what each member cares about, and how to frame your project to each of them.</p>
+      <div class="f-row" style="gap:.65rem;flex-wrap:wrap;margin-bottom:.65rem">
+        <div class="f" style="flex:1;min-width:140px">
+          <label>Target City</label>
+          <select id="stratCity">
+            <option>Raleigh</option><option>Cary</option><option>Apex</option>
+            <option>Wake Forest</option><option>Holly Springs</option>
+            <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+          </select>
+        </div>
+        <div class="f" style="flex:2;min-width:180px">
+          <label>Your Project (brief description)</label>
+          <input id="stratProject" placeholder="e.g. 52-unit townhomes, 4.1 acres, NX-3 rezoning, adjacent to single-family">
+        </div>
+      </div>
+      <div class="f" style="margin-bottom:.65rem">
+        <label>Key Concessions / Offers on the Table</label>
+        <input id="stratConcessions" placeholder="e.g. 12% affordable units, 50ft buffer, traffic study, street-facing garages">
+      </div>
+      <button class="btn" style="background:linear-gradient(135deg,#3a1a1a,#1a3a1a);color:white;width:100%" onclick="generateHearingStrategy()">🤖 Generate Pre-Hearing Strategy</button>
+      <div id="stratResult" style="margin-top:.65rem"></div>
+    </div>
+  </div>
+
   <!-- ── DATA EXPANSION GUIDE ── -->
   <div class="card">
     <div class="card-hd" style="background:linear-gradient(135deg,#5a3a1a,#3a1a5c)">
@@ -1167,12 +1247,20 @@ textarea{resize:vertical;min-height:68px;}
 
 <!-- ── PASTE & EXTRACT MODAL ── -->
 <div id="pasteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:var(--bg);border-radius:10px;padding:1.4rem;width:min(700px,96vw);max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
-      <h4 style="margin:0;font-size:1rem">📋 Paste &amp; Extract — Add Case to Database</h4>
+  <div style="background:var(--bg);border-radius:10px;padding:1.4rem;width:min(740px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+      <h4 style="margin:0;font-size:1rem" id="pasteModalTitle">📋 Paste &amp; Extract</h4>
       <button onclick="closePasteModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)">✕</button>
     </div>
-    <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Open a city planning portal, find a rezoning case page, select all the text, and paste it below. Claude will extract all structured fields and save the case to your database.</p>
+
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:.35rem;margin-bottom:.85rem;background:var(--subtle);border-radius:7px;padding:.3rem">
+      <button id="modeTabCase" onclick="setPasteMode('case')" style="flex:1;padding:.38rem .6rem;border-radius:5px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;background:var(--bg);color:var(--text)">📄 Case Text from Portal</button>
+      <button id="modeTabTranscript" onclick="setPasteMode('transcript')" style="flex:1;padding:.38rem .6rem;border-radius:5px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;background:transparent;color:var(--muted)">🎬 Hearing Transcript / Video Summary</button>
+    </div>
+
+    <p id="pasteInstructions" style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Open a city planning portal, find a rezoning case page, select all the text, and paste it below. Claude extracts all structured fields and saves to the case database.</p>
+
     <div class="f-row" style="gap:.65rem;margin-bottom:.65rem">
       <div class="f" style="flex:1">
         <label>City</label>
@@ -1183,9 +1271,11 @@ textarea{resize:vertical;min-height:68px;}
         </select>
       </div>
     </div>
-    <textarea id="pasteArea" rows="13" placeholder="Paste case text from the city planning portal here... (case number, description, meeting date, vote, staff report, etc.)" style="width:100%;font-size:.78rem;font-family:monospace;border-radius:6px;border:1px solid var(--border);padding:.55rem;background:var(--subtle);color:var(--text);box-sizing:border-box;resize:vertical"></textarea>
+
+    <textarea id="pasteArea" rows="13" placeholder="Paste case text from the city planning portal here..." style="width:100%;font-size:.78rem;font-family:monospace;border-radius:6px;border:1px solid var(--border);padding:.55rem;background:var(--subtle);color:var(--text);box-sizing:border-box;resize:vertical"></textarea>
+
     <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap">
-      <button class="btn" style="background:linear-gradient(135deg,#1a3a5c,#1e5c3a);color:white;flex:1" onclick="runPasteExtract()">🤖 Extract with Claude &amp; Save</button>
+      <button id="extractBtn" class="btn" style="background:linear-gradient(135deg,#1a3a5c,#1e5c3a);color:white;flex:1" onclick="runPasteExtract()">🤖 Extract with Claude &amp; Save</button>
       <button class="btn btn-s" onclick="closePasteModal()" style="flex:0;white-space:nowrap">Cancel</button>
     </div>
     <div id="extractResult" style="margin-top:.75rem;font-size:.8rem"></div>
@@ -6328,7 +6418,403 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCasesDb();
   renderCaseTable();
   renderCityCards();
+  loadCouncilDb();
+  renderCouncilCards();
 });
+
+// ═══════════════════════ PASTE MODAL MODE ═══════════════════════
+
+let _pasteMode = 'case'; // 'case' | 'transcript'
+
+function setPasteMode(mode) {
+  _pasteMode = mode;
+  const caseTab = document.getElementById('modeTabCase');
+  const txTab   = document.getElementById('modeTabTranscript');
+  const instr   = document.getElementById('pasteInstructions');
+  const area    = document.getElementById('pasteArea');
+  const title   = document.getElementById('pasteModalTitle');
+  const btn     = document.getElementById('extractBtn');
+  if (mode === 'case') {
+    caseTab.style.background = 'var(--bg)'; caseTab.style.color = 'var(--text)';
+    txTab.style.background   = 'transparent'; txTab.style.color = 'var(--muted)';
+    title.textContent  = '📋 Paste & Extract — Case from Portal';
+    instr.textContent  = 'Open a city planning portal, find a rezoning case page, select all the text, and paste it below. Claude extracts all structured fields and saves to the case database.';
+    area.placeholder   = 'Paste case text from the city planning portal here... (case number, description, meeting date, vote, staff report, etc.)';
+    btn.textContent    = '🤖 Extract Case & Save';
+  } else {
+    txTab.style.background = 'var(--bg)'; txTab.style.color = 'var(--text)';
+    caseTab.style.background = 'transparent'; caseTab.style.color = 'var(--muted)';
+    title.textContent  = '🎬 Extract from Hearing Transcript / Video Summary';
+    instr.innerHTML    = 'Paste a hearing video transcript or Claude in Chrome summary. Claude will extract <strong>both</strong> the case outcome <em>and</em> per-council-member votes, stated concerns, and sentiment — building profiles you can use to plan pre-hearing meetings.';
+    area.placeholder   = 'Paste hearing transcript or Claude in Chrome video summary here...\n\nIncludes who spoke, how each member voted, what they said, what conditions they asked for, etc.';
+    btn.textContent    = '🤖 Extract Case + Council Profiles';
+  }
+}
+
+function openTranscriptExtract(city) {
+  const modal = document.getElementById('pasteModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  setPasteMode('transcript');
+  if (city) {
+    const sel = document.getElementById('peCitySelect');
+    if (sel) sel.value = city;
+  }
+  document.getElementById('pasteArea').value = '';
+  document.getElementById('extractResult').innerHTML = '';
+}
+
+// Override runPasteExtract to handle both modes
+const _origRunPasteExtract = runPasteExtract;
+async function runPasteExtract() {
+  if (_pasteMode === 'transcript') { await runTranscriptExtract(); return; }
+  await _origRunPasteExtract();
+}
+
+// ═══════════════════════ TRANSCRIPT EXTRACTOR ═══════════════════════
+
+async function runTranscriptExtract() {
+  const text = document.getElementById('pasteArea')?.value?.trim();
+  const city = document.getElementById('peCitySelect')?.value || 'Raleigh';
+  const resultEl = document.getElementById('extractResult');
+  if (!text) { showToast('Paste a transcript or video summary first', 'e'); return; }
+  if (!apiKey) { showToast('Connect your Claude API key first', 'e'); return; }
+  resultEl.innerHTML = '<span style="color:var(--muted)">⏳ Extracting case data and council member profiles...</span>';
+
+  const prompt = `You are analyzing a planning/zoning hearing transcript or video summary from ${city}.
+
+Extract two separate JSON objects and return them exactly in this format (nothing else):
+
+CASE_JSON:
+{
+  "case_number": "string or null",
+  "city": "${city}",
+  "meeting_date": "YYYY-MM-DD or as written",
+  "title": "project name/description",
+  "change_requested": "rezoning change description",
+  "acreage": number or null,
+  "outcome": "approved" | "denied" | "withdrawn" | "continued" | "pending",
+  "adjacent_single_family": true | false,
+  "height_stories_proposed": number or null,
+  "traffic_study_mentioned": true | false,
+  "affordable_housing_mentioned": true | false,
+  "transition_buffer_mentioned": true | false,
+  "staff_recommendation": "approve" | "deny" | "approve with conditions" | "continue" | "unknown",
+  "vote_yes": number or null,
+  "vote_no": number or null,
+  "notes": "key conditions, themes, outcome summary",
+  "public_oppose_count": number or null,
+  "public_support_count": number or null,
+  "council_avg_sentiment": "positive" | "neutral" | "negative" | "mixed" | null,
+  "staff_avg_sentiment": "positive" | "neutral" | "negative" | null
+}
+
+COUNCIL_JSON:
+[
+  {
+    "name": "Full Name",
+    "vote": "yes" | "no" | "abstain" | "absent" | null,
+    "sentiment": "strongly_supportive" | "supportive" | "neutral" | "skeptical" | "opposed",
+    "stated_concerns": ["concern1", "concern2"],
+    "stated_support_reasons": ["reason1"],
+    "conditions_requested": ["specific condition they asked for"],
+    "key_quote": "most revealing direct quote from this member (or null)",
+    "pro_dev_impression": "short phrase describing their general stance on this case"
+  }
+]
+
+IMPORTANT: Include ALL council members who spoke or voted, even briefly. If a member is mentioned as voting but didn't speak, include them with just the vote field. Extract only what is actually in the transcript — do not invent data.
+
+Transcript/Summary to analyze:
+${text.substring(0, 8000)}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+
+    // Parse CASE_JSON
+    const caseMatch = raw.match(/CASE_JSON:\s*(\{[\s\S]*?\})\s*(?:COUNCIL_JSON:|$)/);
+    const councilMatch = raw.match(/COUNCIL_JSON:\s*(\[[\s\S]*\])/);
+
+    let savedCase = null, savedMembers = [];
+
+    if (caseMatch) {
+      try {
+        const caseObj = JSON.parse(caseMatch[1]);
+        caseObj.city = city;
+        caseObj._added = new Date().toISOString();
+        lwCasesDb.push(caseObj);
+        saveCasesDb();
+        savedCase = caseObj;
+      } catch(e) { /* skip malformed */ }
+    }
+
+    if (councilMatch) {
+      try {
+        const members = JSON.parse(councilMatch[1]);
+        members.forEach(m => {
+          if (!m.name) return;
+          mergeCouncilMember(city, m, savedCase?.case_number);
+        });
+        savedMembers = members.filter(m => m.name);
+        saveCouncilDb();
+      } catch(e) { /* skip */ }
+    }
+
+    renderCaseTable();
+    renderCityCards();
+    renderCouncilCards();
+
+    const caseInfo  = savedCase ? `<strong>${savedCase.case_number||'Case'}</strong> — ${savedCase.title||savedCase.change_requested||'(extracted)'} — ${savedCase.outcome}` : '<em>Case data not found in transcript</em>';
+    const memberList = savedMembers.length > 0
+      ? savedMembers.map(m => `<span style="display:inline-block;margin:.15rem .2rem;background:${m.vote==='yes'?'#1a3a1a':m.vote==='no'?'#3a1a1a':'#2a2a3a'};color:${m.vote==='yes'?'#6dbf7e':m.vote==='no'?'#e07070':'#9090c0'};border-radius:4px;padding:.1rem .45rem;font-size:.7rem">${m.name} (${m.vote||'?'})</span>`).join('')
+      : '<em>No council member votes found</em>';
+
+    resultEl.innerHTML = `<div style="background:#0d1a2a;border:1px solid #1a3a5c;border-radius:6px;padding:.75rem;font-size:.8rem">
+      <div style="color:#6ab0ef;margin-bottom:.4rem">✅ Case saved: ${caseInfo}</div>
+      <div style="color:rgba(255,255,255,.6);margin-bottom:.3rem">Council members extracted (${savedMembers.length}):</div>
+      <div>${memberList}</div>
+      <div style="margin-top:.5rem;display:flex;gap:.4rem">
+        <button class="btn btn-s" style="font-size:.72rem" onclick="document.getElementById('pasteArea').value='';document.getElementById('extractResult').innerHTML=''">+ Another Hearing</button>
+        <button class="btn btn-s" style="font-size:.72rem" onclick="document.getElementById('councilFilterCity').value='${city}';renderCouncilCards();closePasteModal()">View ${city} Council Profiles →</button>
+      </div>
+    </div>`;
+    showToast(`Extracted ${savedMembers.length} council member${savedMembers.length!==1?'s':''} + case data`, 's');
+  } catch(e) {
+    resultEl.innerHTML = `<div style="background:#2a0d0d;border:1px solid #8a1a1a;border-radius:6px;padding:.75rem;color:#e07070;font-size:.8rem">❌ Extraction failed: ${e.message}. Try pasting a longer or more complete hearing summary.</div>`;
+  }
+}
+
+// ═══════════════════════ COUNCIL DATABASE ═══════════════════════
+
+let lwCouncil = [];
+
+function saveCouncilDb() {
+  try { localStorage.setItem('lwCouncil', JSON.stringify(lwCouncil)); } catch(e) {}
+}
+
+function loadCouncilDb() {
+  try {
+    const raw = localStorage.getItem('lwCouncil');
+    if (raw) lwCouncil = JSON.parse(raw);
+  } catch(e) { lwCouncil = []; }
+}
+
+function mergeCouncilMember(city, extracted, caseNumber) {
+  const name = extracted.name.trim();
+  let member = lwCouncil.find(m => m.city === city && m.name.toLowerCase() === name.toLowerCase());
+  if (!member) {
+    member = { name, city, district: '', email: '', notes: '', votes: [], concerns_tally: {}, _added: new Date().toISOString() };
+    lwCouncil.push(member);
+  }
+  // Add vote record
+  if (caseNumber || extracted.vote) {
+    const voteRecord = {
+      case_number: caseNumber || '?',
+      vote: extracted.vote || null,
+      sentiment: extracted.sentiment || null,
+      key_quote: extracted.key_quote || null,
+      concerns: extracted.stated_concerns || [],
+      conditions: extracted.conditions_requested || [],
+      _date: new Date().toISOString()
+    };
+    // Avoid duplicates
+    if (!member.votes.find(v => v.case_number === voteRecord.case_number)) {
+      member.votes.push(voteRecord);
+    }
+    // Tally concerns
+    (extracted.stated_concerns || []).forEach(c => {
+      const key = c.toLowerCase().trim();
+      member.concerns_tally[key] = (member.concerns_tally[key] || 0) + 1;
+    });
+  }
+  member._updated = new Date().toISOString();
+}
+
+function calcProDevScore(member) {
+  const votes = member.votes.filter(v => v.vote === 'yes' || v.vote === 'no');
+  if (votes.length === 0) return null;
+  const yes = votes.filter(v => v.vote === 'yes').length;
+  return Math.round((yes / votes.length) * 10);
+}
+
+function topConcerns(member) {
+  return Object.entries(member.concerns_tally || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([k, v]) => `${k} (×${v})`);
+}
+
+function renderCouncilCards() {
+  const city = document.getElementById('councilFilterCity')?.value || '';
+  const wrap = document.getElementById('councilCardsWrap');
+  const empty = document.getElementById('councilEmpty');
+  if (!wrap) return;
+  const members = city ? lwCouncil.filter(m => m.city === city) : lwCouncil;
+  if (members.length === 0) {
+    wrap.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  wrap.innerHTML = members.map((m, i) => {
+    const globalIdx = lwCouncil.indexOf(m);
+    const score = calcProDevScore(m);
+    const concerns = topConcerns(m);
+    const yesVotes = m.votes.filter(v => v.vote === 'yes').length;
+    const noVotes  = m.votes.filter(v => v.vote === 'no').length;
+    const latestQuote = [...m.votes].reverse().find(v => v.key_quote)?.key_quote;
+    const scoreColor  = score === null ? '#888' : score >= 7 ? '#2d9c5a' : score >= 4 ? '#b87a00' : '#c44';
+    const scoreLabel  = score === null ? 'No data' : score >= 7 ? 'Pro-development' : score >= 4 ? 'Moderate / case-by-case' : 'Development-skeptic';
+    return `<div style="background:var(--subtle);border:1px solid var(--border);border-radius:8px;padding:.75rem;display:flex;flex-direction:column;gap:.4rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.4rem">
+        <div>
+          <div style="font-weight:700;font-size:.92rem">${m.name}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${m.city}${m.district?' · '+m.district:''}</div>
+        </div>
+        <button onclick="deleteCouncilMember(${globalIdx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.8rem;padding:.1rem .3rem;flex-shrink:0" title="Remove">✕</button>
+      </div>
+
+      ${score !== null ? `<div>
+        <div style="display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.18rem">
+          <span style="color:var(--muted)">Pro-dev score</span>
+          <span style="font-weight:600;color:${scoreColor}">${score}/10</span>
+        </div>
+        <div style="background:var(--border);border-radius:3px;height:5px"><div style="background:${scoreColor};width:${score*10}%;height:5px;border-radius:3px;transition:width .4s"></div></div>
+        <div style="font-size:.68rem;color:${scoreColor};margin-top:.18rem">${scoreLabel}</div>
+      </div>` : '<div style="font-size:.7rem;color:var(--muted)">No vote data yet</div>'}
+
+      <div style="font-size:.7rem">
+        <span style="background:#1a3a1a;color:#6dbf7e;border-radius:4px;padding:.08rem .38rem;margin-right:.25rem">${yesVotes} yes</span>
+        <span style="background:#3a1a1a;color:#e07070;border-radius:4px;padding:.08rem .38rem">${noVotes} no</span>
+        <span style="color:var(--muted);margin-left:.35rem">${m.votes.length} hearing${m.votes.length!==1?'s':''}</span>
+      </div>
+
+      ${concerns.length > 0 ? `<div>
+        <div style="font-size:.68rem;color:var(--muted);margin-bottom:.18rem;text-transform:uppercase;letter-spacing:.04em">Recurring concerns</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.2rem">${concerns.map(c=>`<span style="background:rgba(200,150,0,.12);border:1px solid rgba(200,150,0,.25);color:#c8a030;border-radius:4px;padding:.08rem .38rem;font-size:.68rem">${c}</span>`).join('')}</div>
+      </div>` : ''}
+
+      ${latestQuote ? `<div style="font-size:.72rem;color:var(--muted);font-style:italic;border-left:2px solid var(--border);padding-left:.45rem;line-height:1.4">"${latestQuote.substring(0,120)}${latestQuote.length>120?'…':''}"</div>` : ''}
+
+      ${m.email ? `<div style="font-size:.72rem"><a href="mailto:${m.email}" style="color:var(--accent)">${m.email}</a></div>` : ''}
+      ${m.notes ? `<div style="font-size:.72rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.35rem;margin-top:.1rem">${m.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openAddMember() {
+  const f = document.getElementById('addMemberForm');
+  if (f) f.style.display = f.style.display === 'none' ? '' : 'none';
+}
+
+function saveNewMember() {
+  const name = document.getElementById('cmName')?.value?.trim();
+  if (!name) { showToast('Name is required', 'e'); return; }
+  const city = document.getElementById('cmCity')?.value || 'Raleigh';
+  const existing = lwCouncil.find(m => m.city === city && m.name.toLowerCase() === name.toLowerCase());
+  if (existing) { showToast('Member already exists for ' + city, 'i'); return; }
+  lwCouncil.push({
+    name,
+    city,
+    district: document.getElementById('cmDistrict')?.value?.trim() || '',
+    email: document.getElementById('cmEmail')?.value?.trim() || '',
+    notes: document.getElementById('cmNotes')?.value?.trim() || '',
+    votes: [],
+    concerns_tally: {},
+    _added: new Date().toISOString()
+  });
+  saveCouncilDb();
+  renderCouncilCards();
+  document.getElementById('addMemberForm').style.display = 'none';
+  document.getElementById('cmName').value = '';
+  document.getElementById('cmDistrict').value = '';
+  document.getElementById('cmEmail').value = '';
+  document.getElementById('cmNotes').value = '';
+  showToast(`${name} added to ${city} council`, 's');
+}
+
+function deleteCouncilMember(idx) {
+  if (!confirm(`Remove ${lwCouncil[idx]?.name} from council database?`)) return;
+  lwCouncil.splice(idx, 1);
+  saveCouncilDb();
+  renderCouncilCards();
+}
+
+function clearCouncilDb() {
+  if (lwCouncil.length === 0) { showToast('Council database is already empty', 'i'); return; }
+  if (!confirm(`Remove all ${lwCouncil.length} council member profiles? This cannot be undone.`)) return;
+  lwCouncil = [];
+  saveCouncilDb();
+  renderCouncilCards();
+  showToast('Council database cleared', 'i');
+}
+
+// ═══════════════════════ PRE-HEARING STRATEGY ═══════════════════════
+
+function generateHearingStrategy() {
+  if (!apiKey) { showToast('Connect your Claude API key first', 'e'); return; }
+  const city        = document.getElementById('stratCity')?.value || 'Raleigh';
+  const project     = document.getElementById('stratProject')?.value?.trim() || 'residential rezoning project';
+  const concessions = document.getElementById('stratConcessions')?.value?.trim() || 'none specified';
+  const resultEl    = document.getElementById('stratResult');
+
+  const cityMembers = lwCouncil.filter(m => m.city === city);
+
+  const memberSummaries = cityMembers.map(m => {
+    const score    = calcProDevScore(m);
+    const concerns = topConcerns(m);
+    const recentVotes = m.votes.slice(-5);
+    const quotes   = recentVotes.filter(v => v.key_quote).map(v => `"${v.key_quote}"`).join('; ');
+    return `- ${m.name} (${m.district||'council'}): pro-dev score ${score!==null?score+'/10':'unknown'} | votes: ${m.votes.filter(v=>v.vote==='yes').length} yes / ${m.votes.filter(v=>v.vote==='no').length} no | top concerns: ${concerns.join(', ')||'unknown'}${quotes?' | quotes: '+quotes.substring(0,200):''}${m.notes?' | notes: '+m.notes:''}`;
+  }).join('\n');
+
+  const cityCases = lwCasesDb.filter(c => c.city === city);
+  const caseContext = cityCases.length > 0
+    ? `Recent ${city} case outcomes: ${cityCases.slice(-8).map(c=>`${c.case_number||'?'}: ${c.outcome} (${c.vote_yes||'?'}-${c.vote_no||'?'})`).join(', ')}`
+    : '';
+
+  const prompt = `You are a political strategy consultant for a real estate developer in ${city}, NC. Generate a detailed pre-hearing political strategy.
+
+PROJECT: ${project}
+DEVELOPER CONCESSIONS AVAILABLE: ${concessions}
+${caseContext ? '\n' + caseContext : ''}
+
+${cityMembers.length > 0
+  ? `COUNCIL MEMBER PROFILES (${cityMembers.length} members with data):\n${memberSummaries}`
+  : `No council member profiles in database yet for ${city}. Provide guidance based on general Wake County planning board patterns and suggest what to research.`}
+
+Provide:
+1. **OVERALL ODDS ASSESSMENT** — Based on the council composition, how favorable is this likely to be?
+2. **WHO TO MEET BEFORE THE HEARING** — Rank the council members. For each: why they matter, what to say, what concession might win them over, and what to avoid bringing up.
+3. **SWING VOTES** — Which member(s) are genuinely undecided and how to reach them specifically.
+4. **FRAMING STRATEGY** — What language and angles land best with THIS council vs. what will backfire.
+5. **RED FLAGS** — Which concerns are likely to come up from which members, and how to pre-empt them.
+6. **RECOMMENDED CONCESSION ORDER** — If you need to offer something, what order to introduce concessions to maximize perceived goodwill.
+
+Be specific and politically direct. This is confidential strategy, not a public document.`;
+
+  resultEl.innerHTML = '<div style="color:var(--muted);padding:.75rem;font-size:.82rem">⏳ Generating political strategy based on ' + (cityMembers.length > 0 ? cityMembers.length + ' council member profiles' : 'general Wake County patterns') + '...</div>';
+  aiAsk(prompt);
+  resultEl.innerHTML = `<div style="background:var(--subtle);border:1px solid var(--border);border-radius:6px;padding:.75rem;font-size:.8rem;color:var(--muted)">
+    ✅ Strategy sent to <strong>AI Assistant sidebar</strong>. The full pre-hearing strategy — who to meet, what to say, swing votes, framing, red flags — is appearing there now.
+    <div style="font-size:.72rem;margin-top:.3rem">Based on: ${cityMembers.length} council profiles · ${cityCases.length} ${city} cases in database</div>
+  </div>`;
+}
 </script>
 </body>
 </html>
