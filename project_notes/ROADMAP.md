@@ -1,5 +1,5 @@
 # LandWorks Project Roadmap
-*Last updated: 2026-04-21*
+*Last updated: 2026-04-29*
 
 ---
 
@@ -11,7 +11,48 @@
 
 ---
 
-## 🔗 Priority 1: Wire LandWorks ↔ OpenClaw Agents
+## ✅ Completed This Week (2026-04-29)
+- Legistar auto-fetch pipeline (`lw_auto_fetch.py`) — nightly cron, 60 Raleigh cases live
+- PDF agenda scraper (`lw_agenda_scraper.py`) — Cary, Apex, Wake Forest + 7 more cities
+- Collapsible card panels in LandWorks
+- 7 new development types (Senior Living, Commercial, Office, Hotel, Industrial, Storage, Municipal)
+- Trial Run per-product breakdown
+- Local proxy server fixes (CORS, /cases endpoint, Legistar proxy route)
+
+---
+
+## 🌊 Priority: Stormwater Calculation Tool
+
+### Tyler's current workflow (to be automated/assisted):
+1. **Drainage area delineation** — AutoCAD parcels used to calculate drainage areas
+   to the storm network and to each SCM
+2. **Curve Number calculation** — spreadsheet using NRCS TR-55 method,
+   soil type + land cover → weighted CN for each drainage area
+3. **SCM sizing** — spreadsheet calculating size requirements/design for each
+   Stormwater Control Measure (bioretention, wet pond, etc.)
+4. **Storm network sizing** — spreadsheet calculating pipe sizes for the storm
+   drainage network using rational method
+5. **SCM grading** — Civil 3D grading features to grade the SCM footprint
+6. **Pond routing** — Hydrology Studio routes ponds to verify SCMs can handle
+   required stormwater events (10-yr, 25-yr, 100-yr storms)
+
+### Regulatory outputs required:
+- **Wake County SNAP tool** — must be filled out for all submittals
+  (Stormwater and Non-point Source Assessment Program)
+- **Wake County Stormwater Tool** — submittal requirement
+- NC DEQ compliance (Jordan Lake / Neuse River Basin rules)
+
+### Build plan:
+- Phase 1: CN calculator (input: drainage area polygons + soil type → output: weighted CN)
+- Phase 2: SCM sizing calculator (bioretention, wet pond) per NCDEQ BMP Design Manual
+- Phase 3: Rational method pipe sizing
+- Phase 4: Simple pond routing (replace Hydrology Studio for basic cases)
+- Phase 5: Auto-populate Wake County SNAP form from calculated values
+- Phase 6: Civil 3D grading automation via Python COM API (Caddy agent)
+
+---
+
+## 🔗 Priority: Wire LandWorks ↔ OpenClaw Agents
 
 ### How the integration should work:
 LandWorks (browser app) talks to OpenClaw (local AI gateway) via a local REST bridge.
