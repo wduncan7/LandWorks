@@ -159,17 +159,25 @@ def fetch_legistar(city: str, client_id: str) -> list:
     matters = []
 
     try:
-        # Get matter types to find rezoning ID
-        tr = requests.get(f"{LEGISTAR_BASE}/{client_id}/mattertypes",
-                         headers=headers, timeout=20)
-        tr.raise_for_status()
-        types = tr.json()
-        rez_type = next((t for t in types if any(
-            x in t.get("MatterTypeName","").lower()
-            for x in ["rezoning","zoning","rezoning petition"]
-        )), None)
+        # Step 1: Try to get matter types to filter for rezoning (optional — skip if API fails)
+        rez_type = None
+        try:
+            tr = requests.get(f"{LEGISTAR_BASE}/{client_id}/mattertypes",
+                             headers=headers, timeout=15)
+            if tr.ok:
+                types = tr.json()
+                rez_type = next((t for t in types if any(
+                    x in t.get("MatterTypeName","").lower()
+                    for x in ["rezoning","zoning","rezoning petition"]
+                )), None)
+                if rez_type:
+                    log(f"  Matter type filter: {rez_type['MatterTypeName']} (id={rez_type['MatterTypeId']})")
+            else:
+                log(f"  mattertypes returned {tr.status_code} — fetching all matter types instead")
+        except Exception as te:
+            log(f"  mattertypes unavailable ({te}) — fetching all matters without type filter")
 
-        # Fetch recent matters
+        # Step 2: Fetch recent matters (with or without type filter)
         url = f"{LEGISTAR_BASE}/{client_id}/matters?$top={MAX_MATTERS}&$orderby=MatterLastModifiedUtc desc"
         if rez_type:
             url += f"&$filter=MatterTypeId eq {rez_type['MatterTypeId']}"
