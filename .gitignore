@@ -1,0 +1,12 @@
+mnt/
+.cache/
+.npm/
+.bash*
+.profile
+*.pyc
+__pycache__/
+*.txt
+make_pdf.py
+patch*.py
+test_*.html
+tmp/

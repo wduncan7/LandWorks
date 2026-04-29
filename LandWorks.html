@@ -108,13 +108,17 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--cream);color:var(--in
 
 /* ── CARDS ── */
 .card{background:var(--white);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:1.2rem;overflow:hidden;}
-.card-hd{background:var(--forest);color:var(--white);padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.card-hd{background:var(--forest);color:var(--white);padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
 .card-hd h3{font-family:'Playfair Display',serif;font-size:.98rem;font-weight:400;display:flex;align-items:center;gap:8px;}
-.card-body{padding:1.2rem;}
+.card-body{padding:1.2rem;transition:all .15s ease;}
 .card-hd-gold{background:linear-gradient(90deg,var(--gold),var(--amber));}
 .card-hd-rust{background:var(--rust);}
 .card-hd-sky{background:var(--sky);}
 .card-hd-lav{background:var(--lavender);}
+/* Collapsible cards */
+.card.collapsed>.card-body{display:none;}
+.card-collapse-btn{margin-left:auto;padding:0 .3rem;background:none;border:none;color:rgba(255,255,255,.7);font-size:.85rem;cursor:pointer;line-height:1;flex-shrink:0;transition:transform .2s;}
+.card.collapsed .card-collapse-btn{transform:rotate(-90deg);}
 
 /* ── FORMS ── */
 .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.85rem;}
@@ -755,9 +759,25 @@ textarea{resize:vertical;min-height:68px;}
         <div class="f"><label>Project Type</label>
           <select id="pType" onchange="buildPermits()">
             <option value="">— Select Type —</option>
-            <option>Single Family Detached</option><option>Apartments</option>
-            <option>Townhomes</option><option>Condos</option><option>Duplexes</option>
-            <option>Commercial</option><option>Mixed Use</option>
+            <optgroup label="Residential">
+              <option>Single Family Detached</option>
+              <option>Duplexes</option>
+              <option>Townhomes</option>
+              <option>Condos</option>
+              <option>Apartments</option>
+              <option>Senior Living / 55+</option>
+            </optgroup>
+            <optgroup label="Commercial">
+              <option>Commercial / Retail</option>
+              <option>Office</option>
+              <option>Hotel / Hospitality</option>
+              <option>Mixed Use</option>
+            </optgroup>
+            <optgroup label="Industrial / Civic">
+              <option>Industrial / Flex</option>
+              <option>Self Storage</option>
+              <option>Municipal / Civic</option>
+            </optgroup>
           </select>
         </div>
         <div class="f w2"><label>Parcel ID(s) / PIN(s) <span style="color:var(--muted);font-size:.65rem;font-weight:400">— auto-populated from parcel list above</span></label>
@@ -4249,15 +4269,27 @@ function planAI(type) {
 
 // ── Product mix defaults (width ft × depth ft × stories) ──
 const SP_PRODUCT_DEFAULTS = {
-  sf:        { label:'Single Family', w:50,  d:100, stories:2, pct:100 },
-  duplex:    { label:'Duplex',        w:32,  d:55,  stories:2, pct:100 },
-  townhome:  { label:'Townhome',      w:22,  d:45,  stories:3, pct:100 },
-  apartment: { label:'Apartment Bldg',w:120, d:140, stories:4, pct:100 },
-  mixed_use: { label:'Mixed Use',     w:28,  d:55,  stories:4, pct:100 },
+  // Residential
+  sf:           { label:'Single Family',   w:50,  d:100, stories:2, pct:100 },
+  duplex:       { label:'Duplex',          w:32,  d:55,  stories:2, pct:100 },
+  townhome:     { label:'Townhome',        w:22,  d:45,  stories:3, pct:100 },
+  apartment:    { label:'Apartment Bldg',  w:120, d:140, stories:4, pct:100 },
+  senior_living:{ label:'Senior Living',   w:120, d:140, stories:3, pct:100 },
+  // Mixed / Commercial
+  mixed_use:    { label:'Mixed Use',       w:28,  d:55,  stories:4, pct:100 },
+  commercial:   { label:'Commercial/Retail',w:120, d:80, stories:2, pct:100 },
+  office:       { label:'Office',          w:100, d:80,  stories:4, pct:100 },
+  hotel:        { label:'Hotel',           w:80,  d:120, stories:5, pct:100 },
+  // Industrial / Civic
+  industrial:   { label:'Industrial/Flex', w:200, d:100, stories:1, pct:100 },
+  storage:      { label:'Self Storage',    w:150, d:50,  stories:1, pct:100 },
+  municipal:    { label:'Municipal/Civic', w:100, d:100, stories:2, pct:100 },
 };
 const SP_PRODUCT_COLORS = {
   sf:'#2a5c3f', duplex:'#3a5c7a', townhome:'#5c3a7a',
-  apartment:'#7a3a2a', mixed_use:'#3a5a2a',
+  apartment:'#7a3a2a', mixed_use:'#b87c3a',
+  senior_living:'#5c3a6a', commercial:'#2a4a6a', office:'#1a4a5c',
+  hotel:'#6a2a4a', industrial:'#5c5c1a', storage:'#5c4a2a', municipal:'#2a5c5c',
 };
 let _spProductRows = []; // [{name,type,w,d,stories,pct}]
 
@@ -4657,11 +4689,18 @@ function buildSitePlanSVG(parcelsData, opts) {
 
   // Per-type layout config: [units-per-building, alley-ft, fill-colors]
   const PROD_CFG = {
-    sf:        { upb:1, alley:0,  fills:['#2a6c3f','#1a4c2f'], stroke:'#0a3c1f', label:'SF lot' },
-    duplex:    { upb:2, alley:10, fills:['#3a6c8a','#2a4c6a'], stroke:'#0a2c4a', label:'Duplex' },
-    townhome:  { upb:6, alley:20, fills:['#c49a3a','#a87c22'], stroke:'#5a3e08', label:'Townhome' },
-    apartment: { upb:1, alley:30, fills:['#8a3a2a','#6a2a1a'], stroke:'#3a1a0a', label:'Apt Bldg' },
-    mixed_use: { upb:4, alley:20, fills:['#b87c3a','#9a6028'], stroke:'#5a3e08', label:'Mixed Use' },
+    sf:           { upb:1, alley:0,  fills:['#2a6c3f','#1a4c2f'], stroke:'#0a3c1f', label:'SF' },
+    duplex:       { upb:2, alley:10, fills:['#3a6c8a','#2a4c6a'], stroke:'#0a2c4a', label:'Duplex' },
+    townhome:     { upb:6, alley:20, fills:['#c49a3a','#a87c22'], stroke:'#5a3e08', label:'TH' },
+    apartment:    { upb:1, alley:30, fills:['#8a3a2a','#6a2a1a'], stroke:'#3a1a0a', label:'Apt' },
+    senior_living:{ upb:1, alley:30, fills:['#5a3a6a','#3a2a4a'], stroke:'#2a1a3a', label:'Sr Liv' },
+    mixed_use:    { upb:4, alley:20, fills:['#b87c3a','#9a6028'], stroke:'#5a3e08', label:'MU' },
+    commercial:   { upb:1, alley:30, fills:['#2a5c7a','#1a3c5a'], stroke:'#0a1c3a', label:'Retail' },
+    office:       { upb:1, alley:25, fills:['#1a5c6a','#0a3c4a'], stroke:'#001c2a', label:'Office' },
+    hotel:        { upb:1, alley:30, fills:['#6a2a5a','#4a1a3a'], stroke:'#2a0a1a', label:'Hotel' },
+    industrial:   { upb:1, alley:0,  fills:['#5a5a1a','#3a3a0a'], stroke:'#1a1a00', label:'Ind' },
+    storage:      { upb:1, alley:0,  fills:['#5a4a2a','#3a2a0a'], stroke:'#1a0a00', label:'Storage' },
+    municipal:    { upb:1, alley:20, fills:['#2a5a5a','#1a3a3a'], stroke:'#0a1a1a', label:'Civic' },
   };
 
   // Assign rows to products proportionally
@@ -5212,6 +5251,22 @@ Return ONLY a JSON block — no other text:
     msgs.lastChild?.remove(); // remove the "generating..." message
     let msg = `**Trial Run: ${type} — ${prog.units} units**\n\n${prog.summary}\n\n`;
     if (prog.density_note) msg += `**Density:** ${prog.density_note}\n\n`;
+
+    // Product mix breakdown
+    const activeProds = (_spProductRows||[]).filter(r=>r&&r.pct>0);
+    if (activeProds.length > 1 && prog.units > 0) {
+      msg += `**Product Mix Breakdown:**\n`;
+      const totalPct = activeProds.reduce((s,r)=>s+(r.pct||0),0)||100;
+      activeProds.forEach(r => {
+        const frac = (r.pct||0) / totalPct;
+        const prodUnits = Math.round(prog.units * frac);
+        const prodSqft  = Math.round((prog.gba_sqft||0) * frac);
+        const def = SP_PRODUCT_DEFAULTS[r.type] || {};
+        msg += `- **${r.name||def.label||r.type}**: ~${prodUnits} units | ${r.w||def.w}×${r.d||def.d} ft | ${r.stories||def.stories} stories | ~${prodSqft.toLocaleString()} sf\n`;
+      });
+      msg += '\n';
+    }
+
     if (prog.key_constraints?.length) msg += `**Key Constraints:**\n${prog.key_constraints.map(c=>'- '+c).join('\n')}\n\n`;
     if (prog.recommended_zoning) msg += `**Zoning needed:** ${prog.recommended_zoning}\n\n`;
     msg += `_All values pre-filled in Statistics. Adjust any field or tell me what to change._`;
@@ -5233,6 +5288,49 @@ Return ONLY a JSON block — no other text:
 // ═══════════════════════ AI ═══════════════════════
 
 function toggleSB(){document.getElementById('sidebar').classList.toggle('slim');}
+
+// ── Collapsible Cards ──
+let _collapsedCards = {};
+function initCollapsibleCards() {
+  try { _collapsedCards = JSON.parse(localStorage.getItem('lwCollapsed')||'{}'); } catch(e) { _collapsedCards = {}; }
+  // Attach click listeners to all card headers
+  document.querySelectorAll('.card-hd').forEach(hd => {
+    // Skip if already has a listener
+    if (hd.dataset.colInited) return;
+    hd.dataset.colInited = '1';
+    // Inject collapse chevron button (if not already present)
+    if (!hd.querySelector('.card-collapse-btn')) {
+      const btn = document.createElement('button');
+      btn.className = 'card-collapse-btn';
+      btn.title = 'Collapse / expand';
+      btn.innerHTML = '▾';
+      btn.onclick = (e) => { e.stopPropagation(); toggleCard(hd); };
+      hd.appendChild(btn);
+    }
+    hd.addEventListener('click', (e) => {
+      // Don't toggle if user clicked a button/link inside the header
+      if (e.target.closest('button,a,select,input') && !e.target.classList.contains('card-collapse-btn')) return;
+      toggleCard(hd);
+    });
+  });
+  // Restore saved collapsed state by card ID (id attr on card or card-hd)
+  document.querySelectorAll('.card').forEach(card => {
+    const id = card.id || card.querySelector('.card-hd')?.dataset.cardId;
+    if (id && _collapsedCards[id]) card.classList.add('collapsed');
+  });
+}
+
+function toggleCard(hd) {
+  const card = hd.closest('.card');
+  if (!card) return;
+  card.classList.toggle('collapsed');
+  // Persist state
+  const id = card.id || hd.dataset.cardId;
+  if (id) {
+    _collapsedCards[id] = card.classList.contains('collapsed');
+    localStorage.setItem('lwCollapsed', JSON.stringify(_collapsedCards));
+  }
+}
 
 function mdToHtml(text) {
   return text
@@ -5894,14 +5992,13 @@ function autoSetJuris(jurisCode) {
 async function checkDataServer() {
   const badge = document.getElementById('serverBadge');
   try {
-    const resp = await fetch('http://127.0.0.1:7474/stats', { signal: AbortSignal.timeout(2000) });
+    const resp = await fetch('http://127.0.0.1:7474/ping', { signal: AbortSignal.timeout(2000) });
     if (resp.ok) {
-      const data = await resp.json();
-      const s = data.stats || {};
-      badge.textContent = `🟢 ${(s.total_parcels||0).toLocaleString()} parcels`;
+      badge.textContent = `🟢 Data Server`;
       badge.style.display = 'inline-flex';
-      badge.title = `Wake County data: ${s.total_parcels?.toLocaleString()||'?'} parcels · Last refresh: ${s.last_refresh?.run_at?.slice(0,10)||'unknown'} · DB: ${s.db_size_mb||'?'} MB`;
-      showToast(`Data server: ${s.total_parcels?.toLocaleString()||'?'} parcels loaded`, 's');
+      badge.title = 'Wake County data server running on port 7474';
+      // Also auto-load cases from the DB
+      await loadCasesFromServer();
       return true;
     }
   } catch(e) { /* not running */ }
@@ -5909,6 +6006,64 @@ async function checkDataServer() {
   badge.style.display = 'inline-flex';
   badge.title = 'Wake County data server not running. Run: python wake_county_data.py start';
   return false;
+}
+
+async function loadCasesFromServer() {
+  /**
+   * Pull auto-fetched cases from lw_auto_fetch.py's database via the local server.
+   * Merges with existing lwCasesDb (localStorage + seed data) without duplicating.
+   */
+  try {
+    const resp = await fetch('http://127.0.0.1:7474/cases?limit=2000',
+                             { signal: AbortSignal.timeout(5000) });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const serverCases = data.cases || [];
+    if (!serverCases.length) return;
+
+    // Build a set of existing keys to avoid duplicates
+    const existingKeys = new Set(lwCasesDb.map(c => `${c.city}_${c.case_number}`));
+    let added = 0;
+    for (const sc of serverCases) {
+      const key = `${sc.city}_${sc.case_number}`;
+      if (existingKeys.has(key)) continue;
+      // Map DB field names to lwCasesDb schema
+      lwCasesDb.push({
+        case_number:               sc.case_number,
+        city:                      sc.city,
+        meeting_date:              sc.meeting_date,
+        title:                     sc.title,
+        change_requested:          sc.change_requested,
+        acreage:                   sc.acreage,
+        outcome:                   sc.outcome,
+        dev_type:                  sc.dev_type,
+        height_stories_proposed:   sc.height_stories,
+        adjacent_single_family:    sc.adjacent_sf,
+        traffic_study_mentioned:   sc.traffic_study,
+        affordable_housing_mentioned: sc.affordable_housing,
+        transition_buffer_mentioned:  sc.transition_buffer,
+        staff_recommendation:      sc.staff_recommendation,
+        vote_yes:                  sc.vote_yes,
+        vote_no:                   sc.vote_no,
+        public_oppose_count:       sc.public_oppose,
+        public_support_count:      sc.public_support,
+        notes:                     sc.notes,
+        _source:                   sc.source || 'legistar_auto',
+        _added:                    sc.fetched_at,
+        id:                        sc.id,
+      });
+      existingKeys.add(key);
+      added++;
+    }
+    if (added > 0) {
+      localStorage.setItem('lwCasesDb', JSON.stringify(lwCasesDb));
+      renderCaseTable();
+      updateRecentCasesCount();
+      showToast(`📡 ${added} new cases loaded from auto-fetch DB (${lwCasesDb.length} total)`, 's');
+    }
+    const badge = document.getElementById('serverBadge');
+    if (badge) badge.title = `Server running · ${serverCases.length} cases in DB`;
+  } catch(e) { /* server not running or no cases DB yet */ }
 }
 
 async function triggerServerRefresh() {
@@ -5932,6 +6087,7 @@ async function triggerServerRefresh() {
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => checkDataServer(), 1500);
   initHBMode();
+  setTimeout(() => initCollapsibleCards(), 500);
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -7793,11 +7949,21 @@ async function fetchLegistarCases(city) {
     showToast(`${city} is not on Legistar. Use "Paste Meeting Text" instead.`, 'w');
     return;
   }
-  showToast(`📡 Fetching ${city} cases from Legistar API...`, 'i');
+  showToast(`📡 Fetching ${city} cases from Legistar (via local proxy)...`, 'i');
+  const PROXY = 'http://127.0.0.1:7474';
+  // Check proxy is alive first
+  try {
+    const ping = await fetch(`${PROXY}/ping`, { signal: AbortSignal.timeout(3000) });
+    if (!ping.ok) throw new Error('proxy not running');
+  } catch(pingErr) {
+    showToast(`⚠ Local proxy not running. Start wake_county_data.py first, then retry.`, 'e');
+    addMsg('sys', `**Legistar Auto-Fetch requires the local proxy.**\n\nRun this in your terminal:\n\`\`\`\npython3 ~/LandWorks/wake_county_data.py start\n\`\`\`\nThen click Auto-Fetch again.`);
+    return;
+  }
   try {
     // Step 1: get matter types to find rezoning type ID
     const typeResp = await fetch(
-      `https://webapi.legistar.com/v1/${clientId}/mattertypes`,
+      `${PROXY}/legistar/${clientId}/mattertypes`,
       { signal: AbortSignal.timeout(12000) }
     );
     if (!typeResp.ok) throw new Error(`HTTP ${typeResp.status}`);
@@ -7805,7 +7971,7 @@ async function fetchLegistarCases(city) {
     const rezType = types.find(t => /rezoning|zoning/i.test(t.MatterTypeName));
 
     // Step 2: fetch recent matters
-    let mattersUrl = `https://webapi.legistar.com/v1/${clientId}/matters?$top=60&$orderby=MatterLastModifiedUtc desc`;
+    let mattersUrl = `${PROXY}/legistar/${clientId}/matters?$top=60&$orderby=MatterLastModifiedUtc desc`;
     if (rezType?.MatterTypeId) mattersUrl += `&$filter=MatterTypeId eq ${rezType.MatterTypeId}`;
     const mResp = await fetch(mattersUrl, { signal: AbortSignal.timeout(15000) });
     if (!mResp.ok) throw new Error(`HTTP ${mResp.status}`);
@@ -7822,7 +7988,7 @@ async function fetchLegistarCases(city) {
       let voteYes = 0, voteNo = 0;
       try {
         const hResp = await fetch(
-          `https://webapi.legistar.com/v1/${clientId}/matters/${m.MatterId}/histories`,
+          `${PROXY}/legistar/${clientId}/matters/${m.MatterId}/histories`,
           { signal: AbortSignal.timeout(8000) }
         );
         if (hResp.ok) {

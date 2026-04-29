@@ -345,10 +345,88 @@ def serve():
         conn.close()
         return jsonify({"cached_parcels": total, "updated_last_24h": recent})
 
+    # ── Auto-fetched cases DB ─────────────────────────────────────────────────
+    CASES_DB_PATH = DATA_DIR / "cases.db"
+
+    @app.route("/cases")
+    def get_cases():
+        """Return all auto-fetched cases from lw_auto_fetch.py's database."""
+        if not CASES_DB_PATH.exists():
+            return jsonify({"cases": [], "total": 0, "note": "Run lw_auto_fetch.py to populate"})
+        try:
+            conn = sqlite3.connect(CASES_DB_PATH)
+            conn.row_factory = sqlite3.Row
+            city  = request.args.get("city")
+            limit = min(int(request.args.get("limit", 500)), 2000)
+            if city:
+                rows = conn.execute("SELECT * FROM cases WHERE city=? ORDER BY meeting_date DESC LIMIT ?",
+                                    (city, limit)).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM cases ORDER BY meeting_date DESC LIMIT ?",
+                                    (limit,)).fetchall()
+            conn.close()
+            cases = [dict(r) for r in rows]
+            # Convert int booleans back to bool for JS
+            for c in cases:
+                for f in ("adjacent_sf","traffic_study","affordable_housing","transition_buffer"):
+                    if c.get(f) is not None:
+                        c[f] = bool(c[f])
+            return jsonify({"cases": cases, "total": len(cases)})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/cases/stats")
+    def case_stats():
+        """Summary stats on the cases database."""
+        if not CASES_DB_PATH.exists():
+            return jsonify({"total": 0})
+        conn = sqlite3.connect(CASES_DB_PATH)
+        total   = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]
+        by_city = conn.execute("SELECT city, COUNT(*) as n FROM cases GROUP BY city").fetchall()
+        by_out  = conn.execute("SELECT outcome, COUNT(*) as n FROM cases GROUP BY outcome").fetchall()
+        conn.close()
+        return jsonify({
+            "total":     total,
+            "by_city":   {r[0]: r[1] for r in by_city},
+            "by_outcome":{r[0]: r[1] for r in by_out},
+        })
+
+    # ── Legistar API proxy (bypasses CORS block on browser direct calls) ──
+    @app.route("/legistar/<client_id>/<path:endpoint>")
+    def legistar_proxy(client_id, endpoint):
+        """
+        Proxy requests to the Legistar public REST API.
+        Usage: GET /legistar/raleigh/matters?$top=50&$filter=...
+        """
+        try:
+            import requests as _req
+            from flask import request as freq
+        except ImportError:
+            return jsonify({"error": "requests not installed"}), 500
+
+        legistar_url = f"https://webapi.legistar.com/v1/{client_id}/{endpoint}"
+        params = dict(freq.args)
+
+        try:
+            resp = _req.get(
+                legistar_url,
+                params=params,
+                headers={"User-Agent": "Mozilla/5.0 LandWorks/1.0"},
+                timeout=30
+            )
+            return (resp.content, resp.status_code, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     print(f"🏗  Wake County Parcel API running on http://localhost:{API_PORT}")
-    print(f"   GET /parcel/<PIN>  — lookup by PIN (cached {CACHE_TTL_HOURS}h)")
-    print(f"   GET /ping          — health check")
-    print(f"   GET /stats         — cache stats")
+    print(f"   GET /parcel/<PIN>              — lookup by PIN (cached {CACHE_TTL_HOURS}h)")
+    print(f"   GET /geometry/<PIN>            — parcel boundary polygon")
+    print(f"   GET /legistar/<city>/<endpoint> — Legistar API proxy (e.g. /legistar/raleigh/matters)")
+    print(f"   GET /ping                      — health check")
+    print(f"   GET /stats                     — cache stats")
     app.run(host="0.0.0.0", port=API_PORT, debug=False)
 
 
