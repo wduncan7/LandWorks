@@ -792,6 +792,22 @@ textarea{resize:vertical;min-height:68px;}
     </div>
   </div>
 
+  <!-- ── PRODUCT MIX (shown here so Trial Run + Site Plan both see it) ── -->
+  <div class="card">
+    <div class="card-hd card-hd-sky" style="justify-content:space-between">
+      <h3>🏘 Product Mix <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.75)">— define unit types for site plan &amp; pro forma</span></h3>
+      <button class="btn" onclick="addSiteProduct()" style="font-size:.72rem;padding:.22rem .6rem;background:rgba(255,255,255,.18);color:white;border:none">+ Add Product</button>
+    </div>
+    <div class="card-body">
+      <!-- Header row -->
+      <div style="display:grid;grid-template-columns:1fr 115px 68px 68px 62px 62px 28px;gap:.3rem;font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:0 .3rem .3rem">
+        <span>Product Name</span><span>Type</span><span>Width ft</span><span>Depth ft</span><span>Stories</span><span>% Mix</span><span></span>
+      </div>
+      <div id="spProductTable"></div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.45rem">First row = primary product for site plan layout. % Mix controls how the buildable zone is allocated between product types.</p>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-hd"><h3>📅 Development Stage Tracker</h3>
       <span id="stageProgress" style="font-size:.75rem;color:var(--mint)"></span>
@@ -868,40 +884,23 @@ textarea{resize:vertical;min-height:68px;}
 <!-- ── SITE PLAN ── -->
 <div class="panel" id="panel-siteplan">
   <div class="card">
-    <div class="card-hd card-hd-sky"><h3>📐 Site Plan Inputs <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— define product mix and site layout parameters</span></h3></div>
+    <div class="card-hd card-hd-sky" style="justify-content:space-between">
+      <h3>📐 Site Layout Parameters <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— setbacks, buffers &amp; roads</span></h3>
+      <span style="font-size:.72rem;color:rgba(255,255,255,.7)">Product mix is defined on the <strong style="color:white">Overview</strong> tab</span>
+    </div>
     <div class="card-body">
-
-      <!-- Product Mix Table -->
-      <div style="margin-bottom:.85rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
-          <label style="margin:0;font-size:.8rem;font-weight:600">Product Mix <span style="font-weight:400;color:var(--muted);font-size:.72rem">— define one or more unit types. First row drives the primary layout.</span></label>
-          <button class="btn btn-s" onclick="addSiteProduct()" style="font-size:.72rem;padding:.2rem .55rem">+ Add Product</button>
-        </div>
-        <!-- Header row -->
-        <div style="display:grid;grid-template-columns:1fr 110px 65px 65px 60px 60px 28px;gap:.3rem;font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:0 .4rem .25rem">
-          <span>Product Name</span><span>Type</span><span>Width ft</span><span>Depth ft</span><span>Stories</span><span>% Mix</span><span></span>
-        </div>
-        <div id="spProductTable"></div>
+      <div class="fg">
+        <div class="f"><label>Front Setback (ft)</label><input type="number" id="spFront" value="20" min="0" placeholder="20"></div>
+        <div class="f"><label>Rear Setback (ft)</label><input type="number" id="spRear" value="20" min="0" placeholder="20"></div>
+        <div class="f"><label>Side Setback (ft)</label><input type="number" id="spSide" value="10" min="0" placeholder="10"></div>
+        <div class="f"><label>Riparian Buffer (ft)</label><input type="number" id="spBuffer" value="50" min="0" placeholder="50"></div>
+        <div class="f"><label>Access Lane Width (ft)</label><input type="number" id="spLane" value="24" min="16" placeholder="24"></div>
+        <div class="f"><label>ROW Dedication (ft)</label><input type="number" id="spROW" value="30" min="0" placeholder="30"></div>
+        <!-- legacy compat - read by renderer -->
+        <input type="hidden" id="spUnitW" value="22">
+        <input type="hidden" id="spUnitD" value="45">
       </div>
-
-      <!-- Site layout parameters -->
-      <details open style="margin-top:.1rem">
-        <summary style="font-size:.8rem;font-weight:600;cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem">
-          <span style="font-size:.65rem;color:var(--muted)">▼</span> Site Layout Parameters
-        </summary>
-        <div class="fg">
-          <div class="f"><label>Front Setback (ft)</label><input type="number" id="spFront" value="20" min="0" placeholder="20"></div>
-          <div class="f"><label>Rear Setback (ft)</label><input type="number" id="spRear" value="20" min="0" placeholder="20"></div>
-          <div class="f"><label>Side Setback (ft)</label><input type="number" id="spSide" value="10" min="0" placeholder="10"></div>
-          <div class="f"><label>Riparian Buffer (ft)</label><input type="number" id="spBuffer" value="50" min="0" placeholder="50"></div>
-          <div class="f"><label>Access Lane Width (ft)</label><input type="number" id="spLane" value="24" min="16" placeholder="24"></div>
-          <div class="f"><label>ROW Dedication (ft)</label><input type="number" id="spROW" value="30" min="0" placeholder="30"></div>
-          <!-- legacy compat - hidden, read by existing renderer -->
-          <input type="hidden" id="spUnitW" value="22">
-          <input type="hidden" id="spUnitD" value="45">
-        </div>
-      </details>
-      <p style="font-size:.72rem;color:var(--muted);margin-top:.55rem">Geometry fetched from Wake County GIS. Layout is conceptual — export SVG and refine in AutoCAD.</p>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.45rem">Geometry fetched from Wake County GIS. Layout is conceptual — export SVG and refine in AutoCAD.</p>
     </div>
   </div>
   <div class="card">
@@ -929,12 +928,91 @@ textarea{resize:vertical;min-height:68px;}
       <h3>🏛 Planning Intelligence <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.75)">— Council concerns, rezoning context, compliance checklist</span></h3>
     </div>
     <div class="card-body">
-      <p style="font-size:.82rem;color:var(--muted);margin:0 0 .5rem">Track what planning boards and city councils care about. Paste council meeting summaries from Claude in Chrome to build your intelligence base. Use AI prompts to prepare for hearings.</p>
+      <p style="font-size:.82rem;color:var(--muted);margin:0 0 .5rem">Track what planning boards and city councils care about. Paste council meeting summaries to build your intelligence base. Use AI prompts to prepare for hearings.</p>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('concerns')">🤖 What concerns apply to my project?</button>
         <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('prep')">🎤 Prepare hearing talking points</button>
         <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('comp')">📋 Check Comp Plan consistency</button>
         <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="planAI('design')">🏗 Flag design standard issues</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COUNCIL MEETING DATA INTAKE ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#3a1a5c,#5a2a8a);justify-content:space-between">
+      <h3 style="color:white">📹 Council Meeting Data <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— add cases after every meeting</span></h3>
+      <div style="display:flex;gap:.5rem">
+        <button onclick="openMeetingCaseExtract()" style="padding:.25rem .7rem;border:1.5px solid rgba(255,255,255,.4);border-radius:5px;background:rgba(255,255,255,.15);color:white;font-size:.75rem;font-weight:700;cursor:pointer">📋 Paste Meeting Text</button>
+        <button onclick="openMeetingTranscriptMode()" style="padding:.25rem .7rem;border:1.5px solid rgba(255,255,255,.4);border-radius:5px;background:rgba(255,255,255,.15);color:white;font-size:.75rem;font-weight:700;cursor:pointer">🎬 Paste Transcript</button>
+        <button onclick="openQuickAddCase()" style="padding:.25rem .7rem;border:none;border-radius:5px;background:var(--amber);color:var(--forest);font-size:.75rem;font-weight:700;cursor:pointer">+ Quick Add Case</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:.65rem .85rem">
+      <!-- Workflow steps -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:.7rem">
+        <div style="background:var(--foam);border:1px solid var(--mint);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:700;font-size:.8rem;color:var(--forest);margin-bottom:.25rem">1️⃣ After the Meeting</div>
+          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Go to your city's Legistar, Granicus, or Agenda Center page. Find the agenda or video for the meeting that just happened.</div>
+        </div>
+        <div style="background:#f0f4fa;border:1px solid #a8bcd4;border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:700;font-size:.8rem;color:#1a3a5c;margin-bottom:.25rem">2️⃣ Get the Text</div>
+          <div style="font-size:.73rem;color:var(--muted);line-height:1.55"><strong>Case text:</strong> copy the agenda item text from the portal.<br><strong>Transcript:</strong> use the video + AI to generate a summary, then paste it.</div>
+        </div>
+        <div style="background:#faf0f8;border:1px solid #d4a8cc;border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:700;font-size:.8rem;color:#5a1a5c;margin-bottom:.25rem">3️⃣ Extract &amp; Save</div>
+          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Claude extracts case data, vote counts, and council member sentiment automatically. Cases are added to your Intelligence Database.</div>
+        </div>
+      </div>
+      <!-- Recent cases added -->
+      <div id="recentCasesAdded" style="font-size:.78rem;color:var(--muted)">
+        <span style="font-weight:600;color:var(--ink)">Recently added: </span>
+        <span id="recentCasesCount">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Add Case Modal (inline) -->
+  <div id="quickAddCasePanel" style="display:none">
+    <div class="card" style="border:2px solid var(--amber)">
+      <div class="card-hd" style="background:var(--amber)"><h3 style="color:var(--forest)">⚡ Quick Add Case</h3>
+        <button onclick="document.getElementById('quickAddCasePanel').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--forest)">✕</button>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+          <div class="f"><label>Case #</label><input type="text" id="qa-casenum" placeholder="Z-22-25"></div>
+          <div class="f"><label>City</label>
+            <select id="qa-city">
+              <option>Raleigh</option><option>Cary</option><option>Apex</option><option>Wake Forest</option>
+              <option>Holly Springs</option><option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option><option>Wake County</option>
+            </select>
+          </div>
+          <div class="f"><label>Meeting Date</label><input type="date" id="qa-date"></div>
+          <div class="f"><label>Outcome</label>
+            <select id="qa-outcome">
+              <option value="approved">Approved</option><option value="denied">Denied</option>
+              <option value="continued">Continued</option><option value="withdrawn">Withdrawn</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+          <div class="f"><label>Case Title / Address</label><input type="text" id="qa-title" placeholder="123 Oak St — 45-lot subdivision"></div>
+          <div class="f"><label>Acreage</label><input type="number" id="qa-acres" placeholder="12.5" step="0.1"></div>
+          <div class="f"><label>Dev Type</label>
+            <select id="qa-dtype">
+              <option value="sf">Single Family</option><option value="townhome">Townhome</option>
+              <option value="duplex">Duplex</option><option value="apartment">Apartment</option>
+              <option value="mixed_use">Mixed Use</option><option value="commercial">Commercial</option>
+            </select>
+          </div>
+          <div class="f"><label>Yes Votes</label><input type="number" id="qa-yes" placeholder="5" min="0"></div>
+          <div class="f"><label>No Votes</label><input type="number" id="qa-no" placeholder="2" min="0"></div>
+        </div>
+        <div class="f" style="margin-bottom:.5rem"><label>Notes</label><textarea id="qa-notes" rows="2" placeholder="Key conditions, public opposition count, notable council comments..."></textarea></div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-p" onclick="saveQuickCase()">💾 Add to Database</button>
+          <button class="btn" onclick="document.getElementById('quickAddCasePanel').style.display='none'">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -4285,22 +4363,27 @@ async function generateSitePlan() {
     ? parcelList.reduce((s, p) => s + (parseFloat(p.acres)||0), 0).toFixed(2)
     : (document.getElementById('exAcres')?.value || '?');
 
+  // Read product mix (always from the global _spProductRows)
+  const _prods = readSiteProducts();
+  const _primaryProd = _prods[0] || { w:22, d:45 };
+
   const opts = {
-    pin:     pins.join(', '),
-    unitW:   parseFloat(document.getElementById('spUnitW')?.value  || 22),
-    unitD:   parseFloat(document.getElementById('spUnitD')?.value  || 45),
-    fSetbk:  parseFloat(document.getElementById('spFront')?.value  || 20),
-    rSetbk:  parseFloat(document.getElementById('spRear')?.value   || 20),
-    sSetbk:  parseFloat(document.getElementById('spSide')?.value   || 10),
-    buffer:  parseFloat(document.getElementById('spBuffer')?.value || 50),
-    laneW:   parseFloat(document.getElementById('spLane')?.value   || 24),
-    rowDed:  parseFloat(document.getElementById('spROW')?.value    || 30),
-    units:   parseInt(document.getElementById('sU')?.value         || 0),
-    address: parcelList.length > 0
-               ? parcelList.map(p => p.address||p.pin).join(' + ')
-               : (getField('pAddr') || ''),
-    acres:   totalAcres,
-    type:    getField('pType') || 'Development',
+    pin:      pins.join(', '),
+    unitW:    _primaryProd.w,
+    unitD:    _primaryProd.d,
+    products: _prods,
+    fSetbk:   parseFloat(document.getElementById('spFront')?.value  || 20),
+    rSetbk:   parseFloat(document.getElementById('spRear')?.value   || 20),
+    sSetbk:   parseFloat(document.getElementById('spSide')?.value   || 10),
+    buffer:   parseFloat(document.getElementById('spBuffer')?.value || 50),
+    laneW:    parseFloat(document.getElementById('spLane')?.value   || 24),
+    rowDed:   parseFloat(document.getElementById('spROW')?.value    || 30),
+    units:    parseInt(document.getElementById('sU')?.value         || 0),
+    address:  parcelList.length > 0
+                ? parcelList.map(p => p.address||p.pin).join(' + ')
+                : (getField('pAddr') || ''),
+    acres:    totalAcres,
+    type:     getField('pType') || 'Development',
   };
 
   try {
@@ -4564,10 +4647,35 @@ function buildSitePlanSVG(parcelsData, opts) {
   b+=`<text x="${(bL+bzL)/2 < bL+10 ? bL+7 : (bL+3).toFixed(1)}" y="${(bzT-4).toFixed(1)}"
       font-family="sans-serif" font-size="7.5" fill="#e07820">F${opts.fSetbk}′ S${opts.sSetbk}′ R${opts.rSetbk}′ setbacks</text>`;
 
+  // ── Multi-product layout constants ──
+  const products = (opts.products && opts.products.length > 0)
+    ? opts.products
+    : [{ name: opts.type||'Townhome', type:'townhome', w: opts.unitW||22, d: opts.unitD||45, stories:3, pct:100 }];
+  const totalPct = products.reduce((s,p) => s+(p.pct||0), 0) || 1;
+
+  // Per-type layout config: [units-per-building, alley-ft, fill-colors]
+  const PROD_CFG = {
+    sf:        { upb:1, alley:0,  fills:['#2a6c3f','#1a4c2f'], stroke:'#0a3c1f', label:'SF lot' },
+    duplex:    { upb:2, alley:10, fills:['#3a6c8a','#2a4c6a'], stroke:'#0a2c4a', label:'Duplex' },
+    townhome:  { upb:6, alley:20, fills:['#c49a3a','#a87c22'], stroke:'#5a3e08', label:'Townhome' },
+    apartment: { upb:1, alley:30, fills:['#8a3a2a','#6a2a1a'], stroke:'#3a1a0a', label:'Apt Bldg' },
+    mixed_use: { upb:4, alley:20, fills:['#3a6a2a','#2a4a1a'], stroke:'#1a2a0a', label:'Mixed Use' },
+  };
+
+  // Assign rows to products proportionally
+  const rowProduct = rowYs.map((_, ri) => {
+    let cumPct = 0;
+    const frac = rowYs.length <= 1 ? 0 : ri / (rowYs.length - 1);
+    for (const p of products) {
+      cumPct += p.pct / totalPct;
+      if (frac <= cumPct + 0.001) return p;
+    }
+    return products[products.length - 1];
+  });
+
   // ── Development elements: oriented grid layout ──
   let dSVG = '';
   let unitCount = 0, bnum = 101;
-  const cA = '#c49a3a', cB = '#a87c22';
 
   // ── Pre-compute cross-street X positions across buildable zone ──
   const crossXPositions = [];
@@ -4581,63 +4689,84 @@ function buildSitePlanSVG(parcelsData, opts) {
   const isCrossX = x => crossXPositions.some(cx => Math.abs(cx - x) < fp(3));
 
   // ── Collector roads + double-loaded buildings ──
-  // Buildings are pre-collected per row; road only drawn if ≥1 building placed.
   rowYs.forEach((rowY, ri) => {
-    // Trim road extent to parcel boundary (step inward until inside parcel)
+    const prod   = rowProduct[ri];
+    const cfg    = PROD_CFG[prod.type] || PROD_CFG.townhome;
+    const upb_r  = prod.type === 'apartment'
+                     ? Math.max(1, Math.floor(prod.w * prod.d * prod.stories / 800))
+                     : cfg.upb;
+    const bUW_r  = fp(prod.w);
+    const bD_r   = fp(prod.d);
+    const bldgW_r   = upb_r * bUW_r;
+    const alley_r   = fp(cfg.alley);
+    const bldgP_r   = bldgW_r + alley_r + fp(10);
+    const toFront_r = roadHW + alley_r;
+    const toBack_r  = toFront_r + bD_r;
+    const [fillA_r, fillB_r] = cfg.fills;
+
+    // Trim road extent to parcel boundary
     let rX1 = lBZminX, rX2 = lBZmaxX;
     const sStep = fp(10);
     while (rX1 < lBZmaxX - fp(10) && !inPL(rX1 + fp(5), rowY)) rX1 += sStep;
     while (rX2 > lBZminX + fp(10) && !inPL(rX2 - fp(5), rowY)) rX2 -= sStep;
-    if (rX1 >= rX2 - bldgW) return;  // not enough room for even one building — skip row
+    if (rX1 >= rX2 - bldgW_r) return;
 
-    // Pre-collect building SVG for this row; only draw road if buildings placed
     let rowBldgSVG = '', rowHasBldg = false;
 
-    // Buildings on both sides of road
     [-1,1].forEach(side => {
-      const bFY   = rowY + side * toFront;
-      const bBY   = rowY + side * toBack;
+      const bFY   = rowY + side * toFront_r;
+      const bBY   = rowY + side * toBack_r;
       const bMinY = Math.min(bFY, bBY);
       const bMaxY = Math.max(bFY, bBY);
       const aMinY = Math.min(rowY + side*roadHW, bFY);
       const aMaxY = Math.max(rowY + side*roadHW, bFY);
 
-      // Start slots from the trimmed road start, not from lBZminX
       let slotX = rX1, slotN = 0;
-      while (slotX + bldgW <= rX2 && unitCount < target) {
+      while (slotX + bldgW_r <= rX2 && unitCount < target) {
         slotN++;
         if (isCrossX(slotX)) { slotX += crossW; continue; }
-        const bX2 = slotX + bldgW;
-        if (!lRF(slotX, bMinY, bldgW, bDepth)) { slotX += bldgPitch; continue; }
+        const bX2 = slotX + bldgW_r;
+        if (!lRF(slotX, bMinY, bldgW_r, bD_r)) { slotX += bldgP_r; continue; }
 
         rowHasBldg = true;
 
-        // Private alley
-        rowBldgSVG += `<polygon points="${[svgPt(slotX,aMinY),svgPt(bX2,aMinY),svgPt(bX2,aMaxY),svgPt(slotX,aMaxY)].join(' ')}" fill="#d8d4c8" opacity="0.9"/>`;
-        if (ri===0 && side===1 && slotN===1) {
-          const [alx,aly]=toLSVG(slotX+bldgW/2,(aMinY+aMaxY)/2);
-          rowBldgSVG += `<text x="${alx.toFixed(1)}" y="${aly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${alx.toFixed(1)},${aly.toFixed(1)})">PRIV. ALLEY 20′</text>`;
+        // Private alley (skip for SF)
+        if (cfg.alley > 0) {
+          rowBldgSVG += `<polygon points="${[svgPt(slotX,aMinY),svgPt(bX2,aMinY),svgPt(bX2,aMaxY),svgPt(slotX,aMaxY)].join(' ')}" fill="#d8d4c8" opacity="0.9"/>`;
+          if (ri===0 && side===1 && slotN===1) {
+            const [alx,aly]=toLSVG(slotX+bldgW_r/2,(aMinY+aMaxY)/2);
+            rowBldgSVG += `<text x="${alx.toFixed(1)}" y="${aly.toFixed(1)}" font-family="sans-serif" font-size="5" fill="#999" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${alx.toFixed(1)},${aly.toFixed(1)})">${cfg.alley}′ ALLEY</text>`;
+          }
         }
 
-        // Building
-        const unitsHere = Math.min(UPB, target - unitCount);
-        const thisBW    = unitsHere * bUnitW;
-        const fill      = bnum % 2 === 1 ? cA : cB;
-        rowBldgSVG += `<polygon points="${[svgPt(slotX,bMinY),svgPt(slotX+thisBW,bMinY),svgPt(slotX+thisBW,bMaxY),svgPt(slotX,bMaxY)].join(' ')}" fill="${fill}" stroke="#5a3e08" stroke-width="0.9"/>`;
-        // Unit dividers (perpendicular to road, in local Y direction)
-        for (let u=1; u<unitsHere; u++) {
-          const [d1x,d1y]=toLSVG(slotX+u*bUnitW,bMinY),[d2x,d2y]=toLSVG(slotX+u*bUnitW,bMaxY);
-          rowBldgSVG += `<line x1="${d1x.toFixed(1)}" y1="${d1y.toFixed(1)}" x2="${d2x.toFixed(1)}" y2="${d2y.toFixed(1)}" stroke="#5a3e08" stroke-width="0.35" opacity="0.5"/>`;
+        // Building / lot rectangle
+        const unitsHere = prod.type === 'sf' ? 1
+                        : prod.type === 'apartment' ? upb_r
+                        : Math.min(upb_r, target - unitCount);
+        const thisBW    = unitsHere * bUW_r;
+        const fill      = bnum % 2 === 1 ? fillA_r : fillB_r;
+        rowBldgSVG += `<polygon points="${[svgPt(slotX,bMinY),svgPt(slotX+thisBW,bMinY),svgPt(slotX+thisBW,bMaxY),svgPt(slotX,bMaxY)].join(' ')}" fill="${fill}" stroke="${cfg.stroke}" stroke-width="0.9"/>`;
+
+        // Unit dividers (not for apartments which are one big box)
+        if (prod.type !== 'apartment') {
+          for (let u=1; u<unitsHere; u++) {
+            const [d1x,d1y]=toLSVG(slotX+u*bUW_r,bMinY),[d2x,d2y]=toLSVG(slotX+u*bUW_r,bMaxY);
+            rowBldgSVG += `<line x1="${d1x.toFixed(1)}" y1="${d1y.toFixed(1)}" x2="${d2x.toFixed(1)}" y2="${d2y.toFixed(1)}" stroke="${cfg.stroke}" stroke-width="0.35" opacity="0.5"/>`;
+          }
         }
-        // Building number label
+
+        // Label: building number + product type indicator
         const [bmx,bmy]=toLSVG(slotX+thisBW/2,(bMinY+bMaxY)/2);
-        rowBldgSVG += `<text x="${bmx.toFixed(1)}" y="${bmy.toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
+        rowBldgSVG += `<text x="${bmx.toFixed(1)}" y="${(bmy-4).toFixed(1)}" font-family="sans-serif" font-size="7.5" fill="white" text-anchor="middle" dominant-baseline="middle" font-weight="bold" opacity="0.9">${bnum++}</text>`;
+        if (products.length > 1) {
+          rowBldgSVG += `<text x="${bmx.toFixed(1)}" y="${(bmy+6).toFixed(1)}" font-family="sans-serif" font-size="5.5" fill="white" text-anchor="middle" dominant-baseline="middle" opacity="0.75">${cfg.label}</text>`;
+        }
+
         unitCount += unitsHere;
-        slotX += bldgPitch;
+        slotX += bldgP_r;
       }
     });
 
-    // Only draw road if at least one building was placed in this row
     if (!rowHasBldg) return;
 
     // Road surface
@@ -4647,7 +4776,6 @@ function buildSitePlanSVG(parcelsData, opts) {
     const [rlx,rly]=toLSVG((rX1+rX2)*0.5,rowY);
     dSVG += `<text x="${rlx.toFixed(1)}" y="${rly.toFixed(1)}" font-family="sans-serif" font-size="6" fill="#888" text-anchor="middle" dominant-baseline="middle" transform="rotate(${_parcelAngleDeg.toFixed(1)},${rlx.toFixed(1)},${rly.toFixed(1)})">COLLECTOR — 26′ R/W</text>`;
 
-    // Append buildings (drawn on top of road)
     dSVG += rowBldgSVG;
   });
 
@@ -4842,12 +4970,15 @@ function buildSitePlanSVG(parcelsData, opts) {
   });
 
   // ── Unit count badge ──
+  const prodMixLabel = products.length === 1
+    ? `${products[0].w}′W × ${products[0].d}′D · ${products[0].name}`
+    : products.map(p=>`${p.name} ${p.pct}%`).join(' · ');
   b+=`<rect x="${(bL+4).toFixed(1)}" y="${(bT+4).toFixed(1)}"
-      width="138" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.3" opacity="0.94"/>`;
-  b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+18).toFixed(1)}"
+      width="168" height="30" rx="4" fill="white" stroke="#1b3d28" stroke-width="1.3" opacity="0.94"/>`;
+  b+=`<text x="${(bL+84).toFixed(1)}" y="${(bT+18).toFixed(1)}"
       font-family="sans-serif" font-size="11" fill="#1b3d28" text-anchor="middle" font-weight="bold">${unitCount} units · Grid Layout</text>`;
-  b+=`<text x="${(bL+69).toFixed(1)}" y="${(bT+28).toFixed(1)}"
-      font-family="sans-serif" font-size="7.5" fill="#666" text-anchor="middle">${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary</text>`;
+  b+=`<text x="${(bL+84).toFixed(1)}" y="${(bT+28).toFixed(1)}"
+      font-family="sans-serif" font-size="7" fill="#666" text-anchor="middle">${prodMixLabel} · actual GIS boundary</text>`;
 
   // ── Parcel dimensions ──
   b+=`<text x="${(bL+bW/2).toFixed(1)}" y="${(bB+18).toFixed(1)}"
@@ -4873,15 +5004,20 @@ function buildSitePlanSVG(parcelsData, opts) {
 
   // ── Sidebar: Legend + Design Notes ──
   const lX=SVG_W-PR+8, lY=HEAD+56;
-  const LI=[
-    [cA,        'Townhome building'],
-    ['#d0cdc0',  'Collector road (26′ R/W)'],
-    ['#d0cbc0',  'Private alley (20′)'],
-    ['#4fa8cc',  'Wet detention pond'],
-    ['#5cb85c',  'Open space / amenity'],
-    ['#a8d8ea',  'Riparian buffer'],
-    ['#b0aa95',  'ROW dedication'],
-  ];
+  // Dynamic legend — product types first, then infrastructure
+  const LI = [];
+  products.forEach(p => {
+    const cfg2 = PROD_CFG[p.type] || PROD_CFG.townhome;
+    LI.push([cfg2.fills[0], `${p.name} (${p.w}′W×${p.d}′D, ${p.stories}st)`]);
+  });
+  LI.push(
+    ['#d0cdc0', 'Collector road (26′ R/W)'],
+    ['#d8d4c8', 'Private alley'],
+    ['#4fa8cc', 'Wet detention pond'],
+    ['#5cb85c', 'Open space / amenity'],
+    ['#a8d8ea', 'Riparian buffer'],
+    ['#b0aa95', 'ROW dedication'],
+  );
   const legH=LI.length*17+32;
   b+=`<rect x="${(lX-4).toFixed(1)}" y="${(lY-20).toFixed(1)}" width="${(PR-14).toFixed(1)}" height="${legH}"
       rx="4" fill="white" stroke="#ccc" stroke-width="1"/>`;
@@ -6969,6 +7105,101 @@ function openPasteExtract(city) {
   }
   document.getElementById('pasteArea').value = '';
   document.getElementById('extractResult').innerHTML = '';
+  setPasteMode('case');
+}
+
+function openMeetingCaseExtract() {
+  // Open paste modal in case-text mode
+  openPasteExtract(document.getElementById('planMuni')?.value || '');
+  setPasteMode('case');
+}
+
+function openMeetingTranscriptMode() {
+  // Open paste modal in transcript mode (extracts both case + council sentiment)
+  openPasteExtract(document.getElementById('planMuni')?.value || '');
+  setPasteMode('transcript');
+}
+
+function openQuickAddCase() {
+  const panel = document.getElementById('quickAddCasePanel');
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  // Pre-fill date with today
+  const dt = document.getElementById('qa-date');
+  if (dt && !dt.value) dt.value = new Date().toISOString().split('T')[0];
+  // Pre-fill city from selected municipality
+  const city = document.getElementById('planMuni')?.value || '';
+  const citySel = document.getElementById('qa-city');
+  if (citySel && city) {
+    const opt = Array.from(citySel.options).find(o => o.value === city || o.text === city);
+    if (opt) citySel.value = opt.value;
+  }
+}
+
+function saveQuickCase() {
+  const caseNum  = document.getElementById('qa-casenum')?.value?.trim();
+  const city     = document.getElementById('qa-city')?.value?.trim();
+  const date     = document.getElementById('qa-date')?.value;
+  const outcome  = document.getElementById('qa-outcome')?.value;
+  const title    = document.getElementById('qa-title')?.value?.trim();
+  const acres    = parseFloat(document.getElementById('qa-acres')?.value) || null;
+  const dtype    = document.getElementById('qa-dtype')?.value;
+  const yes      = parseInt(document.getElementById('qa-yes')?.value) || 0;
+  const no       = parseInt(document.getElementById('qa-no')?.value) || 0;
+  const notes    = document.getElementById('qa-notes')?.value?.trim();
+
+  if (!caseNum || !city || !title) {
+    showToast('Case #, City, and Title are required', 'w'); return;
+  }
+
+  const newCase = {
+    case_number: caseNum,
+    city,
+    meeting_date: date || new Date().toISOString().split('T')[0],
+    title,
+    dev_type: dtype || 'townhome',
+    acreage: acres,
+    outcome,
+    vote_yes: yes,
+    vote_no: no,
+    notes,
+    _added: new Date().toISOString(),
+    id: Date.now(),
+  };
+
+  let cases = [];
+  try { cases = JSON.parse(localStorage.getItem('lwCasesDb') || '[]'); } catch(e) {}
+  // Check for duplicate
+  if (cases.some(c => c.case_number === caseNum && c.city === city)) {
+    showToast(`Case ${caseNum} already exists for ${city}`, 'w'); return;
+  }
+  cases.push(newCase);
+  localStorage.setItem('lwCasesDb', JSON.stringify(cases));
+
+  showToast(`✓ Case ${caseNum} added to database`, 's');
+  document.getElementById('quickAddCasePanel').style.display = 'none';
+  // Clear form
+  ['qa-casenum','qa-title','qa-acres','qa-yes','qa-no','qa-notes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  renderCaseTable();
+  updateRecentCasesCount();
+}
+
+function updateRecentCasesCount() {
+  const el = document.getElementById('recentCasesCount');
+  if (!el) return;
+  try {
+    const cases = JSON.parse(localStorage.getItem('lwCasesDb') || '[]');
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000; // last 7 days
+    const recent = cases.filter(c => {
+      if (!c._added) return false;
+      return new Date(c._added).getTime() > cutoff;
+    });
+    el.textContent = recent.length > 0
+      ? `${recent.length} case${recent.length>1?'s':''} added in the last 7 days · ${cases.length} total in database`
+      : `${cases.length} total cases in database — no additions in last 7 days`;
+  } catch(e) { el.textContent = 'Database not loaded'; }
 }
 
 function closePasteModal() {
@@ -7239,6 +7470,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCityCards();
   loadCouncilDb();
   renderCouncilCards();
+  updateRecentCasesCount();
   // Show calibration note if seed data already loaded
   if (lwCasesDb.some(c => c._source === 'phase1_dashboard')) {
     const note = document.getElementById('calibrationNote');
