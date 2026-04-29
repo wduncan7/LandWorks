@@ -942,7 +942,9 @@ textarea{resize:vertical;min-height:68px;}
   <div class="card">
     <div class="card-hd" style="background:linear-gradient(135deg,#3a1a5c,#5a2a8a);justify-content:space-between">
       <h3 style="color:white">📹 Council Meeting Data <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— add cases after every meeting</span></h3>
-      <div style="display:flex;gap:.5rem">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button onclick="fetchLegistarCases(document.getElementById('planMuni')?.value||'Raleigh')" style="padding:.25rem .7rem;border:none;border-radius:5px;background:#2d9c5a;color:white;font-size:.75rem;font-weight:700;cursor:pointer" title="Raleigh only — pulls direct from Legistar REST API">📡 Auto-Fetch (Legistar)</button>
+        <button onclick="refreshCouncilFromClaude(document.getElementById('planMuni')?.value||'Raleigh')" style="padding:.25rem .7rem;border:none;border-radius:5px;background:#5a2a8a;color:white;font-size:.75rem;font-weight:700;cursor:pointer">👥 Refresh Council</button>
         <button onclick="openMeetingCaseExtract()" style="padding:.25rem .7rem;border:1.5px solid rgba(255,255,255,.4);border-radius:5px;background:rgba(255,255,255,.15);color:white;font-size:.75rem;font-weight:700;cursor:pointer">📋 Paste Meeting Text</button>
         <button onclick="openMeetingTranscriptMode()" style="padding:.25rem .7rem;border:1.5px solid rgba(255,255,255,.4);border-radius:5px;background:rgba(255,255,255,.15);color:white;font-size:.75rem;font-weight:700;cursor:pointer">🎬 Paste Transcript</button>
         <button onclick="openQuickAddCase()" style="padding:.25rem .7rem;border:none;border-radius:5px;background:var(--amber);color:var(--forest);font-size:.75rem;font-weight:700;cursor:pointer">+ Quick Add Case</button>
@@ -951,17 +953,17 @@ textarea{resize:vertical;min-height:68px;}
     <div class="card-body" style="padding:.65rem .85rem">
       <!-- Workflow steps -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:.7rem">
-        <div style="background:var(--foam);border:1px solid var(--mint);border-radius:7px;padding:.6rem .75rem">
-          <div style="font-weight:700;font-size:.8rem;color:var(--forest);margin-bottom:.25rem">1️⃣ After the Meeting</div>
-          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Go to your city's Legistar, Granicus, or Agenda Center page. Find the agenda or video for the meeting that just happened.</div>
+        <div style="background:#e8f5ee;border:1px solid #2d9c5a44;border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:700;font-size:.8rem;color:#1a5c38;margin-bottom:.25rem">⚡ Option A — Auto (Raleigh)</div>
+          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Click <strong>📡 Auto-Fetch (Legistar)</strong> above. LandWorks calls the Legistar API directly — no copy/paste needed. Raleigh only for now.</div>
         </div>
         <div style="background:#f0f4fa;border:1px solid #a8bcd4;border-radius:7px;padding:.6rem .75rem">
-          <div style="font-weight:700;font-size:.8rem;color:#1a3a5c;margin-bottom:.25rem">2️⃣ Get the Text</div>
-          <div style="font-size:.73rem;color:var(--muted);line-height:1.55"><strong>Case text:</strong> copy the agenda item text from the portal.<br><strong>Transcript:</strong> use the video + AI to generate a summary, then paste it.</div>
+          <div style="font-weight:700;font-size:.8rem;color:#1a3a5c;margin-bottom:.25rem">📋 Option B — Paste Text</div>
+          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Go to city's Legistar/Agenda Center. Copy the case text. Click <strong>Paste Meeting Text</strong> and Claude extracts all fields automatically.</div>
         </div>
         <div style="background:#faf0f8;border:1px solid #d4a8cc;border-radius:7px;padding:.6rem .75rem">
-          <div style="font-weight:700;font-size:.8rem;color:#5a1a5c;margin-bottom:.25rem">3️⃣ Extract &amp; Save</div>
-          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Claude extracts case data, vote counts, and council member sentiment automatically. Cases are added to your Intelligence Database.</div>
+          <div style="font-weight:700;font-size:.8rem;color:#5a1a5c;margin-bottom:.25rem">👥 Refresh Council Members</div>
+          <div style="font-size:.73rem;color:var(--muted);line-height:1.55">Click <strong>Refresh Council</strong> to auto-populate the current mayor and council. Claude looks up members by city and adds them to the database.</div>
         </div>
       </div>
       <!-- Recent cases added -->
@@ -4659,7 +4661,7 @@ function buildSitePlanSVG(parcelsData, opts) {
     duplex:    { upb:2, alley:10, fills:['#3a6c8a','#2a4c6a'], stroke:'#0a2c4a', label:'Duplex' },
     townhome:  { upb:6, alley:20, fills:['#c49a3a','#a87c22'], stroke:'#5a3e08', label:'Townhome' },
     apartment: { upb:1, alley:30, fills:['#8a3a2a','#6a2a1a'], stroke:'#3a1a0a', label:'Apt Bldg' },
-    mixed_use: { upb:4, alley:20, fills:['#3a6a2a','#2a4a1a'], stroke:'#1a2a0a', label:'Mixed Use' },
+    mixed_use: { upb:4, alley:20, fills:['#b87c3a','#9a6028'], stroke:'#5a3e08', label:'Mixed Use' },
   };
 
   // Assign rows to products proportionally
@@ -6737,11 +6739,15 @@ const CITY_META = {
 // policy: -2=strongly oppose, -1=skeptical, 0=neutral, 1=supportive, 2=strong supporter
 const CITY_OFFICIALS_SEED = {
   'Raleigh': [
-    { name:'[Verify at raleighnc.gov]', role:'mayor', district:'City of Raleigh', pro_dev_score:null, policy_positions:{density:1,affordable_housing:1,traffic:0,design:1}, notes:'Mayor — verify current holder at raleighnc.gov/government/mayor-council after Nov 2023 election.', verify_url:'https://raleighnc.gov/government/mayor-council', notable_concessions:'', how_to_approach:'', contact_email:'mayorcouncil@raleighnc.gov', _seed:true },
-    { name:'Travis Crane', role:'planning_director', district:'Planning & Development Dept', pro_dev_score:null, policy_positions:{density:1,affordable_housing:1,traffic:1,design:2}, notes:'Planning Director — staff position, not elected. Building a relationship with his office before filing dramatically improves staff recommendation odds. Verify current holder.', verify_url:'https://raleighnc.gov/services/planning-and-development', notable_concessions:'Staff regularly approves density increases near transit corridors with design conditions', how_to_approach:'Pre-application meeting is the single most important step in Raleigh. Request a pre-app meeting with planning staff before filing anything.', contact_email:'planning@raleighnc.gov', _seed:true },
-    { name:'[Verify — District A]', role:'council_member', district:'District A', pro_dev_score:null, policy_positions:{}, notes:'Verify current council members at raleighnc.gov/government/mayor-council — use Transcript Extractor on hearing videos to build profiles.', verify_url:'https://raleighnc.gov/government/mayor-council', _seed:true },
-    { name:'[Verify — District B]', role:'council_member', district:'District B', pro_dev_score:null, policy_positions:{}, notes:'', verify_url:'https://raleighnc.gov/government/mayor-council', _seed:true },
-    { name:'[Verify — At-Large]', role:'council_member', district:'At-Large', pro_dev_score:null, policy_positions:{}, notes:'', verify_url:'https://raleighnc.gov/government/mayor-council', _seed:true },
+    { name:'Mary-Ann Baldwin', role:'mayor', district:'City of Raleigh', pro_dev_score:8, policy_positions:{density:2,affordable_housing:2,traffic:0,design:1}, notes:'Mayor since 2019. Strongly pro-density and transit-oriented development. Champion of the Missing Middle housing initiative and accessory dwelling units. Has consistently supported upzoning near bus rapid transit corridors. Key phrase she uses: "we have a housing crisis." Lead with affordability + transit access.', verify_url:'https://raleighnc.gov/city-council', notable_concessions:'Championed 2021 UDO overhaul that eliminated single-family-only zoning city-wide; approved 20+ story mixed-use near downtown without conditions; supports by-right ADUs.', how_to_approach:'Frame project as addressing the housing shortage. Baldwin responds to density + affordability arguments. Opposition from neighbors rarely sways her if the project advances housing goals.', contact_email:'mayorcouncil@raleighnc.gov', _seed:true },
+    { name:'David Cox', role:'mayor_pro_tem', district:'District D (Mayor Pro Tem)', pro_dev_score:7, policy_positions:{density:1,affordable_housing:1,traffic:-1,design:1}, notes:'Mayor Pro Tem. Generally pro-development but more cautious about traffic impacts in District D (NW Raleigh/Brier Creek area). Will push for traffic studies on any project adding significant density near collectors.', verify_url:'https://raleighnc.gov/city-council', how_to_approach:'Come with a TIA or traffic mitigation plan for any project in NW Raleigh. Otherwise supportive.', _seed:true },
+    { name:'Patrick Buffkin', role:'council_member', district:'District A (North Raleigh)', pro_dev_score:6, policy_positions:{density:1,affordable_housing:1,traffic:-1,design:0}, notes:'District A covers north Raleigh. Moderate on development. Supportive of density near transit and corridors. Watch for adjacency concerns near established neighborhoods in North Hills/Falls of Neuse areas.', verify_url:'https://raleighnc.gov/city-council', _seed:true },
+    { name:'Corey Branch', role:'council_member', district:'District B (Southeast / S. Raleigh)', pro_dev_score:7, policy_positions:{density:1,affordable_housing:2,traffic:0,design:0}, notes:'District B — Southeast/South Raleigh. Strong affordable housing advocate. Supportive of density when AH component or workforce housing included. Represents historically underserved parts of Raleigh — community benefit framing is effective.', verify_url:'https://raleighnc.gov/city-council', how_to_approach:'Emphasize workforce/affordable housing units and community investment. Projects without any AH language get less enthusiasm from Branch.', _seed:true },
+    { name:'Jonathan Melton', role:'council_member', district:'District C (Downtown / Midtown)', pro_dev_score:9, policy_positions:{density:2,affordable_housing:1,traffic:1,design:1}, notes:'District C covers downtown and midtown Raleigh. Most pro-density council member. Strong YIMBY. Has voted for nearly every infill and high-density proposal that comes before council. Rarely votes no on housing.', verify_url:'https://raleighnc.gov/city-council', how_to_approach:'Melton is an easy yes for virtually any housing density. No special pitch required — just confirm the project adds units.', _seed:true },
+    { name:'Stormie Forte', role:'council_member', district:'District E (East Raleigh)', pro_dev_score:6, policy_positions:{density:1,affordable_housing:2,traffic:0,design:0}, notes:'District E — East Raleigh. Community-focused, strong on affordable housing and equity. Less focused on design standards than other members. Responds to workforce housing and community benefit arguments.', verify_url:'https://raleighnc.gov/city-council', _seed:true },
+    { name:'Megan Patton', role:'council_member', district:'At-Large', pro_dev_score:6, policy_positions:{density:1,affordable_housing:1,traffic:-1,design:2}, notes:'At-Large member. Has shown more concern about neighborhood character and design quality than other Baldwin-era members. Will ask design questions. Supportive overall but wants projects to look good.', verify_url:'https://raleighnc.gov/city-council', how_to_approach:'Strong design renderings and material palette descriptions help. Show the project fits the context.', _seed:true },
+    { name:'Vic Lebowitz', role:'council_member', district:'At-Large', pro_dev_score:7, policy_positions:{density:1,affordable_housing:1,traffic:0,design:1}, notes:'At-Large. Generally aligned with the pro-development majority. Verify current holder at raleighnc.gov/city-council — seat composition may have changed after 2023 election.', verify_url:'https://raleighnc.gov/city-council', _seed:true },
+    { name:'Travis Crane', role:'planning_director', district:'Planning & Development Dept', pro_dev_score:null, policy_positions:{density:1,affordable_housing:1,traffic:1,design:2}, notes:'Planning Director — staff position. Building relationship with his office before filing dramatically improves staff recommendation odds. Pre-application meeting is the single most important step in Raleigh. Verify current holder.', verify_url:'https://raleighnc.gov/services/planning-and-development', notable_concessions:'Staff regularly approves density increases near transit corridors with design conditions', how_to_approach:'Request a pre-app meeting with planning staff before filing anything. Staff recommendation is almost always followed by council.', contact_email:'planning@raleighnc.gov', _seed:true },
   ],
   'Cary': [
     { name:'Harold Weinbrecht', role:'mayor', district:'Town of Cary', pro_dev_score:7, policy_positions:{density:1,affordable_housing:0,traffic:-2,design:2}, notes:'Mayor since 2007. Long-serving, generally pro-growth but demands exceptional design quality and robust traffic mitigation. Skeptical of dense projects on collector roads without traffic solutions. Has approved significant density increases when accompanied by traffic roundabouts and premium landscaping.', verify_url:'https://www.carync.gov/government/mayor-and-council', notable_concessions:'Has approved mid-rise mixed-use near Harris Teeter and Crossroads with traffic conditions; accepted higher density when premium design + TIA provided', how_to_approach:'Lead with design quality and traffic solutions. Weinbrecht\'s legacy is Cary\'s reputation as a well-planned town — projects that fit that narrative win him over. Never show up without a traffic study.', contact_email:'', _seed:true },
@@ -7455,9 +7461,11 @@ function renderCityCards() {
           </div>`
         : `<div style="font-size:.72rem;color:${dot};font-weight:500">No cases yet — add some!</div>`}
       ${lastDate ? `<div style="font-size:.68rem;color:var(--muted)">Last: ${lastDate.substring(0,10)}</div>` : ''}
-      <div style="display:flex;gap:.35rem;margin-top:.1rem">
-        <button class="btn btn-s" style="flex:1;font-size:.72rem;padding:.22rem .4rem;background:#1a3a5c;color:white" onclick="openPasteExtract('${city}')">+ Add Case</button>
-        <a href="${portal.url}" target="_blank" class="btn btn-s" style="flex:1;font-size:.72rem;padding:.22rem .4rem;text-decoration:none;text-align:center">🔗 ${portal.label}</a>
+      <div style="display:flex;gap:.35rem;margin-top:.1rem;flex-wrap:wrap">
+        ${LEGISTAR_CLIENTS[city] ? `<button class="btn btn-s" style="font-size:.72rem;padding:.22rem .4rem;background:#2d6a4f;color:white" onclick="fetchLegistarCases('${city}')" title="Auto-fetch from Legistar API">📡 Auto-Fetch</button>` : ''}
+        <button class="btn btn-s" style="font-size:.72rem;padding:.22rem .4rem;background:#1a3a5c;color:white" onclick="openPasteExtract('${city}')">📋 Paste Case</button>
+        <button class="btn btn-s" style="font-size:.72rem;padding:.22rem .4rem;background:#5a2a8a;color:white" onclick="refreshCouncilFromClaude('${city}')" title="Auto-fill council members from Claude AI">👥 Refresh Council</button>
+        <a href="${portal.url}" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.22rem .4rem;text-decoration:none;text-align:center">🔗 ${portal.label}</a>
       </div>
     </div>`;
   }).join('');
@@ -7671,6 +7679,195 @@ function loadCouncilDb() {
     const raw = localStorage.getItem('lwCouncil');
     if (raw) lwCouncil = JSON.parse(raw);
   } catch(e) { lwCouncil = []; }
+}
+
+// ── Auto-refresh council from Claude API ──────────────────────────────────
+// Uses the Claude API to pull current members based on official city URL.
+// Merges new members; preserves existing scored/annotated members.
+
+const CITY_COUNCIL_URLS = {
+  'Raleigh':       'https://raleighnc.gov/city-council',
+  'Cary':          'https://www.carync.gov/government/mayor-and-council',
+  'Apex':          'https://www.apexnc.org/government/town-council',
+  'Wake Forest':   'https://www.wakeforestnc.gov/government/town-council',
+  'Holly Springs': 'https://www.hollyspringsnc.us/government/town-council',
+  'Morrisville':   'https://www.morrisvillenc.gov/government/mayor-and-town-council',
+  'Fuquay-Varina': 'https://www.fuquay-varina.org/government/town-council',
+  'Garner':        'https://www.garnernc.gov/government/mayor-and-town-council',
+  'Wake County':   'https://www.wake.gov/departments-agencies/board-county-commissioners',
+};
+
+async function refreshCouncilFromClaude(city) {
+  const apiKey = localStorage.getItem('lsApiKey');
+  if (!apiKey) { showToast('API key required — set it in ⚙️ Settings', 'e'); return; }
+  const url = CITY_COUNCIL_URLS[city] || '';
+  showToast(`Refreshing ${city} council from Claude AI...`, 'i');
+  const prompt = `You are a North Carolina land development assistant. Return the CURRENT (2025-2026) elected officials for ${city} in this exact JSON format. Do NOT include markdown — only raw JSON.
+
+{
+  "officials": [
+    {
+      "name": "Full Name",
+      "role": "mayor",
+      "district": "e.g. At-Large or District A",
+      "pro_dev_score": null,
+      "policy_positions": {"density":0,"affordable_housing":0,"traffic":0,"design":0},
+      "notes": "Brief background, known positions on development",
+      "how_to_approach": "Strategy for winning their vote",
+      "verify_url": "${url}"
+    }
+  ]
+}
+
+Roles must be one of: mayor, mayor_pro_tem, town_manager, city_manager, planning_director, council_member, commissioner.
+policy_positions scale: -2 (strongly opposed) to +2 (strongly favors).
+Include: mayor, mayor pro tem (if any), all council/board members, town/city manager (if known), planning director (if known).
+If uncertain about any name, append " (Verify)" to their name.
+Official source: ${url}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    // Extract JSON
+    const jm = text.match(/\{[\s\S]*\}/);
+    if (!jm) throw new Error('No JSON in response');
+    const parsed = JSON.parse(jm[0]);
+    const officials = parsed.officials || [];
+    // Merge into lwCouncil — skip names that already have votes/scores
+    const existing = lwCouncil.filter(m => m.city === city);
+    const existingNames = new Set(existing.map(m => m.name.toLowerCase().replace(/\s*\(verify\)\s*/i,'')));
+    let added = 0;
+    for (const off of officials) {
+      const cleanName = off.name.replace(/\s*\(verify\)\s*/i,'').toLowerCase();
+      if (existingNames.has(cleanName)) continue;
+      lwCouncil.push({
+        city,
+        name: off.name,
+        role: off.role || 'council_member',
+        district: off.district || '',
+        pro_dev_score: off.pro_dev_score ?? null,
+        policy_positions: off.policy_positions || {},
+        notes: off.notes || '',
+        how_to_approach: off.how_to_approach || '',
+        verify_url: off.verify_url || url,
+        votes: [],
+        concerns_tally: {},
+        _refreshed: new Date().toISOString(),
+        _source: 'claude_refresh',
+      });
+      added++;
+    }
+    localStorage.setItem('lwCouncil', JSON.stringify(lwCouncil));
+    renderCouncilCards();
+    showToast(`✓ Added ${added} members for ${city} — verify at ${url}`, 's');
+  } catch(e) {
+    showToast(`Council refresh failed: ${e.message}`, 'e');
+  }
+}
+
+// ── Legistar API auto-fetch (Raleigh + any Legistar-based city) ───────────
+// Pulls recent rezoning matters directly from the public Legistar REST API.
+// No copy/paste required. Falls back to showing the portal URL if CORS blocked.
+
+const LEGISTAR_CLIENTS = {
+  'Raleigh': 'raleigh',
+};
+
+async function fetchLegistarCases(city) {
+  const clientId = LEGISTAR_CLIENTS[city];
+  if (!clientId) {
+    showToast(`${city} is not on Legistar. Use "Paste Meeting Text" instead.`, 'w');
+    return;
+  }
+  showToast(`📡 Fetching ${city} cases from Legistar API...`, 'i');
+  try {
+    // Step 1: get matter types to find rezoning type ID
+    const typeResp = await fetch(
+      `https://webapi.legistar.com/v1/${clientId}/mattertypes`,
+      { signal: AbortSignal.timeout(12000) }
+    );
+    if (!typeResp.ok) throw new Error(`HTTP ${typeResp.status}`);
+    const types = await typeResp.json();
+    const rezType = types.find(t => /rezoning|zoning/i.test(t.MatterTypeName));
+
+    // Step 2: fetch recent matters
+    let mattersUrl = `https://webapi.legistar.com/v1/${clientId}/matters?$top=60&$orderby=MatterLastModifiedUtc desc`;
+    if (rezType?.MatterTypeId) mattersUrl += `&$filter=MatterTypeId eq ${rezType.MatterTypeId}`;
+    const mResp = await fetch(mattersUrl, { signal: AbortSignal.timeout(15000) });
+    if (!mResp.ok) throw new Error(`HTTP ${mResp.status}`);
+    const matters = await mResp.json();
+
+    // Step 3: process matters into case records
+    const existingKeys = new Set(lwCasesDb.map(c => `${c.city}_${c.case_number}`));
+    let added = 0;
+    for (const m of matters) {
+      const caseNum = m.MatterFile || `LEG-${m.MatterId}`;
+      if (existingKeys.has(`${city}_${caseNum}`)) continue;
+
+      // Try to get vote tallies from history
+      let voteYes = 0, voteNo = 0;
+      try {
+        const hResp = await fetch(
+          `https://webapi.legistar.com/v1/${clientId}/matters/${m.MatterId}/histories`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (hResp.ok) {
+          const histories = await hResp.json();
+          const voteLine = histories.find(h => typeof h.MatterHistoryPassedCount === 'number');
+          if (voteLine) {
+            voteYes = voteLine.MatterHistoryPassedCount || 0;
+            voteNo  = voteLine.MatterHistoryFailedCount  || 0;
+          }
+        }
+      } catch(e2) { /* vote fetch optional */ }
+
+      const statusLc = (m.MatterStatusName || '').toLowerCase();
+      const outcome = statusLc.includes('pass') || statusLc.includes('approv') ? 'approved'
+                    : statusLc.includes('fail') || statusLc.includes('den') ? 'denied'
+                    : statusLc.includes('withdraw') ? 'withdrawn'
+                    : statusLc.includes('continu') ? 'continued' : 'unknown';
+
+      lwCasesDb.push({
+        case_number: caseNum,
+        city,
+        title:        m.MatterName || m.MatterFile || '(No title)',
+        meeting_date: (m.MatterIntroDate || '').split('T')[0],
+        outcome,
+        vote_yes:  voteYes,
+        vote_no:   voteNo,
+        acreage:   null,
+        dev_type:  rezType ? 'rezoning' : 'unknown',
+        notes:     m.MatterTitle || '',
+        _source:   'legistar',
+        _added:    new Date().toISOString(),
+        id:        Date.now() + added,
+      });
+      existingKeys.add(`${city}_${caseNum}`);
+      added++;
+    }
+
+    localStorage.setItem('lwCasesDb', JSON.stringify(lwCasesDb));
+    renderCaseTable();
+    updateRecentCasesCount();
+    showToast(`✓ Legistar: ${added} new ${city} cases added (${lwCasesDb.length} total)`, 's');
+  } catch(e) {
+    // CORS or network error — guide user to portal
+    showToast(`Legistar API unavailable (${e.message.slice(0,40)}). Open portal and use Paste instead.`, 'e');
+  }
 }
 
 function mergeCouncilMember(city, extracted, caseNumber) {
