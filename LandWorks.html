@@ -868,19 +868,40 @@ textarea{resize:vertical;min-height:68px;}
 <!-- ── SITE PLAN ── -->
 <div class="panel" id="panel-siteplan">
   <div class="card">
-    <div class="card-hd card-hd-sky"><h3>📐 Site Plan Inputs <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— dimensions used to generate layout</span></h3></div>
+    <div class="card-hd card-hd-sky"><h3>📐 Site Plan Inputs <span style="font-size:.72rem;font-weight:400;color:rgba(255,255,255,.7)">— define product mix and site layout parameters</span></h3></div>
     <div class="card-body">
-      <div class="fg">
-        <div class="f"><label>Unit Width (ft)</label><input type="number" id="spUnitW" value="22" min="14" max="40" placeholder="22"></div>
-        <div class="f"><label>Unit Depth (ft)</label><input type="number" id="spUnitD" value="45" min="30" max="80" placeholder="45"></div>
-        <div class="f"><label>Front Setback (ft)</label><input type="number" id="spFront" value="20" min="0" placeholder="20"></div>
-        <div class="f"><label>Rear Setback (ft)</label><input type="number" id="spRear" value="20" min="0" placeholder="20"></div>
-        <div class="f"><label>Side Setback (ft)</label><input type="number" id="spSide" value="10" min="0" placeholder="10"></div>
-        <div class="f"><label>Riparian Buffer (ft)</label><input type="number" id="spBuffer" value="50" min="0" placeholder="50"></div>
-        <div class="f"><label>Access Lane Width (ft)</label><input type="number" id="spLane" value="24" min="16" placeholder="24"></div>
-        <div class="f"><label>ROW Dedication (ft)</label><input type="number" id="spROW" value="30" min="0" placeholder="30"></div>
+
+      <!-- Product Mix Table -->
+      <div style="margin-bottom:.85rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
+          <label style="margin:0;font-size:.8rem;font-weight:600">Product Mix <span style="font-weight:400;color:var(--muted);font-size:.72rem">— define one or more unit types. First row drives the primary layout.</span></label>
+          <button class="btn btn-s" onclick="addSiteProduct()" style="font-size:.72rem;padding:.2rem .55rem">+ Add Product</button>
+        </div>
+        <!-- Header row -->
+        <div style="display:grid;grid-template-columns:1fr 110px 65px 65px 60px 60px 28px;gap:.3rem;font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:0 .4rem .25rem">
+          <span>Product Name</span><span>Type</span><span>Width ft</span><span>Depth ft</span><span>Stories</span><span>% Mix</span><span></span>
+        </div>
+        <div id="spProductTable"></div>
       </div>
-      <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Geometry fetched from Wake County GIS. Layout is conceptual — export SVG and refine in AutoCAD.</p>
+
+      <!-- Site layout parameters -->
+      <details open style="margin-top:.1rem">
+        <summary style="font-size:.8rem;font-weight:600;cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem">
+          <span style="font-size:.65rem;color:var(--muted)">▼</span> Site Layout Parameters
+        </summary>
+        <div class="fg">
+          <div class="f"><label>Front Setback (ft)</label><input type="number" id="spFront" value="20" min="0" placeholder="20"></div>
+          <div class="f"><label>Rear Setback (ft)</label><input type="number" id="spRear" value="20" min="0" placeholder="20"></div>
+          <div class="f"><label>Side Setback (ft)</label><input type="number" id="spSide" value="10" min="0" placeholder="10"></div>
+          <div class="f"><label>Riparian Buffer (ft)</label><input type="number" id="spBuffer" value="50" min="0" placeholder="50"></div>
+          <div class="f"><label>Access Lane Width (ft)</label><input type="number" id="spLane" value="24" min="16" placeholder="24"></div>
+          <div class="f"><label>ROW Dedication (ft)</label><input type="number" id="spROW" value="30" min="0" placeholder="30"></div>
+          <!-- legacy compat - hidden, read by existing renderer -->
+          <input type="hidden" id="spUnitW" value="22">
+          <input type="hidden" id="spUnitD" value="45">
+        </div>
+      </details>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.55rem">Geometry fetched from Wake County GIS. Layout is conceptual — export SVG and refine in AutoCAD.</p>
     </div>
   </div>
   <div class="card">
@@ -896,7 +917,7 @@ textarea{resize:vertical;min-height:68px;}
   <div class="actions">
     <button class="btn" style="background:var(--sky);color:white;font-weight:700" onclick="generateSitePlan()">🗺 Generate Site Plan</button>
     <button class="btn btn-s" onclick="exportSitePlanSVG()">⬇ Export SVG</button>
-    <button class="btn btn-g" onclick="aiAsk('Based on my site plan for '+getField('pType')+' on '+document.getElementById(\'spUnitW\').value+'ft wide × '+document.getElementById(\'spUnitD\').value+'ft deep units, '+document.getElementById(\'sU\').value+' units proposed on '+document.getElementById(\'exAcres\').value+' acres: What are the key site design considerations, typical HOA amenities for this product type, and any Wake County design standards I should know?')">🤖 Sport: Design Review</button>
+    <button class="btn btn-g" onclick="(function(){const prods=readSiteProducts();const prodDesc=prods.map(p=>p.name+' ('+p.w+'ft × '+p.d+'ft, '+p.stories+' stories, '+p.pct+'% mix)').join('; ');aiAsk('Based on my site plan for '+getField('pType')+' product mix: '+prodDesc+'. Total '+document.getElementById('sU').value+' units proposed on '+document.getElementById('exAcres').value+' acres: What are the key site design considerations, typical HOA amenities for this product mix, and any Wake County design standards I should know?')})()">🤖 Sport: Design Review</button>
   </div>
 </div>
 
@@ -1055,6 +1076,8 @@ textarea{resize:vertical;min-height:68px;}
           <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Apex</div>
           <div style="display:flex;gap:.3rem;flex-wrap:wrap">
             <a href="https://www.apexnc.org/AgendaCenter" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Agendas / Videos</a>
+            <a href="https://www.apexnc.org/215/Applications-Schedules" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📅 Schedules</a>
+            <a href="https://www.apexnc.org/DocumentCenter/View/30197/2026-Master-Subdivision-Minor-Site-and-Major-Site-Plan-Schedule-PDF" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📄 2026 Schedule PDF</a>
             <a href="https://www.apexnc.org/planning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
             <a href="https://www.apexnc.org/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
           </div>
@@ -1599,6 +1622,130 @@ textarea{resize:vertical;min-height:68px;}
       <div id="schedGrid"></div>
     </div>
   </div>
+
+  <!-- ── REGULATORY REVIEW TIMELINES ── -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#1a3a5c,#2d5c8a)">
+      <h3 style="color:white">⚖️ Regulatory Review Timelines</h3>
+      <span style="font-size:.72rem;color:rgba(255,255,255,.7)">Federal, state &amp; local agency clock</span>
+    </div>
+    <div class="card-body" style="padding:.75rem">
+
+      <!-- NCDWR 401 -->
+      <div style="background:var(--foam);border:1px solid var(--mint);border-radius:var(--r);padding:.85rem;margin-bottom:.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+          <div>
+            <div style="font-weight:700;font-size:.88rem;color:var(--forest)">🌊 NCDWR — Individual 401 Water Quality Certification</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:1px">NC Division of Water Resources · Triggered when project impacts streams or wetlands ≥ 0.1 ac</div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:1.1rem;font-weight:700;color:var(--forest)">55–60 days</div>
+            <div style="font-size:.68rem;color:var(--muted)">typical clean approval</div>
+          </div>
+        </div>
+        <!-- Timeline bar -->
+        <div style="display:flex;gap:3px;height:24px;border-radius:5px;overflow:hidden;margin-bottom:.5rem">
+          <div style="width:50%;background:#2a5c3f;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:white;font-weight:700" title="60-day review clock starts at submission">Day 1–30</div>
+          <div style="width:25%;background:#5a9e74;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:white;font-weight:700" title="30-day public notice minimum before issuance">Public Notice</div>
+          <div style="width:25%;background:#9dd4b0;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--ink);font-weight:700" title="Issuance window after notice period ends">Day 31–60</div>
+        </div>
+        <div style="font-size:.78rem;line-height:1.65;color:var(--ink)">
+          <strong>60-day review clock</strong> starts at submission. <strong>30-day public notice</strong> sent to NCDWR Listserv — issuance cannot happen until notice period expires.<br>
+          ⚠ <strong>On Hold:</strong> If DWR issues a Request for Additional Information (RAI), the clock <em>may re-start</em> from zero when materials are received. Budget 60–90 additional days if on hold.<br>
+          📋 Submittal: <a href="https://deq.nc.gov/about/divisions/water-resources/water-resources-permits/wastewater-branch/401-wetlands-buffer-permitting" target="_blank" style="color:var(--pine)">deq.nc.gov 401 Permitting</a>
+        </div>
+        <div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;font-size:.72rem"><strong>Start date:</strong> <input type="date" id="reg401Start" style="border:none;background:transparent;font-size:.72rem;font-family:inherit" onchange="calcRegDates()"></div>
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;font-size:.72rem" id="reg401Due">Est. approval: —</div>
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;font-size:.72rem" id="reg401Notice">Public notice closes: —</div>
+        </div>
+      </div>
+
+      <!-- USACE 404 NWP -->
+      <div style="background:#f0f4fa;border:1px solid #a8bcd4;border-radius:var(--r);padding:.85rem;margin-bottom:.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+          <div>
+            <div style="font-weight:700;font-size:.88rem;color:#1a3a5c">⚓ USACE — Section 404 Nationwide Permit (NWP)</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:1px">US Army Corps of Engineers · Covers most wetland/stream fill impacts under NWP thresholds</div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:1.1rem;font-weight:700;color:#1a3a5c">45 days</div>
+            <div style="font-size:.68rem;color:var(--muted)">+ 30-day EPA review</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:3px;height:24px;border-radius:5px;overflow:hidden;margin-bottom:.5rem">
+          <div style="width:55%;background:#1a3a5c;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:white;font-weight:700" title="45-day USACE review — BLOCKED until 401 received">45-day review</div>
+          <div style="width:30%;background:#2c5f8a;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:white;font-weight:700" title="EPA Section 121.12 — up to 30 days after USACE receives 401">EPA 30-day (CWA §121)</div>
+          <div style="width:15%;background:#7aabcf;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:white;font-weight:700">Issue</div>
+        </div>
+        <div style="font-size:.78rem;line-height:1.65;color:var(--ink)">
+          <strong>45-day USACE review</strong> cannot begin (and NWP cannot be issued) until USACE receives a copy of the <em>401 Water Quality Certification</em> from NCDWR.<br>
+          <strong>EPA Section 121.12:</strong> Once USACE receives the 401, EPA has up to <strong>30 additional days</strong> to review per Clean Water Act Section 121.12.<br>
+          ⚠ <strong>Incomplete Application Notice:</strong> USACE may issue an IAN — clock re-starts on receipt of complete materials.<br>
+          📋 Submittal: <a href="https://www.sas.usace.army.mil/Missions/Regulatory/" target="_blank" style="color:#1a3a5c">Wilmington District Regulatory</a>
+        </div>
+        <div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;font-size:.72rem"><strong>401 received by USACE:</strong> <input type="date" id="reg404Start" style="border:none;background:transparent;font-size:.72rem;font-family:inherit" onchange="calcRegDates()"></div>
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.3rem .65rem;font-size:.72rem" id="reg404Due">Est. NWP issue: —</div>
+        </div>
+      </div>
+
+      <!-- Municipal Schedules -->
+      <div style="background:#faf7f0;border:1px solid var(--border);border-radius:var(--r);padding:.85rem">
+        <div style="font-weight:700;font-size:.88rem;color:var(--forest);margin-bottom:.5rem">🏛 Municipal Review Schedules <span style="font-size:.72rem;font-weight:400;color:var(--muted)">— subject to annual update</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;font-size:.78rem">
+
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem">
+            <div style="font-weight:700;color:var(--forest);margin-bottom:.2rem">📍 Town of Apex</div>
+            <div style="color:var(--muted);font-size:.7rem;margin-bottom:.3rem">Applications &amp; Schedules (changes annually)</div>
+            <a href="https://www.apexnc.org/215/Applications-Schedules" target="_blank" style="color:var(--pine);font-size:.72rem;display:block;margin-bottom:.2rem">🔗 Applications &amp; Schedules Page</a>
+            <a href="https://www.apexnc.org/DocumentCenter/View/30197/2026-Master-Subdivision-Minor-Site-and-Major-Site-Plan-Schedule-PDF" target="_blank" style="color:var(--pine);font-size:.72rem;display:block">📄 2026 Master Schedule PDF</a>
+          </div>
+
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem">
+            <div style="font-weight:700;color:var(--forest);margin-bottom:.2rem">📍 Town of Cary</div>
+            <div style="color:var(--muted);font-size:.7rem;margin-bottom:.3rem">Development review hearings</div>
+            <a href="https://www.carync.gov/connect-engage/transparency/public-hearings/public-hearing-cases/rezoning-cases-active-historic" target="_blank" style="color:var(--pine);font-size:.72rem;display:block;margin-bottom:.2rem">🔗 Rezoning Cases</a>
+            <a href="https://www.carync.gov/services-equipment/planning" target="_blank" style="color:var(--pine);font-size:.72rem;display:block">📋 Planning Services</a>
+          </div>
+
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem">
+            <div style="font-weight:700;color:var(--forest);margin-bottom:.2rem">📍 City of Raleigh</div>
+            <div style="color:var(--muted);font-size:.7rem;margin-bottom:.3rem">Planning Commission &amp; City Council</div>
+            <a href="https://raleighnc.gov/planning/zoning-and-land-use/rezoning" target="_blank" style="color:var(--pine);font-size:.72rem;display:block;margin-bottom:.2rem">🔗 Rezoning Information</a>
+            <a href="https://raleigh.legistar.com/Calendar.aspx" target="_blank" style="color:var(--pine);font-size:.72rem;display:block">📅 Legistar Calendar</a>
+          </div>
+
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem">
+            <div style="font-weight:700;color:var(--forest);margin-bottom:.2rem">🛣 NCDOT — TIA Review</div>
+            <div style="color:var(--muted);font-size:.7rem;margin-bottom:.3rem">Traffic Impact Analysis</div>
+            <div style="font-size:.72rem;color:var(--ink)">Scoping: ~2–4 wks<br>TIA review: 30–45 days<br>Resubmittals add 30 days each</div>
+            <a href="https://connect.ncdot.gov/projects/planning/Pages/TIA.aspx" target="_blank" style="color:var(--pine);font-size:.72rem;display:block;margin-top:.3rem">🔗 NCDOT TIA Portal</a>
+          </div>
+
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem">
+            <div style="font-weight:700;color:var(--forest);margin-bottom:.2rem">🌿 NCDEQ — Stormwater</div>
+            <div style="color:var(--muted);font-size:.7rem;margin-bottom:.3rem">State Stormwater Permit (if &gt;1 ac disturbed)</div>
+            <div style="font-size:.72rem;color:var(--ink)">Review: 30–90 days<br>Express review option: ~30 days<br>See DEMLR for details</div>
+            <a href="https://deq.nc.gov/about/divisions/energy-mineral-land-resources/stormwater" target="_blank" style="color:var(--pine);font-size:.72rem;display:block;margin-top:.3rem">🔗 DEMLR Stormwater</a>
+          </div>
+
+          <div style="background:white;border:1px solid var(--border);border-radius:5px;padding:.5rem .7rem">
+            <div style="font-weight:700;color:var(--forest);margin-bottom:.2rem">🏗 Wake County — Erosion Control</div>
+            <div style="color:var(--muted);font-size:.7rem;margin-bottom:.3rem">Land Disturbance Permit (if &gt;1 ac)</div>
+            <div style="font-size:.72rem;color:var(--ink)">Review: 15–30 days<br>Requires Grading &amp; Erosion Control Plan<br>Must submit before land disturbance begins</div>
+            <a href="https://www.wake.gov/departments-agencies/planning-development-inspections/land-development/erosion-and-sedimentation-control" target="_blank" style="color:var(--pine);font-size:.72rem;display:block;margin-top:.3rem">🔗 Wake Erosion Control</a>
+          </div>
+
+        </div>
+        <div style="margin-top:.65rem;padding:.5rem .7rem;background:var(--foam);border-radius:5px;font-size:.75rem;color:var(--muted)">
+          ⚠ All municipal submission deadlines are updated annually. Always confirm current cutoff dates directly with each agency before submitting. Links above open official agency pages.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div class="actions">
     <button class="btn btn-p" onclick="save()">💾 Save Schedule</button>
     <button class="btn btn-g" onclick="aiAsk('Review my project milestones and schedule. Flag any gaps, unrealistic timelines, or missing steps for a Wake County residential development.')">🤖 Sport: Review Schedule</button>
@@ -1979,7 +2126,10 @@ textarea{resize:vertical;min-height:68px;}
 
   <div class="card">
     <div class="card-hd"><h3>🏡 Project & Lot Info</h3>
-      <button class="btn btn-g" onclick="saveHB()">💾 Save</button>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-g" onclick="syncHBFromProject()" title="Copy project data from main project fields into Home Builder" style="font-size:.75rem;padding:.25rem .6rem">⬇ Sync from Project</button>
+        <button class="btn btn-g" onclick="saveHB()">💾 Save</button>
+      </div>
     </div>
     <div class="card-body">
       <div class="fg">
@@ -4017,6 +4167,104 @@ function planAI(type) {
 
 // ═══════════════════════ SITE PLAN ═══════════════════════
 
+// ── Product mix defaults (width ft × depth ft × stories) ──
+const SP_PRODUCT_DEFAULTS = {
+  sf:        { label:'Single Family', w:50,  d:100, stories:2, pct:100 },
+  duplex:    { label:'Duplex',        w:32,  d:55,  stories:2, pct:100 },
+  townhome:  { label:'Townhome',      w:22,  d:45,  stories:3, pct:100 },
+  apartment: { label:'Apartment Bldg',w:120, d:140, stories:4, pct:100 },
+  mixed_use: { label:'Mixed Use',     w:28,  d:55,  stories:4, pct:100 },
+};
+const SP_PRODUCT_COLORS = {
+  sf:'#2a5c3f', duplex:'#3a5c7a', townhome:'#5c3a7a',
+  apartment:'#7a3a2a', mixed_use:'#3a5a2a',
+};
+let _spProductRows = []; // [{name,type,w,d,stories,pct}]
+
+function renderProductTable() {
+  const tbl = document.getElementById('spProductTable');
+  if (!tbl) return;
+  if (_spProductRows.length === 0) {
+    // seed with one townhome row by default
+    _spProductRows = [{ name:'Standard Townhome', type:'townhome', w:22, d:45, stories:3, pct:100 }];
+  }
+  tbl.innerHTML = _spProductRows.map((r, i) => `
+    <div style="display:grid;grid-template-columns:1fr 110px 65px 65px 60px 60px 28px;gap:.3rem;margin-bottom:.3rem;align-items:center" data-sp-idx="${i}">
+      <input type="text" value="${r.name||''}" placeholder="Product name"
+        style="padding:.28rem .5rem;border:1.5px solid var(--border);border-radius:5px;font-size:.8rem;background:var(--cream)"
+        oninput="window._spProductRows[${i}].name=this.value;_spSyncHidden()">
+      <select style="padding:.28rem .35rem;border:1.5px solid var(--border);border-radius:5px;font-size:.78rem;background:var(--cream)"
+        onchange="window._spProductRows[${i}].type=this.value;_spApplyDefaults(${i},this.value);_spSyncHidden()">
+        ${Object.entries(SP_PRODUCT_DEFAULTS).map(([k,v])=>`<option value="${k}"${r.type===k?' selected':''}>${v.label}</option>`).join('')}
+      </select>
+      <input type="number" value="${r.w}" min="10" max="300" placeholder="ft"
+        style="padding:.28rem .3rem;border:1.5px solid var(--border);border-radius:5px;font-size:.8rem;background:var(--cream);text-align:right"
+        oninput="window._spProductRows[${i}].w=+this.value;_spSyncHidden()">
+      <input type="number" value="${r.d}" min="10" max="300" placeholder="ft"
+        style="padding:.28rem .3rem;border:1.5px solid var(--border);border-radius:5px;font-size:.8rem;background:var(--cream);text-align:right"
+        oninput="window._spProductRows[${i}].d=+this.value;_spSyncHidden()">
+      <input type="number" value="${r.stories}" min="1" max="10"
+        style="padding:.28rem .3rem;border:1.5px solid var(--border);border-radius:5px;font-size:.8rem;background:var(--cream);text-align:right"
+        oninput="window._spProductRows[${i}].stories=+this.value;_spSyncHidden()">
+      <input type="number" value="${r.pct}" min="1" max="100" placeholder="%"
+        style="padding:.28rem .3rem;border:1.5px solid var(--border);border-radius:5px;font-size:.8rem;background:var(--cream);text-align:right"
+        oninput="window._spProductRows[${i}].pct=+this.value;_spSyncHidden()">
+      <button onclick="removeSiteProduct(${i})" title="Remove"
+        style="padding:.2rem;border:none;background:var(--rust);color:white;border-radius:4px;font-size:.78rem;cursor:pointer;line-height:1">✕</button>
+    </div>`).join('');
+  _spSyncHidden();
+}
+
+function addSiteProduct() {
+  // Detect likely type from current rows
+  const types = _spProductRows.map(r=>r.type);
+  // Default to sf if first time adding, otherwise townhome
+  const defaultType = _spProductRows.length === 0 ? 'sf'
+    : (_spProductRows[0].type === 'townhome' ? 'sf' : 'townhome');
+  const def = SP_PRODUCT_DEFAULTS[defaultType];
+  // Recalculate pct evenly
+  const newCount = _spProductRows.length + 1;
+  const evenPct = Math.round(100 / newCount);
+  _spProductRows.forEach(r => r.pct = evenPct);
+  _spProductRows.push({ name: def.label, type: defaultType, w: def.w, d: def.d, stories: def.stories, pct: 100 - evenPct * (_spProductRows.length) });
+  renderProductTable();
+}
+
+function removeSiteProduct(idx) {
+  if (_spProductRows.length <= 1) { showToast('At least one product required', 'w'); return; }
+  _spProductRows.splice(idx, 1);
+  renderProductTable();
+}
+
+function _spApplyDefaults(idx, type) {
+  const def = SP_PRODUCT_DEFAULTS[type];
+  if (!def) return;
+  _spProductRows[idx].w = def.w;
+  _spProductRows[idx].d = def.d;
+  _spProductRows[idx].stories = def.stories;
+  _spProductRows[idx].name = def.label;
+  renderProductTable();
+}
+
+function _spSyncHidden() {
+  // Keep legacy hidden inputs in sync with the primary (first) product
+  const primary = _spProductRows[0];
+  if (!primary) return;
+  const hw = document.getElementById('spUnitW');
+  const hd = document.getElementById('spUnitD');
+  if (hw) hw.value = primary.w;
+  if (hd) hd.value = primary.d;
+}
+
+function readSiteProducts() {
+  return _spProductRows.map(r => ({ ...r }));
+}
+
+// Initialize product table on load
+document.addEventListener('DOMContentLoaded', () => {
+  renderProductTable();
+});
+
 let _lastSitePlanSVG = '';
 
 async function generateSitePlan() {
@@ -4080,8 +4328,12 @@ async function generateSitePlan() {
       if (t.getAttribute('onclick')?.includes("'siteplan'")) t.classList.add('on');
     });
 
+    const prods = readSiteProducts();
+    const prodSummary = prods.length === 1
+      ? `${prods[0].name} (${opts.unitW}′W × ${opts.unitD}′D)`
+      : prods.map(p=>`${p.name} ${p.pct}%`).join(' · ');
     document.getElementById('spStats').textContent =
-      `${pins.length} parcel${pins.length>1?'s':''} · ${totalAcres} ac · ${opts.unitW}′W × ${opts.unitD}′D · actual GIS boundary`;
+      `${pins.length} parcel${pins.length>1?'s':''} · ${totalAcres} ac · ${prodSummary} · actual GIS boundary`;
     showToast(`Site plan generated for ${pins.length} parcel${pins.length>1?'s':''}`, 's');
 
   } catch(e) {
@@ -5188,6 +5440,33 @@ function buildMeetings() {
   }).join('');
 }
 
+// ═══════════════════════ REGULATORY DATES ═══════════════════════
+
+function calcRegDates() {
+  function addDays(dateStr, days) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + days);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  }
+
+  // NCDWR 401 — 60-day clock from submission, 30-day public notice
+  const start401 = document.getElementById('reg401Start')?.value;
+  if (start401) {
+    const due = document.getElementById('reg401Due');
+    const notice = document.getElementById('reg401Notice');
+    if (due) due.textContent = `Est. clean approval: ${addDays(start401, 60)}`;
+    if (notice) notice.textContent = `Public notice closes: ${addDays(start401, 30)}`;
+  }
+
+  // USACE 404 NWP — 45-day review starts when 401 received, +30 for EPA
+  const start404 = document.getElementById('reg404Start')?.value;
+  if (start404) {
+    const due = document.getElementById('reg404Due');
+    if (due) due.textContent = `Est. NWP issue: ${addDays(start404, 75)}`; // 45 + 30
+  }
+}
+
 // ═══════════════════════ SCHEDULE / MILESTONES ═══════════════════════
 
 const DEFAULT_MILESTONES = [
@@ -5796,6 +6075,45 @@ function saveHB() {
   renderHBInspProgress();
 }
 
+function syncHBFromProject() {
+  // Copy main project fields into HB lot panel fields
+  const pin   = getField('pPIN')   || document.getElementById('activePin')?.textContent || '';
+  const addr  = getField('pAddr')  || '';
+  const juris = getField('pJuris') || '';
+  const acres = parseFloat(getField('sA') || getField('exAcres') || 0);
+  const lotSF = acres > 0 ? Math.round(acres * 43560) : '';
+
+  // Jurisdiction mapping from project dropdown values to HB dropdown values
+  const jurisMap = {
+    'Raleigh':'City of Raleigh', 'City of Raleigh':'City of Raleigh',
+    'Cary':'Town of Cary', 'Town of Cary':'Town of Cary',
+    'Apex':'Town of Apex', 'Town of Apex':'Town of Apex',
+    'Holly Springs':'Town of Holly Springs', 'Town of Holly Springs':'Town of Holly Springs',
+    'Morrisville':'Town of Morrisville', 'Town of Morrisville':'Town of Morrisville',
+    'Fuquay-Varina':'Town of Fuquay-Varina', 'Town of Fuquay-Varina':'Town of Fuquay-Varina',
+    'Wake County':'Unincorporated Wake County', 'Unincorporated Wake County':'Unincorporated Wake County',
+  };
+
+  const pinEl    = document.getElementById('hb-pin');
+  const nameEl   = document.getElementById('hb-projName');
+  const jurisEl  = document.getElementById('hb-juris');
+  const lotSFEl  = document.getElementById('hb-lotSF');
+
+  if (pinEl  && pin)  pinEl.value  = pin.trim();
+  if (nameEl && addr) nameEl.value = addr;
+  const mappedJuris = jurisMap[juris] || juris;
+  if (jurisEl && mappedJuris) {
+    // Try to set select value
+    const opt = Array.from(jurisEl.options).find(o => o.value === mappedJuris || o.text === mappedJuris);
+    if (opt) jurisEl.value = opt.value;
+  }
+  if (lotSFEl && lotSF) lotSFEl.value = lotSF;
+
+  saveHB();
+  hbCalc();
+  showToast('Synced project info into Home Builder', 's');
+}
+
 function loadHB() {
   // Build the DOM first
   buildHBPermits();
@@ -6213,11 +6531,12 @@ const CITY_META = {
     tip:      '💡 Lead with site design and traffic. Cary rejects projects that feel "cheap." A high-quality traffic study and premium landscaping plan go a long way.',
   },
   'Apex': {
-    videos:   'https://www.apexnc.org/AgendaCenter',
-    rezoning: 'https://www.apexnc.org/planning',
-    gis:      'https://www.apexnc.org/gis',
-    council:  'https://www.apexnc.org/government/town-council',
-    planning: 'https://www.apexnc.org/planning',
+    videos:    'https://www.apexnc.org/AgendaCenter',
+    rezoning:  'https://www.apexnc.org/215/Applications-Schedules',
+    schedPDF:  'https://www.apexnc.org/DocumentCenter/View/30197/2026-Master-Subdivision-Minor-Site-and-Major-Site-Plan-Schedule-PDF',
+    gis:       'https://www.apexnc.org/gis',
+    council:   'https://www.apexnc.org/government/town-council',
+    planning:  'https://www.apexnc.org/215/Applications-Schedules',
     culture:  'Pro-growth but community-minded. Street connectivity and pedestrian access are key priorities. Adjacent single-family concerns handled with transitions.',
     tip:      '💡 Show pedestrian connectivity and how your project links to existing street network. Apex values walkability and neighborhood integration.',
   },
@@ -6872,7 +7191,7 @@ One short paragraph on how to approach the public hearing.`;
 const CITY_PORTALS = {
   'Raleigh':       { url: 'https://raleigh.granicus.com/ViewPublisher.php?view_id=5', label: 'Granicus Videos' },
   'Cary':          { url: 'https://www.carync.gov/connect-engage/transparency/public-hearings/public-hearing-cases/rezoning-cases-active-historic', label: 'Rezoning Cases' },
-  'Apex':          { url: 'https://www.apexnc.org/planning', label: 'Planning Portal' },
+  'Apex':          { url: 'https://www.apexnc.org/215/Applications-Schedules', label: 'Applications & Schedules' },
   'Wake Forest':   { url: 'https://www.wakeforestnc.gov/government/boards-and-committees/planning-board', label: 'Planning Board' },
   'Holly Springs': { url: 'https://www.hollyspringsnc.us/planning', label: 'Planning Dept' },
   'Morrisville':   { url: 'https://www.morrisvillenc.gov/government/departments/planning', label: 'Planning Dept' },
