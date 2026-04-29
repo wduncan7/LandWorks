@@ -44,19 +44,53 @@ API_KEY    = os.environ.get("ANTHROPIC_API_KEY", "")
 HAIKU      = "claude-haiku-4-5-20251001"
 SONNET     = "claude-sonnet-4-6"
 
+
+def _parse_json_array(raw: str) -> list:
+    """Robustly extract the first JSON array from a Claude response."""
+    # Strip markdown fences
+    raw = re.sub(r'^```[a-z]*\n?', '', raw.strip())
+    raw = re.sub(r'\n?```.*$', '', raw, flags=re.DOTALL)
+    raw = raw.strip()
+    if not raw:
+        return []
+    # Find the first [ ... ] block
+    start = raw.find('[')
+    if start == -1:
+        return []
+    depth = 0
+    for i, ch in enumerate(raw[start:], start):
+        if ch == '[':
+            depth += 1
+        elif ch == ']':
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(raw[start:i+1])
+                except json.JSONDecodeError:
+                    return []
+    return []
+
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── City YouTube channels ──────────────────────────────────────────────────────
+# Verified channels marked ✓ | Unverified marked with ? (may need updating)
 CITY_CHANNELS = {
-    "Apex":        "https://www.youtube.com/c/TownofApexGov",
-    "Raleigh":     "https://www.youtube.com/@CityofRaleighGov",
-    "Cary":        "https://www.youtube.com/@TownofCary",
-    "Wake Forest": "https://www.youtube.com/@WakeForestNC",
-    "Holly Springs":"https://www.youtube.com/@HollySpringsTownNC",
-    "Fuquay-Varina":"https://www.youtube.com/@TownofFuquayVarina",
-    "Garner":      "https://www.youtube.com/@TownofGarnerNC",
-    "Morrisville": "https://www.youtube.com/@TownofMorrisvilleNC",
+    # Wake County municipalities
+    "Apex":         "https://www.youtube.com/c/TownofApexGov",           # ✓ confirmed
+    "Raleigh":      "https://www.youtube.com/@CityofRaleighGov",         # ✓
+    "Cary":         "https://www.youtube.com/@TownofCaryNC",             # ? verify
+    "Wake Forest":  "https://www.youtube.com/@TownofWakeForestNC",       # ? verify
+    "Holly Springs":"https://www.youtube.com/@TownofHollySpringsNC",     # ? verify
+    "Fuquay-Varina":"https://www.youtube.com/@TownofFuquayVarinaNC",     # ? verify
+    "Garner":       "https://www.youtube.com/@TownofGarnerNC",           # ? verify
+    "Morrisville":  "https://www.youtube.com/@TownofMorrisvilleNC",      # ? verify
+    "Knightdale":   "https://www.youtube.com/@TownofKnightdaleNC",       # ? verify
+    "Wendell":      "https://www.youtube.com/@TownofWendellNC",          # ? verify
+    "Zebulon":      "https://www.youtube.com/@TownofZebulonNC",          # ? verify
+    "Rolesville":   "https://www.youtube.com/@TownofRolesvilleNC",       # ? verify
+    # County board — handles rezonings in unincorporated Wake County
+    "Wake County":  "https://www.youtube.com/@WakeCountyGovNC",          # ? verify
 }
 
 # Keywords to identify planning/rezoning meeting videos
@@ -333,8 +367,7 @@ def extract_with_claude(city, transcript, video_url, use_sonnet_for_council=Fals
             }]
         )
         raw = resp.content[0].text.strip()
-        raw = re.sub(r'^```[a-z]*\n?', '', raw); raw = re.sub(r'\n?```$', '', raw)
-        cases = json.loads(raw.strip()) if raw else []
+        cases = _parse_json_array(raw)
         for c in cases:
             c.update({"city": city, "source": "video", "_video_url": video_url})
         log(f"  ✓ {len(cases)} cases extracted")
@@ -344,12 +377,15 @@ def extract_with_claude(city, transcript, video_url, use_sonnet_for_council=Fals
         council_model = SONNET if use_sonnet_for_council else HAIKU
 
         # Get known members from DB for context
-        conn = sqlite3.connect(CASES_DB)
-        known = conn.execute(
-            "SELECT DISTINCT member_name FROM council_intelligence WHERE city=?", (city,)
-        ).fetchall()
-        conn.close()
-        members_str = ", ".join(r[0] for r in known) if known else "unknown — extract from transcript"
+        try:
+            conn = sqlite3.connect(CASES_DB)
+            known = conn.execute(
+                "SELECT DISTINCT member_name FROM council_intelligence WHERE city=?", (city,)
+            ).fetchall()
+            conn.close()
+            members_str = ", ".join(r[0] for r in known) if known else "unknown — extract from transcript"
+        except Exception:
+            members_str = "unknown — extract from transcript"
 
         resp2 = client.messages.create(
             model=council_model, max_tokens=4000,
@@ -358,8 +394,7 @@ def extract_with_claude(city, transcript, video_url, use_sonnet_for_council=Fals
             }]
         )
         raw2 = resp2.content[0].text.strip()
-        raw2 = re.sub(r'^```[a-z]*\n?', '', raw2); raw2 = re.sub(r'\n?```$', '', raw2)
-        members = json.loads(raw2.strip()) if raw2 else []
+        members = _parse_json_array(raw2)
         for m in members:
             m["video_url"] = video_url
         log(f"  ✓ {len(members)} council member records extracted")
