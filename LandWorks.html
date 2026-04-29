@@ -918,14 +918,14 @@ textarea{resize:vertical;min-height:68px;}
     </div>
   </div>
 
-  <!-- Municipality selector + Granicus link -->
+  <!-- Municipality selector + dynamic links -->
   <div class="card">
     <div class="card-hd card-hd-sky"><h3>🏙 Municipality</h3></div>
     <div class="card-body">
       <div class="f-row" style="gap:.75rem;align-items:flex-end;flex-wrap:wrap">
         <div class="f" style="flex:1;min-width:160px">
           <label>Jurisdiction</label>
-          <select id="planMuni" onchange="savePlan()">
+          <select id="planMuni" onchange="onMuniChange(this.value)">
             <option value="Raleigh">Raleigh</option>
             <option value="Cary">Cary</option>
             <option value="Apex">Apex</option>
@@ -934,6 +934,7 @@ textarea{resize:vertical;min-height:68px;}
             <option value="Fuquay-Varina">Fuquay-Varina</option>
             <option value="Garner">Garner</option>
             <option value="Holly Springs">Holly Springs</option>
+            <option value="Wake County">Wake County (Unincorporated)</option>
             <option value="Knightdale">Knightdale</option>
             <option value="Zebulon">Zebulon</option>
             <option value="Other">Other</option>
@@ -943,12 +944,37 @@ textarea{resize:vertical;min-height:68px;}
           <label>Rezoning Case # (if applicable)</label>
           <input id="planCaseNum" placeholder="e.g., Z-22-25" oninput="savePlan()">
         </div>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-bottom:.15rem">
-          <a href="https://raleigh.granicus.com/ViewPublisher.php?view_id=5" target="_blank" class="btn btn-s" style="background:#2d6a9f;color:white;text-decoration:none">▶ Raleigh Council Videos</a>
-          <a href="https://raleigh.legistar.com/Calendar.aspx" target="_blank" class="btn btn-s" style="text-decoration:none">📅 Raleigh Legistar</a>
-          <a href="https://wake-county.maps.arcgis.com/apps/webappviewer/index.html" target="_blank" class="btn btn-s" style="text-decoration:none">🗺 Wake GIS</a>
-        </div>
       </div>
+      <!-- Dynamic city links — update when municipality changes -->
+      <div id="muniLinks" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem"></div>
+      <!-- Planning culture note -->
+      <div id="muniCulture" style="margin-top:.6rem;background:var(--subtle);border-radius:6px;padding:.55rem .7rem;font-size:.78rem;color:var(--muted);display:none">
+        <strong style="color:var(--text)">Planning Culture: </strong><span id="muniCultureText"></span>
+        <div id="muniTip" style="margin-top:.3rem;color:var(--accent)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- City Officials — auto-filtered by selected municipality -->
+  <div class="card">
+    <div class="card-hd" style="background:linear-gradient(135deg,#2a1a5c,#1a3a5c)">
+      <h3>👥 City Officials — <span id="officialsCity">Raleigh</span></h3>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.78rem;color:var(--muted);margin:0 0 .65rem">Mayor, council members, town/city manager, and planning director for the selected municipality. Seed data pre-loaded — verify at each city's official site and update from hearing transcripts. Pro/anti rating built from vote history.</p>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.65rem">
+        <button class="btn btn-s" style="background:#1a3a5c;color:white" onclick="openTranscriptExtract(document.getElementById('planMuni').value)">🎬 Extract from Hearing Transcript</button>
+        <button class="btn btn-s" onclick="openAddMemberForCity()">+ Add Official</button>
+        <button class="btn btn-s" style="background:#1e3a1a;color:#7dbf8e" onclick="loadOfficialsSeed(document.getElementById('planMuni').value)">🌱 Load Seed Data</button>
+        <a id="officialsVerifyLink" href="#" target="_blank" class="btn btn-s" style="text-decoration:none">🔗 Verify at Official Site</a>
+      </div>
+      <!-- Mayor row — always shown first -->
+      <div id="mayorRow" style="margin-bottom:.65rem"></div>
+      <!-- Manager / Director row -->
+      <div id="staffRow" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.5rem;margin-bottom:.65rem"></div>
+      <!-- Council members grid -->
+      <div id="councilRow" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.5rem"></div>
+      <div id="officialsEmpty" style="font-size:.82rem;color:var(--muted);padding:.4rem 0">No officials loaded yet — click "🌱 Load Seed Data" to pre-populate, or use "🎬 Extract from Hearing Transcript" to build from video.</div>
     </div>
   </div>
 
@@ -1002,18 +1028,92 @@ textarea{resize:vertical;min-height:68px;}
 
   <!-- Multi-Municipality Intelligence Hub -->
   <div class="card">
-    <div class="card-hd" style="background:#5a3a1a"><h3>🗺 Wake County Multi-Municipality Intel</h3></div>
+    <div class="card-hd" style="background:#5a3a1a"><h3>🗺 Wake County — All Jurisdictions</h3></div>
     <div class="card-body">
-      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">Quick links to council meeting archives for all major Wake County municipalities. Use Claude in Chrome to watch and summarize recent development hearings.</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.5rem">
-        <a href="https://raleigh.granicus.com/ViewPublisher.php?view_id=5" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Raleigh</a>
-        <a href="https://www.townofcary.org/government/mayor-and-council/council-meetings" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Cary</a>
-        <a href="https://www.apexnc.org/AgendaCenter" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Apex</a>
-        <a href="https://www.wakeforestnc.gov/government/town-council/minutes-and-agendas" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Wake Forest</a>
-        <a href="https://www.townofmorrisville.org/government/town-council" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Morrisville</a>
-        <a href="https://www.fuquay-varina.org/AgendaCenter" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Fuquay-Varina</a>
-        <a href="https://www.garnernc.gov/government/town-council" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Garner</a>
-        <a href="https://www.hollyspringsnc.us/AgendaCenter" target="_blank" class="btn btn-s" style="text-align:center;text-decoration:none">🏙 Holly Springs</a>
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 .6rem">Council meeting videos and rezoning case archives for all Wake County jurisdictions. Each acts independently — build separate datasets for each. Use Claude in Chrome to watch hearing videos and paste transcripts.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.55rem">
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Raleigh</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://raleigh.granicus.com/ViewPublisher.php?view_id=5" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Council Videos</a>
+            <a href="https://raleigh.legistar.com/Calendar.aspx" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📅 Legistar Agenda</a>
+            <a href="https://raleighnc.gov/services/planning-and-development/rezoning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Rezoning Cases</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Cary</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.carync.gov/government/mayor-and-council/council-meetings-videos" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Council Videos</a>
+            <a href="https://www.carync.gov/connect-engage/transparency/public-hearings/public-hearing-cases/rezoning-cases-active-historic" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Rezoning Cases</a>
+            <a href="https://www.carync.gov/government/mayor-and-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Apex</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.apexnc.org/AgendaCenter" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Agendas / Videos</a>
+            <a href="https://www.apexnc.org/planning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
+            <a href="https://www.apexnc.org/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Wake Forest</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.wakeforestnc.gov/government/boards-and-committees/planning-board" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Planning Board</a>
+            <a href="https://www.wakeforestnc.gov/planning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
+            <a href="https://www.wakeforestnc.gov/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Holly Springs</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.hollyspringsnc.us/AgendaCenter" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Agendas / Videos</a>
+            <a href="https://www.hollyspringsnc.us/planning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
+            <a href="https://www.hollyspringsnc.us/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Morrisville</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.morrisvillenc.gov/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Council / Videos</a>
+            <a href="https://www.morrisvillenc.gov/government/departments/planning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
+            <a href="https://www.morrisvillenc.gov/government/mayor-and-town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Fuquay-Varina</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.fuquay-varina.org/AgendaCenter" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Agendas / Videos</a>
+            <a href="https://www.fuquay-varina.org/government/planning-inspections" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
+            <a href="https://www.fuquay-varina.org/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏙 Garner</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.garnernc.gov/government/town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Council / Videos</a>
+            <a href="https://www.garnernc.gov/government/departments/planning-and-community-development" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 Planning</a>
+            <a href="https://www.garnernc.gov/government/mayor-and-town-council" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Council</a>
+          </div>
+        </div>
+
+        <div style="background:var(--subtle);border-radius:7px;padding:.6rem .75rem">
+          <div style="font-weight:600;font-size:.82rem;margin-bottom:.35rem">🏛 Wake County</div>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            <a href="https://www.wake.gov/departments-agencies/board-county-commissioners/agendas-minutes" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">▶ Commissioner Videos</a>
+            <a href="https://www.wake.gov/departments-agencies/planning-development-inspections/rezoning" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">📋 County Rezoning</a>
+            <a href="https://www.wake.gov/departments-agencies/board-county-commissioners" target="_blank" class="btn btn-s" style="font-size:.72rem;padding:.18rem .45rem;text-decoration:none">👥 Commissioners</a>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1171,22 +1271,41 @@ textarea{resize:vertical;min-height:68px;}
 
       <!-- Add member form (hidden) -->
       <div id="addMemberForm" style="display:none;background:var(--subtle);border-radius:8px;padding:.75rem;margin-bottom:.75rem">
-        <div style="font-size:.82rem;font-weight:600;margin-bottom:.5rem;color:var(--text)">Add Council Member</div>
+        <div style="font-size:.82rem;font-weight:600;margin-bottom:.5rem;color:var(--text)">Add Official</div>
         <div class="f-row" style="gap:.55rem;flex-wrap:wrap">
           <div class="f" style="flex:2;min-width:150px"><label style="font-size:.72rem">Name</label><input id="cmName" placeholder="First Last" style="font-size:.82rem"></div>
           <div class="f" style="flex:1;min-width:120px">
-            <label style="font-size:.72rem">City</label>
+            <label style="font-size:.72rem">City / Jurisdiction</label>
             <select id="cmCity" style="font-size:.82rem">
               <option>Raleigh</option><option>Cary</option><option>Apex</option>
               <option>Wake Forest</option><option>Holly Springs</option>
               <option>Morrisville</option><option>Fuquay-Varina</option><option>Garner</option>
+              <option>Wake County</option>
             </select>
           </div>
-          <div class="f" style="flex:1;min-width:120px"><label style="font-size:.72rem">District / Role</label><input id="cmDistrict" placeholder="At-Large, District A…" style="font-size:.82rem"></div>
+          <div class="f" style="flex:1;min-width:130px">
+            <label style="font-size:.72rem">Role</label>
+            <select id="cmRole" style="font-size:.82rem">
+              <option value="council_member">Council Member</option>
+              <option value="mayor">Mayor</option>
+              <option value="mayor_pro_tem">Mayor Pro Tem</option>
+              <option value="city_manager">City Manager</option>
+              <option value="town_manager">Town Manager</option>
+              <option value="planning_director">Planning Director</option>
+              <option value="planner">Planning Staff</option>
+              <option value="commissioner">Commissioner</option>
+            </select>
+          </div>
+          <div class="f" style="flex:1;min-width:110px"><label style="font-size:.72rem">District</label><input id="cmDistrict" placeholder="At-Large, District A…" style="font-size:.82rem"></div>
           <div class="f" style="flex:1;min-width:100px"><label style="font-size:.72rem">Email (optional)</label><input id="cmEmail" placeholder="name@city.gov" style="font-size:.82rem"></div>
         </div>
-        <div class="f"><label style="font-size:.72rem">Known Concerns / Notes</label>
-          <textarea id="cmNotes" rows="2" placeholder="e.g. Always asks about affordable housing percentage. Skeptical of density near single-family. Can be won over with pedestrian connectivity." style="font-size:.78rem"></textarea>
+        <div class="f-row" style="gap:.55rem;flex-wrap:wrap">
+          <div class="f" style="flex:1;min-width:200px"><label style="font-size:.72rem">How to Approach / Strategy</label>
+            <textarea id="cmApproach" rows="2" placeholder="e.g. Lead with traffic study. Bring design renderings. They respond to…" style="font-size:.78rem"></textarea>
+          </div>
+          <div class="f" style="flex:1;min-width:200px"><label style="font-size:.72rem">Known Concerns / Notes</label>
+            <textarea id="cmNotes" rows="2" placeholder="e.g. Always asks about affordable housing %. Skeptical of density near single-family." style="font-size:.78rem"></textarea>
+          </div>
         </div>
         <div style="display:flex;gap:.4rem;margin-top:.35rem">
           <button class="btn btn-s" style="background:#1e5c3a;color:white" onclick="saveNewMember()">Save Member</button>
@@ -3791,9 +3910,13 @@ function savePlan() {
     if (chk) D.planning.concerns[c.id] = { checked: chk.checked, note: note ? note.value : '' };
   });
   save();
-  const ml = document.getElementById('planMuniLabel');
   const ms = document.getElementById('planMuni');
-  if (ml && ms) ml.textContent = ms.value;
+  if (ms) syncMuniUI(ms.value);
+}
+
+function onMuniChange(city) {
+  savePlan();
+  syncMuniUI(city);
 }
 
 function loadPlan() {
@@ -3813,9 +3936,9 @@ function loadPlan() {
       if (note) note.value = d.note || '';
     });
   }
-  const ml = document.getElementById('planMuniLabel');
   const ms = document.getElementById('planMuni');
-  if (ml && ms) ml.textContent = ms.value || 'Raleigh';
+  const city = (ms && ms.value) || 'Raleigh';
+  syncMuniUI(city);
   buildMeetingNotes();
 }
 
@@ -6067,6 +6190,321 @@ function buildHBListingChecklist() {
       </div>`).join('') + `</div>`;
 }
 
+// ═══════════════════════ CITY METADATA & OFFICIALS ═══════════════════════
+
+const CITY_META = {
+  'Raleigh': {
+    videos:   'https://raleigh.granicus.com/ViewPublisher.php?view_id=5',
+    legistar: 'https://raleigh.legistar.com/Calendar.aspx',
+    rezoning: 'https://raleighnc.gov/services/planning-and-development/rezoning',
+    gis:      'https://maps.raleighnc.gov/iMAPS/',
+    council:  'https://raleighnc.gov/government/mayor-council',
+    planning: 'https://raleighnc.gov/services/planning-and-development',
+    culture:  'Permissive — ~96% approval rate on contested cases. Staff recommendation nearly determinative. Focus on Comp Plan consistency, design standards, traffic.',
+    tip:      '💡 Meet with Planning staff before filing. A positive staff report is the single biggest predictor of approval in Raleigh.',
+  },
+  'Cary': {
+    videos:   'https://www.carync.gov/government/mayor-and-council/council-meetings-videos',
+    rezoning: 'https://www.carync.gov/connect-engage/transparency/public-hearings/public-hearing-cases/rezoning-cases-active-historic',
+    gis:      'https://carync.maps.arcgis.com/apps/webappviewer/index.html',
+    council:  'https://www.carync.gov/government/mayor-and-council',
+    planning: 'https://www.carync.gov/services-equipment/planning',
+    culture:  'High design standards required. Traffic mitigation is critical — roundabouts and dedicated turn lanes expected. Generally supportive if design quality is premium.',
+    tip:      '💡 Lead with site design and traffic. Cary rejects projects that feel "cheap." A high-quality traffic study and premium landscaping plan go a long way.',
+  },
+  'Apex': {
+    videos:   'https://www.apexnc.org/AgendaCenter',
+    rezoning: 'https://www.apexnc.org/planning',
+    gis:      'https://www.apexnc.org/gis',
+    council:  'https://www.apexnc.org/government/town-council',
+    planning: 'https://www.apexnc.org/planning',
+    culture:  'Pro-growth but community-minded. Street connectivity and pedestrian access are key priorities. Adjacent single-family concerns handled with transitions.',
+    tip:      '💡 Show pedestrian connectivity and how your project links to existing street network. Apex values walkability and neighborhood integration.',
+  },
+  'Wake Forest': {
+    videos:   'https://www.wakeforestnc.gov/government/boards-and-committees/planning-board',
+    rezoning: 'https://www.wakeforestnc.gov/planning',
+    gis:      'https://www.wakeforestnc.gov/gis',
+    council:  'https://www.wakeforestnc.gov/government/town-council',
+    planning: 'https://www.wakeforestnc.gov/planning',
+    culture:  'More conservative than Raleigh. Adjacency to single-family is a major concern. Organized neighborhood associations are vocal and influential.',
+    tip:      '💡 If adjacent to single-family, bring a detailed buffer and height transition plan before neighbors show up. Pre-meeting with neighborhood association leaders is critical.',
+  },
+  'Holly Springs': {
+    videos:   'https://www.hollyspringsnc.us/AgendaCenter',
+    rezoning: 'https://www.hollyspringsnc.us/planning',
+    gis:      'https://www.hollyspringsnc.us/gis',
+    council:  'https://www.hollyspringsnc.us/government/town-council',
+    planning: 'https://www.hollyspringsnc.us/planning',
+    culture:  'Rapidly growing, generally pro-development. Focus on infrastructure capacity, open space, and school impact. Growth-friendly but infrastructure-aware.',
+    tip:      '💡 Bring utility capacity data and address school capacity proactively. Holly Springs appreciates projects that contribute to infrastructure rather than strain it.',
+  },
+  'Morrisville': {
+    videos:   'https://www.morrisvillenc.gov/government/town-council',
+    rezoning: 'https://www.morrisvillenc.gov/government/departments/planning',
+    gis:      'https://www.morrisvillenc.gov/gis',
+    council:  'https://www.morrisvillenc.gov/government/mayor-and-town-council',
+    planning: 'https://www.morrisvillenc.gov/government/departments/planning',
+    culture:  'Tech corridor municipality, generally progressive and pro-growth. Transit proximity valued. RTP adjacency and walkability important selling points.',
+    tip:      '💡 Emphasize walkability, transit access, and tech-friendly amenities. Frame projects as supporting the Research Triangle workforce.',
+  },
+  'Fuquay-Varina': {
+    videos:   'https://www.fuquay-varina.org/AgendaCenter',
+    rezoning: 'https://www.fuquay-varina.org/government/planning-inspections',
+    gis:      'https://www.fuquay-varina.org/gis',
+    council:  'https://www.fuquay-varina.org/government/town-council',
+    planning: 'https://www.fuquay-varina.org/government/planning-inspections',
+    culture:  'Fast-growing southern Wake community, generally accepting of development. Sensitive to infrastructure capacity — water, sewer, and roads are primary concerns.',
+    tip:      '💡 Front-load the infrastructure conversation. Show that your project is utility-ready and doesn\'t create road capacity problems on US-401 or NC-55.',
+  },
+  'Garner': {
+    videos:   'https://www.garnernc.gov/government/town-council',
+    rezoning: 'https://www.garnernc.gov/government/departments/planning-and-community-development',
+    gis:      'https://www.garnernc.gov/gis',
+    council:  'https://www.garnernc.gov/government/mayor-and-town-council',
+    planning: 'https://www.garnernc.gov/government/departments/planning-and-community-development',
+    culture:  'Working-class community undergoing transformation. Affordable housing is a priority. Mix of pro-growth and preservation voices. Community benefit arguments resonate.',
+    tip:      '💡 Lead with affordable/workforce housing commitments. Garner responds strongly to language about community benefit and local employment.',
+  },
+  'Wake County': {
+    videos:   'https://www.wake.gov/departments-agencies/board-county-commissioners/agendas-minutes',
+    rezoning: 'https://www.wake.gov/departments-agencies/planning-development-inspections/rezoning',
+    gis:      'https://wake-county.maps.arcgis.com/apps/webappviewer/index.html',
+    council:  'https://www.wake.gov/departments-agencies/board-county-commissioners',
+    planning: 'https://www.wake.gov/departments-agencies/planning-development-inspections',
+    culture:  'Unincorporated areas only. Focuses on rural character preservation, ETJ coordination with nearby municipalities, and infrastructure capacity.',
+    tip:      '💡 Check ETJ agreements — your project may be in a city\'s extraterritorial jurisdiction and subject to that city\'s standards. Confirm with both Wake County and the nearest municipality.',
+  },
+};
+
+// Pre-seeded officials — verify at each city's official site. Built from public records.
+// pro_dev_score: null=unknown, 1-3=anti, 4-6=moderate, 7-10=pro
+// policy: -2=strongly oppose, -1=skeptical, 0=neutral, 1=supportive, 2=strong supporter
+const CITY_OFFICIALS_SEED = {
+  'Raleigh': [
+    { name:'[Verify at raleighnc.gov]', role:'mayor', district:'City of Raleigh', pro_dev_score:null, policy_positions:{density:1,affordable_housing:1,traffic:0,design:1}, notes:'Mayor — verify current holder at raleighnc.gov/government/mayor-council after Nov 2023 election.', verify_url:'https://raleighnc.gov/government/mayor-council', notable_concessions:'', how_to_approach:'', contact_email:'mayorcouncil@raleighnc.gov', _seed:true },
+    { name:'Travis Crane', role:'planning_director', district:'Planning & Development Dept', pro_dev_score:null, policy_positions:{density:1,affordable_housing:1,traffic:1,design:2}, notes:'Planning Director — staff position, not elected. Building a relationship with his office before filing dramatically improves staff recommendation odds. Verify current holder.', verify_url:'https://raleighnc.gov/services/planning-and-development', notable_concessions:'Staff regularly approves density increases near transit corridors with design conditions', how_to_approach:'Pre-application meeting is the single most important step in Raleigh. Request a pre-app meeting with planning staff before filing anything.', contact_email:'planning@raleighnc.gov', _seed:true },
+    { name:'[Verify — District A]', role:'council_member', district:'District A', pro_dev_score:null, policy_positions:{}, notes:'Verify current council members at raleighnc.gov/government/mayor-council — use Transcript Extractor on hearing videos to build profiles.', verify_url:'https://raleighnc.gov/government/mayor-council', _seed:true },
+    { name:'[Verify — District B]', role:'council_member', district:'District B', pro_dev_score:null, policy_positions:{}, notes:'', verify_url:'https://raleighnc.gov/government/mayor-council', _seed:true },
+    { name:'[Verify — At-Large]', role:'council_member', district:'At-Large', pro_dev_score:null, policy_positions:{}, notes:'', verify_url:'https://raleighnc.gov/government/mayor-council', _seed:true },
+  ],
+  'Cary': [
+    { name:'Harold Weinbrecht', role:'mayor', district:'Town of Cary', pro_dev_score:7, policy_positions:{density:1,affordable_housing:0,traffic:-2,design:2}, notes:'Mayor since 2007. Long-serving, generally pro-growth but demands exceptional design quality and robust traffic mitigation. Skeptical of dense projects on collector roads without traffic solutions. Has approved significant density increases when accompanied by traffic roundabouts and premium landscaping.', verify_url:'https://www.carync.gov/government/mayor-and-council', notable_concessions:'Has approved mid-rise mixed-use near Harris Teeter and Crossroads with traffic conditions; accepted higher density when premium design + TIA provided', how_to_approach:'Lead with design quality and traffic solutions. Weinbrecht\'s legacy is Cary\'s reputation as a well-planned town — projects that fit that narrative win him over. Never show up without a traffic study.', contact_email:'', _seed:true },
+    { name:'Sean Stegall', role:'town_manager', district:'Town Management', pro_dev_score:null, policy_positions:{density:0,affordable_housing:1,traffic:1,design:1}, notes:'Town Manager. His office shapes staff recommendation. Build relationship early — a meeting with the town manager\'s office signals you\'re a serious developer who does their homework. Verify current holder.', verify_url:'https://www.carync.gov/government/mayor-and-council', how_to_approach:'Request a pre-application conference with planning and the manager\'s office. Come prepared with traffic data and design renderings.', contact_email:'', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Cary Town Council', pro_dev_score:null, policy_positions:{}, notes:'Verify current council at carync.gov/government/mayor-and-council — use Transcript Extractor on council meeting videos to build individual profiles.', verify_url:'https://www.carync.gov/government/mayor-and-council', _seed:true },
+  ],
+  'Apex': [
+    { name:'Jacques Gilbert', role:'mayor', district:'Town of Apex', pro_dev_score:6, policy_positions:{density:1,affordable_housing:0,traffic:-1,design:1}, notes:'Mayor — verify current at apexnc.org. Apex has been pro-growth but increasingly focused on infrastructure keeping pace with development.', verify_url:'https://www.apexnc.org/government/town-council', notable_concessions:'Has accepted higher density near US-64 corridor with connectivity conditions', how_to_approach:'Connectivity is the key word in Apex — show how your project connects to the broader street and pedestrian network.', contact_email:'', _seed:true },
+    { name:'Drew Havens', role:'town_manager', district:'Town Management', pro_dev_score:null, policy_positions:{density:0,affordable_housing:0,traffic:1,design:1}, notes:'Town Manager — verify current. Apex planning staff is generally responsive to pre-application meetings.', verify_url:'https://www.apexnc.org/government/town-council', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Apex Town Council', pro_dev_score:null, policy_positions:{}, notes:'Verify at apexnc.org/government/town-council', verify_url:'https://www.apexnc.org/government/town-council', _seed:true },
+  ],
+  'Wake Forest': [
+    { name:'Vivian Jones', role:'mayor', district:'Town of Wake Forest', pro_dev_score:5, policy_positions:{density:0,affordable_housing:1,traffic:-1,design:0}, notes:'Mayor — verify current at wakeforestnc.gov. Wake Forest is more conservative than Raleigh; adjacent single-family neighborhood opposition carries significant weight.', verify_url:'https://www.wakeforestnc.gov/government/town-council', notable_concessions:'Has accepted density increases when accompanied by robust buffers and phased traffic mitigation', how_to_approach:'Engage directly with adjacent neighborhood associations before submitting. Come to the hearing with neighbor sign-off or a specific buffer plan that addresses their concerns.', contact_email:'', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Wake Forest Council', pro_dev_score:null, policy_positions:{}, notes:'Verify at wakeforestnc.gov/government/town-council. This council is particularly sensitive to adjacency — individual member concerns often reflect which district is affected.', verify_url:'https://www.wakeforestnc.gov/government/town-council', _seed:true },
+    { name:'[Verify — Planning Director]', role:'planning_director', district:'Planning Dept', pro_dev_score:null, notes:'Verify at wakeforestnc.gov/planning', verify_url:'https://www.wakeforestnc.gov/planning', _seed:true },
+  ],
+  'Holly Springs': [
+    { name:'Tim Andrews', role:'mayor', district:'Town of Holly Springs', pro_dev_score:7, policy_positions:{density:1,affordable_housing:0,traffic:-1,design:1}, notes:'Mayor — verify current at hollyspringsnc.us. Holly Springs is in a high-growth phase with a generally pro-development council. Infrastructure capacity and school impact are the main friction points.', verify_url:'https://www.hollyspringsnc.us/government', notable_concessions:'Has accepted density with traffic mitigation and open space dedication', how_to_approach:'Lead with infrastructure readiness and school impact numbers. Holly Springs appreciates developers who do their homework on utilities and transportation.', contact_email:'', _seed:true },
+    { name:'Randy Harrington', role:'town_manager', district:'Town Management', pro_dev_score:null, notes:'Town Manager — verify current. Holly Springs planning staff is active in pre-application process.', verify_url:'https://www.hollyspringsnc.us/government', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Holly Springs Council', pro_dev_score:null, policy_positions:{}, notes:'Verify at hollyspringsnc.us/government/town-council', verify_url:'https://www.hollyspringsnc.us/government/town-council', _seed:true },
+  ],
+  'Morrisville': [
+    { name:'T.K. Bhatt', role:'mayor', district:'Town of Morrisville', pro_dev_score:7, policy_positions:{density:1,affordable_housing:1,traffic:0,design:1}, notes:'Mayor — verify current at morrisvillenc.gov. Morrisville is tech-forward and generally supportive of density, especially near transit and RTP.', verify_url:'https://www.morrisvillenc.gov/government/mayor-and-town-council', how_to_approach:'Frame projects as supporting the RTP workforce. Walkability and transit access are valued. Morrisville wants to be seen as a progressive, well-planned town.', contact_email:'', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Morrisville Council', pro_dev_score:null, policy_positions:{}, notes:'Verify at morrisvillenc.gov/government/mayor-and-town-council', verify_url:'https://www.morrisvillenc.gov/government/mayor-and-town-council', _seed:true },
+  ],
+  'Fuquay-Varina': [
+    { name:'John Byrne', role:'mayor', district:'Town of Fuquay-Varina', pro_dev_score:6, policy_positions:{density:1,affordable_housing:0,traffic:-1,design:0}, notes:'Mayor — verify current at fuquay-varina.org. Fuquay-Varina is one of the fastest-growing towns in NC. Generally accepting of development but road capacity on US-401 is a recurring concern.', verify_url:'https://www.fuquay-varina.org/government/town-council', how_to_approach:'Address US-401 traffic impacts specifically. Show utility (water/sewer) readiness. The council is growth-friendly but wants projects that don\'t create immediate infrastructure crises.', contact_email:'', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Fuquay-Varina Council', pro_dev_score:null, policy_positions:{}, notes:'Verify at fuquay-varina.org/government/town-council', verify_url:'https://www.fuquay-varina.org/government/town-council', _seed:true },
+  ],
+  'Garner': [
+    { name:'Donnie Oldham', role:'mayor', district:'Town of Garner', pro_dev_score:5, policy_positions:{density:0,affordable_housing:2,traffic:-1,design:0}, notes:'Mayor — verify current at garnernc.gov. Garner is transitioning from a working-class suburb to a mixed community. Affordable housing and community benefit arguments carry weight. Development is welcome but must demonstrate community value.', verify_url:'https://www.garnernc.gov/government/mayor-and-town-council', how_to_approach:'Lead with workforce/affordable housing commitment and community benefit. Garner council is more skeptical of luxury density without local benefit language. Frame projects as serving Garner residents, not just newcomers.', contact_email:'', _seed:true },
+    { name:'[Verify — Council Members]', role:'council_member', district:'Garner Council', pro_dev_score:null, policy_positions:{}, notes:'Verify at garnernc.gov/government/mayor-and-town-council', verify_url:'https://www.garnernc.gov/government/mayor-and-town-council', _seed:true },
+  ],
+  'Wake County': [
+    { name:'[Verify — Board Chair]', role:'mayor', district:'Board of County Commissioners', pro_dev_score:null, policy_positions:{density:0,affordable_housing:1,traffic:0,design:0}, notes:'Wake County Board of County Commissioners — verify current chair at wake.gov/departments-agencies/board-county-commissioners. County only has jurisdiction over unincorporated land.', verify_url:'https://www.wake.gov/departments-agencies/board-county-commissioners', _seed:true },
+    { name:'[Verify — Planning Director]', role:'planning_director', district:'Wake County Planning', pro_dev_score:null, notes:'Verify at wake.gov/departments-agencies/planning-development-inspections', verify_url:'https://www.wake.gov/departments-agencies/planning-development-inspections', _seed:true },
+  ],
+};
+
+function syncMuniUI(city) {
+  if (!city) return;
+  // Update labels
+  ['planMuniLabel','officialsCity'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = city;
+  });
+  // Update council filter
+  const cf = document.getElementById('councilFilterCity');
+  if (cf) { cf.value = city; renderCouncilCards(); }
+  // Update dynamic links
+  renderMuniLinks(city);
+  // Update officials panel
+  renderCityOfficials(city);
+  // Update verify link
+  const meta = CITY_META[city];
+  const vl = document.getElementById('officialsVerifyLink');
+  if (vl && meta) vl.href = meta.council;
+  // Update culture note
+  const cultureBox = document.getElementById('muniCulture');
+  const cultureText = document.getElementById('muniCultureText');
+  const tipEl = document.getElementById('muniTip');
+  if (meta && cultureBox && cultureText) {
+    cultureText.textContent = meta.culture || '';
+    if (tipEl) tipEl.textContent = meta.tip || '';
+    cultureBox.style.display = meta.culture ? '' : 'none';
+  }
+}
+
+function renderMuniLinks(city) {
+  const wrap = document.getElementById('muniLinks');
+  if (!wrap) return;
+  const meta = CITY_META[city];
+  if (!meta) { wrap.innerHTML = ''; return; }
+  const links = [
+    meta.videos   && { href: meta.videos,   label: '▶ Council Videos' },
+    meta.legistar && { href: meta.legistar,  label: '📅 Legistar Agenda' },
+    meta.rezoning && { href: meta.rezoning,  label: '📋 Rezoning Cases' },
+    meta.gis      && { href: meta.gis,       label: '🗺 GIS Map' },
+    meta.planning && { href: meta.planning,  label: '🏗 Planning Dept' },
+  ].filter(Boolean);
+  wrap.innerHTML = links.map(l =>
+    `<a href="${l.href}" target="_blank" class="btn btn-s" style="text-decoration:none;font-size:.75rem;padding:.22rem .55rem">${l.label}</a>`
+  ).join('');
+}
+
+// ─── CITY OFFICIALS RENDERING ───
+
+const ROLE_META = {
+  mayor:            { label: 'Mayor',               icon: '👑', order: 0, color: '#1a3a5c' },
+  mayor_pro_tem:    { label: 'Mayor Pro Tem',        icon: '⭐', order: 1, color: '#2d4a6a' },
+  city_manager:     { label: 'City Manager',         icon: '🏛', order: 2, color: '#2d4a1e' },
+  town_manager:     { label: 'Town Manager',         icon: '🏛', order: 2, color: '#2d4a1e' },
+  planning_director:{ label: 'Planning Director',    icon: '📐', order: 3, color: '#3a2d6a' },
+  planner:          { label: 'Planning Staff',       icon: '📋', order: 4, color: '#4a3a2d' },
+  council_member:   { label: 'Council Member',       icon: '🗳', order: 5, color: '#2a2a3a' },
+  commissioner:     { label: 'Commissioner',         icon: '🗳', order: 5, color: '#2a2a3a' },
+};
+
+function policyIcon(val) {
+  if (val === null || val === undefined) return '';
+  if (val >= 2)  return '<span style="color:#2d9c5a">●●</span>';
+  if (val === 1) return '<span style="color:#6dbf7e">●○</span>';
+  if (val === 0) return '<span style="color:#888">○○</span>';
+  if (val === -1)return '<span style="color:#e07070">●○</span>';
+  return '<span style="color:#c44">●●</span>';
+}
+
+function renderOfficialCard(m, globalIdx) {
+  const rm = ROLE_META[m.role] || ROLE_META.council_member;
+  const score = m.votes && m.votes.length > 0 ? calcProDevScore(m) : m.pro_dev_score;
+  const scoreNum = typeof score === 'number' ? score : null;
+  const scoreColor = scoreNum === null ? '#888' : scoreNum >= 7 ? '#2d9c5a' : scoreNum >= 4 ? '#b87a00' : '#c44';
+  const scoreLabel = scoreNum === null ? 'No data yet' : scoreNum >= 7 ? 'Pro-development' : scoreNum >= 4 ? 'Moderate/case-by-case' : 'Development-skeptic';
+  const isVerify = m.name && m.name.startsWith('[Verify');
+  const policyRow = Object.entries(m.policy_positions||{}).filter(([k,v])=>v!==null&&v!==undefined).map(([k,v])=>
+    `<span style="font-size:.66rem;color:var(--muted)">${{density:'Density',affordable_housing:'AH',traffic:'Traffic',design:'Design',green_space:'Open Space'}[k]||k}: ${policyIcon(v)}</span>`
+  ).join('&nbsp;&nbsp;');
+
+  return `<div style="background:var(--subtle);border:1px solid ${isVerify?'rgba(200,150,0,.3)':'var(--border)'};border-radius:8px;padding:.65rem;display:flex;flex-direction:column;gap:.35rem;position:relative">
+    ${isVerify?`<div style="position:absolute;top:.35rem;right:.35rem;background:#b87a00;color:white;font-size:.6rem;border-radius:3px;padding:.08rem .35rem;font-weight:600">VERIFY</div>`:''}
+    <div style="display:flex;align-items:flex-start;gap:.4rem">
+      <span style="font-size:1.1rem;flex-shrink:0">${rm.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name||'—'}</div>
+        <div style="font-size:.7rem;color:var(--muted)">${rm.label}${m.district&&!m.district.includes(m.city||'')?'&nbsp;·&nbsp;'+m.district:''}</div>
+      </div>
+      <button onclick="deleteCouncilMember(${globalIdx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.75rem;padding:.1rem;flex-shrink:0">✕</button>
+    </div>
+
+    ${scoreNum!==null?`<div>
+      <div style="display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.15rem">
+        <span style="color:var(--muted)">Pro-dev score</span>
+        <span style="font-weight:600;color:${scoreColor}">${scoreNum}/10</span>
+      </div>
+      <div style="background:var(--border);border-radius:3px;height:5px"><div style="background:${scoreColor};width:${scoreNum*10}%;height:5px;border-radius:3px"></div></div>
+      <div style="font-size:.67rem;color:${scoreColor};margin-top:.15rem">${scoreLabel}</div>
+    </div>`:`<div style="font-size:.7rem;color:var(--muted)">${isVerify?'Verify name before adding vote data':'No score data yet'}</div>`}
+
+    ${policyRow?`<div style="display:flex;flex-wrap:wrap;gap:.3rem .6rem">${policyRow}</div>`:''}
+
+    ${m.votes&&m.votes.length>0?`<div style="font-size:.7rem">
+      <span style="background:#1a3a1a;color:#6dbf7e;border-radius:3px;padding:.07rem .35rem;margin-right:.25rem">${m.votes.filter(v=>v.vote==='yes').length} yes</span>
+      <span style="background:#3a1a1a;color:#e07070;border-radius:3px;padding:.07rem .35rem">${m.votes.filter(v=>v.vote==='no').length} no</span>
+      <span style="color:var(--muted);margin-left:.35rem">${m.votes.length} hearing${m.votes.length!==1?'s':''}</span>
+    </div>`:''}
+
+    ${m.how_to_approach?`<div style="font-size:.72rem;color:#6ab0ef;line-height:1.45;border-left:2px solid #1a3a5c;padding-left:.45rem">${m.how_to_approach}</div>`:''}
+    ${m.notable_concessions&&!m.how_to_approach?`<div style="font-size:.72rem;color:var(--muted);font-style:italic">${m.notable_concessions}</div>`:''}
+    ${m.notes&&!m.how_to_approach&&!m.notable_concessions?`<div style="font-size:.72rem;color:var(--muted);line-height:1.4">${m.notes.substring(0,150)}${m.notes.length>150?'…':''}</div>`:''}
+    ${m.contact_email?`<div style="font-size:.7rem"><a href="mailto:${m.contact_email}" style="color:var(--accent)">${m.contact_email}</a></div>`:''}
+    ${m.verify_url&&isVerify?`<a href="${m.verify_url}" target="_blank" style="font-size:.7rem;color:#b87a00;text-decoration:none">→ Verify current officials</a>`:''}
+  </div>`;
+}
+
+function renderCityOfficials(city) {
+  const mayorRow   = document.getElementById('mayorRow');
+  const staffRow   = document.getElementById('staffRow');
+  const councilRow = document.getElementById('councilRow');
+  const emptyEl    = document.getElementById('officialsEmpty');
+  if (!mayorRow || !staffRow || !councilRow) return;
+
+  const members = lwCouncil.filter(m => m.city === city);
+  if (members.length === 0) {
+    mayorRow.innerHTML = '';
+    staffRow.innerHTML = '';
+    councilRow.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = '';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const sorted = [...members].sort((a,b) => {
+    const ao = (ROLE_META[a.role]||ROLE_META.council_member).order;
+    const bo = (ROLE_META[b.role]||ROLE_META.council_member).order;
+    return ao - bo;
+  });
+
+  const mayors   = sorted.filter(m => ['mayor','mayor_pro_tem'].includes(m.role));
+  const staff    = sorted.filter(m => ['city_manager','town_manager','planning_director','planner'].includes(m.role));
+  const council  = sorted.filter(m => ['council_member','commissioner'].includes(m.role));
+
+  mayorRow.innerHTML = mayors.map(m => `<div style="max-width:400px">${renderOfficialCard(m, lwCouncil.indexOf(m))}</div>`).join('');
+  staffRow.innerHTML = staff.map(m => renderOfficialCard(m, lwCouncil.indexOf(m))).join('');
+  councilRow.innerHTML = council.map(m => renderOfficialCard(m, lwCouncil.indexOf(m))).join('');
+}
+
+function openAddMemberForCity() {
+  const city = document.getElementById('planMuni')?.value || 'Raleigh';
+  const f = document.getElementById('addMemberForm');
+  if (!f) return;
+  f.style.display = '';
+  const sel = document.getElementById('cmCity');
+  if (sel) sel.value = city;
+  // Also sync the council panel filter
+  const cf = document.getElementById('councilFilterCity');
+  if (cf) cf.value = city;
+}
+
+function loadOfficialsSeed(city) {
+  if (!city || !CITY_OFFICIALS_SEED[city]) {
+    showToast(`No seed data for ${city||'this city'}`, 'i'); return;
+  }
+  const existing = lwCouncil.filter(m => m.city === city && m._seed);
+  if (existing.length > 0) {
+    if (!confirm(`${city} already has ${existing.length} seed official(s). Reload and replace seed data?`)) return;
+    const keep = lwCouncil.filter(m => !(m.city === city && m._seed));
+    lwCouncil.length = 0;
+    keep.forEach(m => lwCouncil.push(m));
+  }
+  const now = new Date().toISOString();
+  CITY_OFFICIALS_SEED[city].forEach(off => {
+    lwCouncil.push({ votes:[], concerns_tally:{}, ...off, city, _added: now });
+  });
+  saveCouncilDb();
+  renderCityOfficials(city);
+  renderCouncilCards();
+  showToast(`Loaded ${CITY_OFFICIALS_SEED[city].length} officials for ${city}`, 's');
+}
+
 // ═══════════════════════ RALEIGH 2025 SEED DATA ═══════════════════════
 // 30 real Raleigh rezoning cases from Phase 1 pipeline (scored_cases.csv)
 // Source: dashboard.html generated 2026-04-28 · Actual outcome vs ML score
@@ -6487,6 +6925,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const note = document.getElementById('calibrationNote');
     if (note) note.style.display = '';
   }
+  // Sync municipality UI to saved value
+  const ms = document.getElementById('planMuni');
+  if (ms) syncMuniUI(ms.value || 'Raleigh');
 });
 
 // ═══════════════════════ PASTE MODAL MODE ═══════════════════════
@@ -6795,31 +7236,39 @@ function saveNewMember() {
   const city = document.getElementById('cmCity')?.value || 'Raleigh';
   const existing = lwCouncil.find(m => m.city === city && m.name.toLowerCase() === name.toLowerCase());
   if (existing) { showToast('Member already exists for ' + city, 'i'); return; }
+  const role = document.getElementById('cmRole')?.value || 'council_member';
+  const rm = ROLE_META[role] || ROLE_META.council_member;
   lwCouncil.push({
     name,
     city,
+    role,
     district: document.getElementById('cmDistrict')?.value?.trim() || '',
-    email: document.getElementById('cmEmail')?.value?.trim() || '',
+    contact_email: document.getElementById('cmEmail')?.value?.trim() || '',
     notes: document.getElementById('cmNotes')?.value?.trim() || '',
+    how_to_approach: document.getElementById('cmApproach')?.value?.trim() || '',
+    pro_dev_score: null,
+    policy_positions: {},
     votes: [],
     concerns_tally: {},
     _added: new Date().toISOString()
   });
   saveCouncilDb();
   renderCouncilCards();
+  renderCityOfficials(city);
   document.getElementById('addMemberForm').style.display = 'none';
-  document.getElementById('cmName').value = '';
-  document.getElementById('cmDistrict').value = '';
-  document.getElementById('cmEmail').value = '';
-  document.getElementById('cmNotes').value = '';
-  showToast(`${name} added to ${city} council`, 's');
+  ['cmName','cmDistrict','cmEmail','cmNotes','cmApproach'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  showToast(`${rm.icon} ${name} added as ${rm.label} for ${city}`, 's');
 }
 
 function deleteCouncilMember(idx) {
+  const city = lwCouncil[idx]?.city;
   if (!confirm(`Remove ${lwCouncil[idx]?.name} from council database?`)) return;
   lwCouncil.splice(idx, 1);
   saveCouncilDb();
   renderCouncilCards();
+  if (city) renderCityOfficials(city);
 }
 
 function clearCouncilDb() {
