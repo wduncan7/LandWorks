@@ -159,7 +159,7 @@ def fetch_parcel_from_arcgis(pin: str) -> Optional[dict]:
         "total_value":    _float(attrs.get("TOTAL_VALUE_ASSD")),
         "last_sale_price":_float(attrs.get("TOTSALPRICE")),
         "last_sale_date": _epoch_to_date(attrs.get("SALE_DATE")),
-        "zoning":         attrs.get("PROPDESC", ""),
+        "zoning":         attrs.get("ZONING_CLASS") or None,
         "township":       attrs.get("TOWNSHIP_DECODE", attrs.get("TOWNSHIP", "")),
         "planning_juris": attrs.get("PLANNING_JURISDICTION", ""),
         "exempt_status":  attrs.get("EXEMPTDESC", attrs.get("EXEMPTSTAT", "")),
@@ -268,7 +268,7 @@ def serve():
 
     @app.route("/geometry/<pin>")
     def get_geometry(pin):
-        """Fetch parcel boundary polygon from Wake County ArcGIS in NC State Plane feet."""
+        """Fetch parcel boundary polygon from Wake County ArcGIS in WGS84 (lat/lon)."""
         try:
             import requests as _req
         except ImportError:
@@ -277,7 +277,7 @@ def serve():
             "where":          f"PIN_NUM='{pin}'",
             "outFields":      "PIN_NUM,DEED_ACRES,SITE_ADDRESS,CITY_DECODE",
             "returnGeometry": "true",
-            "outSR":          "2264",   # NC State Plane, US Feet
+            "outSR":          "4326",   # WGS84 lat/lon for Leaflet
             "f":              "json",
         }
         try:
@@ -288,9 +288,15 @@ def serve():
             if not features:
                 return jsonify({"error": f"PIN {pin} not found"}), 404
             feat = features[0]
+            rings = feat.get("geometry", {}).get("rings", [])
+            # Convert Esri rings [lon, lat] → GeoJSON Polygon
+            geojson = {
+                "type": "Polygon",
+                "coordinates": rings
+            }
             return jsonify({
                 "pin":        pin,
-                "geometry":   feat.get("geometry", {}),
+                "geojson":    geojson,
                 "attributes": feat.get("attributes", {}),
             })
         except Exception as e:
@@ -391,6 +397,213 @@ def serve():
             "by_outcome":{r[0]: r[1] for r in by_out},
         })
 
+    @app.route("/council")
+    def get_council():
+        """
+        Return council member profiles built from the council_intelligence table.
+        Each member gets a pro_dev_score (0-10) derived from their vote history,
+        aggregated concerns, and most recent quotes.
+        GET /council?city=Raleigh   — filter by city
+        GET /council                — all cities
+        """
+        if not CASES_DB_PATH.exists():
+            return jsonify({"members": [], "total": 0})
+        try:
+            conn = sqlite3.connect(CASES_DB_PATH)
+            conn.row_factory = sqlite3.Row
+            city = request.args.get("city")
+
+            # Check if table exists
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='council_intelligence'"
+            ).fetchone()
+            if not tbl:
+                conn.close()
+                return jsonify({"members": [], "total": 0, "note": "No council data yet — run video scraper"})
+
+            if city:
+                rows = conn.execute(
+                    "SELECT * FROM council_intelligence WHERE city=? ORDER BY extracted_at DESC",
+                    (city,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM council_intelligence ORDER BY city, member_name, extracted_at DESC"
+                ).fetchall()
+            conn.close()
+
+            import json as _json
+
+            # Aggregate by city + member_name
+            members = {}
+            for r in rows:
+                key = (r["city"], r["member_name"])
+                if key not in members:
+                    members[key] = {
+                        "city":            r["city"],
+                        "name":            r["member_name"],
+                        "role":            r["role"] or "council_member",
+                        "votes":           [],
+                        "yes_votes":       0,
+                        "no_votes":        0,
+                        "abstain_votes":   0,
+                        "concerns_tally":  {},
+                        "key_quotes":      [],
+                    }
+                m = members[key]
+
+                # Tally vote
+                vote = (r["vote"] or "").lower()
+                if vote == "yes":   m["yes_votes"] += 1
+                elif vote == "no":  m["no_votes"] += 1
+                elif vote == "abstain": m["abstain_votes"] += 1
+
+                # Add vote record
+                concerns = []
+                conditions = []
+                try:
+                    concerns   = _json.loads(r["stated_concerns"] or "[]")
+                    conditions = _json.loads(r["conditions_requested"] or "[]")
+                except Exception:
+                    pass
+
+                m["votes"].append({
+                    "case_number":        r["case_number"],
+                    "meeting_date":       r["meeting_date"],
+                    "vote":               r["vote"],
+                    "sentiment":          r["sentiment"],
+                    "key_quote":          r["key_quote"],
+                    "stated_concerns":    concerns,
+                    "conditions_requested": conditions,
+                })
+
+                # Tally concerns
+                for c in concerns:
+                    label = c.strip().lower()[:60]
+                    m["concerns_tally"][label] = m["concerns_tally"].get(label, 0) + 1
+
+                # Keep recent quotes
+                if r["key_quote"] and len(m["key_quotes"]) < 3:
+                    m["key_quotes"].append(r["key_quote"])
+
+            # Calculate pro_dev_score for each member
+            result = []
+            for m in members.values():
+                total_votes = m["yes_votes"] + m["no_votes"] + m["abstain_votes"]
+                if total_votes > 0:
+                    raw = (m["yes_votes"] / (m["yes_votes"] + m["no_votes"])) * 10 if (m["yes_votes"] + m["no_votes"]) > 0 else 5
+                    m["pro_dev_score"] = round(raw, 1)
+                else:
+                    m["pro_dev_score"] = None
+
+                m["total_votes"]     = total_votes
+                m["top_concerns"]    = sorted(m["concerns_tally"].items(), key=lambda x: -x[1])[:5]
+                m["latest_quote"]    = m["key_quotes"][0] if m["key_quotes"] else None
+                result.append(m)
+
+            # Sort: city, then by most votes (most data first)
+            result.sort(key=lambda x: (x["city"], -(x["total_votes"])))
+            return jsonify({"members": result, "total": len(result)})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # ── Zoning lookup (bypasses browser CORS for Planning/Zoning layer) ──
+    @app.route("/zoning/<pin>")
+    def get_zoning(pin):
+        """
+        Fetch zoning district for a parcel PIN.
+        Strategy 1: Property/Property/MapServer ZONING_CLASS attribute query
+        Strategy 2: Spatial point-in-polygon on Planning/Zoning/MapServer
+        """
+        try:
+            import requests as _req
+        except ImportError:
+            return jsonify({"error": "requests not installed"}), 500
+
+        pin_clean = pin.strip().replace("-", "")
+        headers = {"User-Agent": "Mozilla/5.0 LandWorks/1.0"}
+
+        # ── Strategy 1: ZONING_CLASS from Property/Property layer ──────────────
+        prop_endpoints = [
+            "https://maps.wake.gov/arcgis/rest/services/Property/Property/MapServer/0/query",
+            "https://maps.wakegov.com/arcgis/rest/services/Property/Property/MapServer/0/query",
+            "https://maps.wake.gov/arcgis/rest/services/Property/Parcels/MapServer/0/query",
+        ]
+        for ep in prop_endpoints:
+            try:
+                resp = _req.get(ep, params={
+                    "where": f"PIN_NUM='{pin_clean}'",
+                    "outFields": "ZONING_CLASS,ZONING_DESC,ZONE_CLASS",
+                    "returnGeometry": "false",
+                    "f": "json",
+                }, headers=headers, timeout=15)
+                data = resp.json()
+                feats = data.get("features", [])
+                if feats:
+                    attrs = feats[0].get("attributes", {})
+                    z = (attrs.get("ZONING_CLASS") or attrs.get("ZONING_DESC") or
+                         attrs.get("ZONE_CLASS") or "")
+                    if z and str(z).strip() and str(z).lower() not in ("null", "none", ""):
+                        return jsonify({"zoning": str(z).strip(), "source": "property_layer"})
+            except Exception:
+                continue
+
+        # ── Strategy 2: Spatial query on Planning/Zoning layer ─────────────────
+        # First get parcel centroid from geometry endpoint
+        try:
+            # Inline geometry fetch to get centroid
+            geom_resp = _req.get(
+                "https://maps.wake.gov/arcgis/rest/services/Property/Parcels/MapServer/0/query",
+                params={
+                    "where": f"PIN_NUM='{pin_clean}'",
+                    "outFields": "PIN_NUM",
+                    "returnGeometry": "true",
+                    "outSR": "4326",
+                    "f": "json",
+                }, headers=headers, timeout=15
+            )
+            geom_data = geom_resp.json()
+            geom_feats = geom_data.get("features", [])
+            if geom_feats:
+                rings = (geom_feats[0].get("geometry") or {}).get("rings", [])
+                if rings and rings[0]:
+                    pts = rings[0]
+                    cx = sum(p[0] for p in pts) / len(pts)
+                    cy = sum(p[1] for p in pts) / len(pts)
+
+                    # Spatial query on Planning/Zoning layers
+                    zone_endpoints = [
+                        "https://maps.wake.gov/arcgis/rest/services/Planning/Zoning/MapServer/0/query",
+                        "https://maps.wakegov.com/arcgis/rest/services/Planning/Zoning/MapServer/0/query",
+                        "https://maps.wake.gov/arcgis/rest/services/Planning/Zoning/FeatureServer/0/query",
+                    ]
+                    for ep in zone_endpoints:
+                        try:
+                            z_resp = _req.get(ep, params={
+                                "geometry": f"{cx:.6f},{cy:.6f}",
+                                "geometryType": "esriGeometryPoint",
+                                "inSR": "4326",
+                                "spatialRel": "esriSpatialRelIntersects",
+                                "outFields": "ZONING_CLASS,ZONING_DESC,ZONE_CLASS,ZONING,ZONE_DESC",
+                                "returnGeometry": "false",
+                                "f": "json",
+                            }, headers=headers, timeout=15)
+                            z_data = z_resp.json()
+                            z_feats = z_data.get("features", [])
+                            if z_feats:
+                                a = z_feats[0].get("attributes", {})
+                                z = (a.get("ZONING_CLASS") or a.get("ZONING_DESC") or
+                                     a.get("ZONE_CLASS") or a.get("ZONING") or
+                                     a.get("ZONE_DESC") or "")
+                                if z and str(z).strip() and str(z).lower() not in ("null", "none", ""):
+                                    return jsonify({"zoning": str(z).strip(), "source": "planning_zoning_layer"})
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+
+        return jsonify({"zoning": None, "source": None, "note": "Not found in any Wake County GIS layer"}), 200
+
     # ── Legistar API proxy (bypasses CORS block on browser direct calls) ──
     @app.route("/legistar/<client_id>/<path:endpoint>")
     def legistar_proxy(client_id, endpoint):
@@ -424,6 +637,7 @@ def serve():
     print(f"🏗  Wake County Parcel API running on http://localhost:{API_PORT}")
     print(f"   GET /parcel/<PIN>              — lookup by PIN (cached {CACHE_TTL_HOURS}h)")
     print(f"   GET /geometry/<PIN>            — parcel boundary polygon")
+    print(f"   GET /zoning/<PIN>              — zoning district (Property + Planning/Zoning layers)")
     print(f"   GET /legistar/<city>/<endpoint> — Legistar API proxy (e.g. /legistar/raleigh/matters)")
     print(f"   GET /ping                      — health check")
     print(f"   GET /stats                     — cache stats")
